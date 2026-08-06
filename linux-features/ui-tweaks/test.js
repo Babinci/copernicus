@@ -41,6 +41,14 @@ const {
   ZH_CN_LOCALE_ASSET_PATTERN,
   applyEnglishReasoningLabels,
 } = require("./patches/reasoning-effort-labels.js");
+const {
+  COLOR_ATTRIBUTE: THREAD_COLOR_ATTRIBUTE,
+  RUNTIME_MARKER: THREAD_COLOR_RUNTIME_MARKER,
+  STYLE_ID: THREAD_COLOR_STYLE_ID,
+  THREAD_COLORS,
+  applySidebarThreadColorPatch,
+  sidebarThreadColorRuntimeSource,
+} = require("./patches/sidebar-thread-color.js");
 
 function projectBundleFixture() {
   return [
@@ -55,6 +63,27 @@ function modelPickerStateBundleFixture() {
     "vz=wu(`composer-model-picker-menu-view-v1`,`simple`);",
     "}",
   ].join("");
+}
+
+function sidebarThreadColorBundleFixture() {
+  return [
+    "function Ztu(e){let t=cache(),{isPinned:o,labelColor:l,threadSummary:g,..._}=e,",
+    "v=o!==void 0&&o,x=l===void 0?null:l,S=g===void 0?null:g,C=No(Q),",
+    "[w,T]=(0,enu.useState)(!1),E=Zu();",
+    "let $e=()=>[{id:`rename-thread`,message:sK.renameThread,onSelect:Ke},",
+    "...O==null||O===`local`?[]:[{id:`change-connection-color`}]];return _}",
+    "function localRow(e){let B=e.conversationId;Mo(Kas,B);let ne=e.extra;",
+    "return Ztu({labelColor:null,modelProvider:e.modelProvider})}",
+  ].join("");
+}
+
+function enabledThreadColorContext() {
+  return {
+    feature: {
+      manifest: { tweaks: { sidebar: { threadColor: { enabled: false } } } },
+      settings: { tweaks: { sidebar: { threadColor: { enabled: true } } } },
+    },
+  };
 }
 
 function modelPickerMenuBundleFixture() {
@@ -162,6 +191,7 @@ test("ui-tweaks is discoverable and disabled until listed in features.json", () 
       descriptors.map((descriptor) => [descriptor.id, descriptor.phase, descriptor.ciPolicy]),
       [
         ["feature:ui-tweaks:sidebar-project-name-style", "webview-asset", "optional"],
+        ["feature:ui-tweaks:sidebar-thread-color", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-default-advanced-view", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-inline-model-list", "webview-asset", "optional"],
         [
@@ -380,6 +410,110 @@ test("sidebar project descriptor targets only the current project sidebar asset"
     "app-initial~app-main~remote-conversation-page~projects-index-page-By2_tGIM.js",
     PROJECTS_SIDEBAR_ASSET_PATTERN,
   );
+});
+
+test("sidebar thread colors are opt-in and patch the complete current contract once", () => {
+  const source = sidebarThreadColorBundleFixture();
+  assert.equal(applySidebarThreadColorPatch(source), source);
+
+  const context = enabledThreadColorContext();
+  const patched = applySidebarThreadColorPatch(source, context);
+
+  assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
+  assert.match(patched, new RegExp(THREAD_COLOR_STYLE_ID));
+  assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
+  assert.match(patched, /codexLinuxThreadLabelColor=Mo\(Kas,B\)/);
+  assert.match(patched, /labelColor:codexLinuxThreadLabelColor/);
+  assert.match(patched, /change-thread-color/);
+  assert.match(patched, /\.\.\.\(v&&\(O==null\|\|O===`local`\)\?\[/);
+  assert.match(patched, /Il\.SIDEBAR_THREAD_METADATA/);
+  assert.doesNotMatch(patched, /labelColor:null/);
+  assert.equal(applySidebarThreadColorPatch(patched, context), patched);
+});
+
+test("sidebar thread color runtime is dependency-free valid JavaScript", () => {
+  const runtime = sidebarThreadColorRuntimeSource();
+  assert.doesNotThrow(() => Function(runtime)());
+  for (const { label, value } of THREAD_COLORS) {
+    assert.match(runtime, new RegExp(label));
+    assert.match(runtime, new RegExp(value));
+  }
+});
+
+test("sidebar thread color runtime merges, clears, validates, and reports failures", async () => {
+  let persisted = {
+    "thread-one": { labelColor: "#ef4444", futureField: true },
+    "thread-two": { labelColor: "#22c55e" },
+  };
+  let writes = 0;
+  const toasts = [];
+  const toastKey = Symbol("toast");
+  const scope = { get: (key) => (key === toastKey ? { danger: (message) => toasts.push(message) } : null) };
+  let failWrite = false;
+  const runtime = Function(
+    "Cp",
+    "Il",
+    "Sp",
+    "Th",
+    "$u",
+    "document",
+    `${sidebarThreadColorRuntimeSource()};return {` +
+      `setColor:codexLinuxSetSidebarThreadColor,menu:codexLinuxSidebarThreadColorMenu};`,
+  )(
+    () => persisted,
+    { SIDEBAR_THREAD_METADATA: "sidebar-thread-metadata" },
+    async (_scope, _key, value) => {
+      writes += 1;
+      if (failWrite) throw new Error("write failed");
+      persisted = value;
+    },
+    toastKey,
+    (message) => message,
+    undefined,
+  );
+
+  assert.deepEqual(runtime.menu(scope, "thread-one").map((item) => item.message.defaultMessage), [
+    ...THREAD_COLORS.map(({ label }) => label),
+    "No color",
+  ]);
+
+  await runtime.setColor(scope, "thread-one", "#3b82f6");
+  assert.deepEqual(persisted, {
+    "thread-one": { labelColor: "#3b82f6", futureField: true },
+    "thread-two": { labelColor: "#22c55e" },
+  });
+
+  await runtime.setColor(scope, "thread-one", null);
+  assert.deepEqual(persisted, {
+    "thread-one": { futureField: true },
+    "thread-two": { labelColor: "#22c55e" },
+  });
+
+  const writesBeforeInvalid = writes;
+  await runtime.setColor(scope, "thread-one", "red");
+  assert.equal(writes, writesBeforeInvalid);
+
+  failWrite = true;
+  await runtime.setColor(scope, "thread-two", "#a855f7");
+  assert.deepEqual(toasts, ["Could not update pin color"]);
+  assert.deepEqual(persisted["thread-two"], { labelColor: "#22c55e" });
+});
+
+test("sidebar thread color drift warns and remains byte-identical", () => {
+  const source = sidebarThreadColorBundleFixture().replace(
+    "labelColor:null,modelProvider:",
+    "labelColor:void 0,modelProvider:",
+  );
+  const { value, warnings } = withCapturedWarns(() =>
+    applySidebarThreadColorPatch(source, {
+      ...enabledThreadColorContext(),
+      warnOnMissingMarkers: true,
+    }),
+  );
+
+  assert.equal(value, source);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /Expected exactly one current sidebar marker/);
 });
 
 test("patch injects sidebar project-name stylesheet runtime once", () => {

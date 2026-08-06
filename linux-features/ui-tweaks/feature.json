@@ -40,6 +40,9 @@
       "projectName": {
         "enabled": true,
         "style": "font-weight: 700 !important;"
+      },
+      "threadColor": {
+        "enabled": false
       }
     }
   }
