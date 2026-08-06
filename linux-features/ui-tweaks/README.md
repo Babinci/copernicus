@@ -22,7 +22,7 @@ Enable it in the local, gitignored feature config:
 | `modelPicker.showModelsByDefault` | `patches/model-picker-model-list.js` | Opens the advanced picker by default and shows model choices inline instead of hiding them behind the compact Power slider and a nested Model submenu. | `tweaks.modelPicker.showModelsByDefault.enabled` |
 | `reasoning.keepEffortLabelsEnglish` | `patches/reasoning-effort-labels.js` | Keeps reasoning effort values in English in the Simplified Chinese UI while leaving the surrounding interface translated. | `tweaks.reasoning.keepEffortLabelsEnglish.enabled` |
 | `sidebar.projectName` | `patches/sidebar-project-name.js` | Styles project names in the left sidebar project list. It does not style `Projects` / `Chats` section headings and does not style chat rows. | `tweaks.sidebar.projectName.enabled`, `tweaks.sidebar.projectName.style` |
-| `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds a named color submenu to pinned local chats and displays the saved color as a narrow sidebar marker. | `tweaks.sidebar.threadColor.enabled` |
+| `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds a named color submenu to pinned local chats and displays the saved color as a soft full-row tint. | `tweaks.sidebar.threadColor.enabled` |
 
 ## Settings
 
@@ -194,8 +194,8 @@ Adds **Change pin color…** to the context menu for pinned local chats. The
 submenu offers Red, Orange, Yellow, Green, Blue, Purple, and No color. The
 choice is stored in the upstream `sidebar-thread-metadata` global-state entry
 for that conversation and survives restarts, unpinning, and repinning. The
-sidebar keeps its normal text and pinned grouping; color is only a supplementary
-visual marker.
+sidebar keeps its normal text and pinned grouping; color is only a supplementary,
+low-opacity row background.
 
 This tweak is independently disabled by default. Enable it locally with:
 

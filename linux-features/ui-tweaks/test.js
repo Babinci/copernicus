@@ -47,6 +47,7 @@ const {
   STYLE_ID: THREAD_COLOR_STYLE_ID,
   THREAD_COLORS,
   applySidebarThreadColorPatch,
+  sidebarThreadColorCss,
   sidebarThreadColorRuntimeSource,
 } = require("./patches/sidebar-thread-color.js");
 
@@ -434,10 +435,25 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
 test("sidebar thread color runtime is dependency-free valid JavaScript", () => {
   const runtime = sidebarThreadColorRuntimeSource();
   assert.doesNotThrow(() => Function(runtime)());
+  assert.match(runtime, /background-color:#ef444424!important/);
+  assert.match(runtime, /:hover\{background-color:#ef444438!important/);
+  assert.doesNotMatch(runtime, /::before/);
   for (const { label, value } of THREAD_COLORS) {
     assert.match(runtime, new RegExp(label));
     assert.match(runtime, new RegExp(value));
   }
+});
+
+test("sidebar thread color patch upgrades an existing marker runtime to the full-row tint", () => {
+  const context = enabledThreadColorContext();
+  const current = applySidebarThreadColorPatch(sidebarThreadColorBundleFixture(), context);
+  const legacy = current.replace(
+    JSON.stringify(sidebarThreadColorCss()),
+    JSON.stringify(`[${THREAD_COLOR_ATTRIBUTE}]{position:relative;}`),
+  );
+
+  assert.notEqual(legacy, current);
+  assert.equal(applySidebarThreadColorPatch(legacy, context), current);
 });
 
 test("sidebar thread color runtime merges, clears, validates, and reports failures", async () => {

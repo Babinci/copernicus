@@ -61,16 +61,25 @@ function countOccurrences(source, marker) {
   return count;
 }
 
+function sidebarThreadColorCss() {
+  return THREAD_COLORS.flatMap(({ value }) => [
+    `[${COLOR_ATTRIBUTE}=${JSON.stringify(value)}]{background-color:${value}24!important;}`,
+    `[${COLOR_ATTRIBUTE}=${JSON.stringify(value)}]:hover{background-color:${value}38!important;}`,
+  ]).join("");
+}
+
+function refreshSidebarThreadColorCss(source) {
+  const prefix = `STYLE_ID=${JSON.stringify(STYLE_ID)},CSS=`;
+  const start = source.indexOf(prefix);
+  if (start < 0) return source;
+  const cssStart = start + prefix.length;
+  const cssEnd = source.indexOf(";if(typeof document===", cssStart);
+  if (cssEnd < 0) return source;
+  return `${source.slice(0, cssStart)}${JSON.stringify(sidebarThreadColorCss())}${source.slice(cssEnd)}`;
+}
+
 function sidebarThreadColorRuntimeSource() {
-  const css = [
-    `[${COLOR_ATTRIBUTE}]{position:relative;}`,
-    ...THREAD_COLORS.map(
-      ({ value }) =>
-        `[${COLOR_ATTRIBUTE}=${JSON.stringify(value)}]::before{` +
-        `content:"";position:absolute;inset-block:8px;inset-inline-start:2px;` +
-        `width:3px;border-radius:9999px;background:${value};}`,
-    ),
-  ].join("");
+  const css = sidebarThreadColorCss();
 
   return [
     `;var codexLinuxSidebarThreadColors=${JSON.stringify(THREAD_COLORS)};`,
@@ -106,9 +115,10 @@ function applySidebarThreadColorPatch(source, context = {}) {
       warn("Asset source is not a string");
       return source;
     }
-    if (!enabled(context) || source.includes(RUNTIME_MARKER)) {
+    if (!enabled(context)) {
       return source;
     }
+    if (source.includes(RUNTIME_MARKER)) return refreshSidebarThreadColorCss(source);
 
     const replacements = [
       [COLOR_SELECTOR_MARKER, COLOR_SELECTOR_REPLACEMENT],
@@ -157,5 +167,6 @@ module.exports = {
   THREAD_COLOR_ASSET_PATTERN,
   applySidebarThreadColorPatch,
   descriptors,
+  sidebarThreadColorCss,
   sidebarThreadColorRuntimeSource,
 };
