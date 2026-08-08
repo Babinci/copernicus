@@ -1,22 +1,34 @@
-<h1 align="center">ChatGPT Desktop for Linux</h1>
+<h1 align="center">Copernicus</h1>
+
+<p align="center"><strong>ChatGPT Desktop for Linux + GPT-only agent fleets + evidence-grounded auto-research</strong></p>
 
 <p align="center">
-  <a href="https://github.com/ilysenko/codex-desktop-linux/actions/workflows/ci.yml"><img src="https://github.com/ilysenko/codex-desktop-linux/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/ilysenko/codex-desktop-linux/actions/workflows/upstream-build-app.yml"><img src="https://github.com/ilysenko/codex-desktop-linux/actions/workflows/upstream-build-app.yml/badge.svg" alt="Upstream Build App"></a>
+  <a href="https://github.com/Babinci/copernicus/actions/workflows/ci.yml"><img src="https://github.com/Babinci/copernicus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Babinci/copernicus/actions/workflows/upstream-build-app.yml"><img src="https://github.com/Babinci/copernicus/actions/workflows/upstream-build-app.yml/badge.svg" alt="Upstream Build App"></a>
   <a href="https://discord.gg/skCB3DXqgw"><img src="https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white" alt="Join the Discord community"></a>
 </p>
 
-Unofficial Linux build wrapper for [OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/).
-The official ChatGPT app is available for macOS and Windows; this repository
-covers Linux by converting the upstream macOS `Codex.dmg` into a runnable Linux
-Electron app.
+Copernicus is an unofficial, source-only Linux build wrapper for
+[OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
+Codex plugin for ambitious local work. It combines the proven Linux conversion
+pipeline with three deliberately small workflows:
+
+- **Fleet** routes bounded work across native GPT Sol, Terra, and Luna lanes.
+- **Auto-Research** invents a problem-specific agent DAG, evaluates candidates,
+  writes hash-chained local receipts, and learns through OKF only at cycle boundaries.
+- **Rick Rubin** reduces brainstorms and systems to the few ideas that earn their weight.
+
+There are no third-party model providers, API-key routers, autonomous publishing
+paths, databases, or always-on agent societies. Commands and trusted evaluators
+outrank model votes.
 
 The project builds native `.deb`, `.rpm`, and `.pkg.tar.zst` packages, supports
 local AppImage self-builds and Nix, and can install a local update manager that
 rebuilds future Linux packages from newer upstream DMGs.
 
 <p align="center">
-  <a href="#how-to-install">Install</a> ·
+  <a href="#install-the-copernicus-plugin">Plugin</a> ·
+  <a href="#how-to-install">Linux app</a> ·
   <a href="#uninstall">Uninstall</a> ·
   <a href="#feature-matrix">Features</a> ·
   <a href="#updates">Updates</a> ·
@@ -29,6 +41,48 @@ rebuilds future Linux packages from newer upstream DMGs.
 Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). For
 implementation details, see [AGENTS.md](AGENTS.md).
 
+## Install the Copernicus plugin
+
+With a current Codex CLI and an existing ChatGPT sign-in:
+
+```bash
+codex login
+codex plugin marketplace add Babinci/copernicus
+codex plugin add copernicus@copernicus
+```
+
+Then ask Codex to use `$fleet`, `$auto-research`, or `$rick-rubin`. Model access
+and reasoning controls remain account- and workspace-dependent; Copernicus does
+not unlock models or increase plan limits.
+
+To inspect a local checkout before installation:
+
+```bash
+python3 plugins/copernicus/skills/fleet/scripts/fleet.py list
+python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
+python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
+```
+
+See the [Copernicus guide](docs/copernicus/index.md) for architecture, a first
+research cycle, Fleet manifests, and safe scheduled work.
+
+### Custom chat colors
+
+The `ui-tweaks` feature adds persistent red, orange, yellow, green, blue, and
+purple row tints to pinned chats and local chats inside Projects. Enable it in
+the ignored `linux-features/features.json` before building:
+
+```json
+{
+  "enabled": ["ui-tweaks"],
+  "settings": {
+    "ui-tweaks": {
+      "tweaks": {"sidebar": {"threadColor": {"enabled": true}}}
+    }
+  }
+}
+```
+
 ## How To Install
 
 ChatGPT Desktop for Linux is built locally from the upstream `Codex.dmg`: the
@@ -40,8 +94,8 @@ and stay disabled unless you enable them before building.
 For native packages and AppImage self-builds, start from a checkout:
 
 ```bash
-git clone https://github.com/ilysenko/codex-desktop-linux.git
-cd codex-desktop-linux
+git clone https://github.com/Babinci/copernicus.git
+cd copernicus
 ```
 
 | Platform | Recommended path | Notes |
@@ -50,7 +104,7 @@ cd codex-desktop-linux
 | Fedora | `make bootstrap-native` | Builds and installs an `.rpm` |
 | openSUSE | `make bootstrap-native` | Builds and installs an `.rpm` |
 | Arch, Manjaro, EndeavourOS | `make bootstrap-native` | Builds and installs a pacman package |
-| NixOS / Nix | `nix run github:ilysenko/codex-desktop-linux` | See [Nix docs](docs/nix.md) |
+| NixOS / Nix | `nix run github:Babinci/copernicus` | See [Nix docs](docs/nix.md) |
 | Atomic desktops / other distros | `make build-app && make appimage` | Local self-build; no bundled updater |
 
 Recommended native install:
@@ -359,6 +413,7 @@ Full list: [Troubleshooting](docs/troubleshooting.md).
 
 ## Project Docs
 
+- [Copernicus](docs/copernicus/index.md)
 - [Native setup](docs/native-setup.md)
 - [Nix](docs/nix.md)
 - [Linux Computer Use](docs/linux-computer-use.md)

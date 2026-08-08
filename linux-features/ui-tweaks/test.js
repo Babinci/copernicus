@@ -426,7 +426,12 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, /codexLinuxThreadLabelColor=Mo\(Kas,B\)/);
   assert.match(patched, /labelColor:codexLinuxThreadLabelColor/);
   assert.match(patched, /change-thread-color/);
-  assert.match(patched, /\.\.\.\(v&&\(O==null\|\|O===`local`\)\?\[/);
+  assert.match(
+    patched,
+    /\.\.\.\(\(v\|\|_\.isGrouped===!0\)&&\(O==null\|\|O===`local`\)\?\[/,
+  );
+  assert.match(patched, /defaultMessage:`Change chat color…`/);
+  assert.doesNotMatch(patched, /Change pin color/);
   assert.match(patched, /Il\.SIDEBAR_THREAD_METADATA/);
   assert.doesNotMatch(patched, /labelColor:null/);
   assert.equal(applySidebarThreadColorPatch(patched, context), patched);
@@ -511,7 +516,7 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
 
   failWrite = true;
   await runtime.setColor(scope, "thread-two", "#a855f7");
-  assert.deepEqual(toasts, ["Could not update pin color"]);
+  assert.deepEqual(toasts, ["Could not update chat color"]);
   assert.deepEqual(persisted["thread-two"], { labelColor: "#22c55e" });
 });
 

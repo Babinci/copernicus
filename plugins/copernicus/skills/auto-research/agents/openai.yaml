@@ -1,0 +1,4 @@
+interface:
+  display_name: "Copernicus Auto-Research"
+  short_description: "Solve problems through adaptive agent graphs and OKF memory."
+  default_prompt: "Use Copernicus Auto-Research to frame this problem, invent the smallest useful agent graph, execute it with evidence, and curate cycle-boundary knowledge."

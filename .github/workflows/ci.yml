@@ -48,6 +48,16 @@ jobs:
           set -euo pipefail
           bash scripts/ci/run-node-checks.sh
 
+      - name: Check Copernicus plugin
+        run: |
+          set -euo pipefail
+          python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
+          python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
+          python3 -m compileall -q plugins/copernicus/skills
+          python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
+          python3 -m json.tool plugins/copernicus/.codex-plugin/plugin.json >/dev/null
+          ! grep -R '\[TODO\|TODO:' plugins/copernicus
+
       - name: Check Rust formatting
         run: cargo fmt --check
 
@@ -69,6 +79,7 @@ jobs:
             echo ""
             echo "- Shell syntax checks passed."
             echo "- Node syntax and tests passed."
+            echo "- Copernicus plugin tests passed."
             echo "- Rust formatting, clippy, check, and tests passed."
             echo "- Script smoke tests passed."
           } >> "$GITHUB_STEP_SUMMARY"

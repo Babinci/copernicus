@@ -2,10 +2,11 @@
 
 ## Purpose
 
-This repository adapts the official macOS ChatGPT Desktop DMG into a runnable
-Linux app, packages it as `.deb`, `.rpm`, pacman, and AppImage artifacts, and
-ships a local Rust update manager that can rebuild future Linux packages from
-newer upstream DMGs.
+This repository is Copernicus: it adapts the official macOS ChatGPT Desktop DMG
+into a runnable Linux app and ships an installable GPT-only Codex plugin for
+Fleet, SAS/OKF auto-research, and Rick Rubin subtraction. It packages the app as
+`.deb`, `.rpm`, pacman, and AppImage artifacts and retains the local Rust update
+manager that can rebuild future Linux packages from newer upstream DMGs.
 
 The build flow: `install.sh` downloads/extracts `Codex.dmg`, patches the
 extracted app through core and enabled Linux feature descriptors, rebuilds
@@ -38,6 +39,12 @@ update-builder bundle.
 - Treat updater, package builder, launcher, and feature framework changes as
   cross-format changes unless the code explicitly scopes them to one package
   format or desktop target.
+- Keep Copernicus model execution native to Codex and GPT-only. No proxy,
+  third-party provider, silent fallback, auth-cache copying, or embedded secret.
+- Keep Copernicus workflows in `plugins/copernicus/`. Do not patch the Desktop
+  ASAR or core packaging merely to expose a skill that the plugin system can own.
+- Auto-research writes canonical OKF memory only at cycle boundaries from joined
+  evidence. Model consensus is never a verifier.
 
 ## Issue And Pull Request Labels
 
@@ -88,6 +95,8 @@ Use source files, not generated artifacts. Main routing:
 - Computer Use: `computer-use-linux/`; compositor backends under
   `computer-use-linux/src/windowing/backends/`.
 - Nix: `flake.nix`, `flake.lock`, and `nix/`.
+- Copernicus plugin: `plugins/copernicus/`; public marketplace:
+  `.agents/plugins/marketplace.json`; product docs: `docs/copernicus/`.
 
 Detailed agent docs: [repository map](docs/agents/repository-map.md),
 [generated/runtime notes](docs/agents/generated-and-runtime-notes.md), and

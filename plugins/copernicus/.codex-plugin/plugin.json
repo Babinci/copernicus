@@ -1,0 +1,18 @@
+{
+  "name": "copernicus",
+  "version": "0.1.0",
+  "description": "GPT-only Fleet, adaptive SAS+OKF auto-research, and Rick Rubin subtraction for Codex.",
+  "author": {
+    "name": "Wojtek (Babinci)"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Copernicus",
+    "shortDescription": "GPT-only fleets and evidence-grounded auto-research.",
+    "longDescription": "Copernicus combines bounded Sol, Terra, and Luna fleets with adaptive problem-solving graphs, locally integrity-checked evidence, OKF cycle memory, and Rick Rubin subtraction.",
+    "developerName": "Wojtek (Babinci)",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Use Copernicus to frame this problem, invent the smallest useful GPT-only agent graph, execute it with evidence, and cut anything that does not earn its place."
+  }
+}

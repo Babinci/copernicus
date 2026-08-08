@@ -1,0 +1,21 @@
+---
+okf_version: "0.1"
+---
+
+# Copernicus
+
+Copernicus is a source-only Linux Desktop fork plus an installable GPT-only
+problem-solving plugin.
+
+## Start here
+
+- [Getting started](getting-started.md) — install the plugin and run a first bounded mission.
+- [Architecture](architecture.md) — understand Fleet, SAS, receipts, evaluation, and OKF memory.
+- [Scheduled work](scheduled-work.md) — run attended Scheduled tasks or trusted local cron safely.
+
+## Product boundaries
+
+- The Linux wrapper locally converts a user-authorized upstream DMG; it does not redistribute it.
+- The plugin uses native Codex authentication and GPT models only.
+- Auto-research proposes memory from joined evidence at cycle boundaries; it never promotes guesses mid-cycle.
+- External writes, publishing, purchases, deployment, messaging, and destructive actions remain human-authorized.

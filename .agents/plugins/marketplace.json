@@ -1,0 +1,20 @@
+{
+  "name": "copernicus",
+  "interface": {
+    "displayName": "Copernicus"
+  },
+  "plugins": [
+    {
+      "name": "copernicus",
+      "source": {
+        "source": "local",
+        "path": "./plugins/copernicus"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

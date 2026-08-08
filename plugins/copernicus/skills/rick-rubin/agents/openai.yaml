@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rick Rubin"
+  short_description: "Cut everything that does not serve the essence."
+  default_prompt: "Apply the Rick Rubin less-but-better pass: what stays, what goes, and the hardest cut."

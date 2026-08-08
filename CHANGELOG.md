@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Copernicus marketplace plugin with GPT-only Sol, Terra, and Luna Fleet lanes,
+  a bounded `codex exec` batch runner, a general Solution Autoresearch System,
+  hash-chained evidence receipts, OKF cycle-boundary memory, and the Rick Rubin
+  subtraction skill.
+- An OKF-clean Copernicus documentation bundle covering installation,
+  architecture, and scheduled work.
 - A shared upstream DMG acceptance profile now produces the same structured
   decision for local installs, updater rebuilds, and scheduled CI. Scheduled
   rejections create one fingerprinted drift issue and supersede issues for
@@ -23,6 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Sidebar chat colors now apply to pinned chats and local Project chats while
+  preserving the opt-in, fail-soft UI tweak boundary.
 - Remote mobile control now relies on the current upstream account-enrollment
   compatibility and Connections tab resolver instead of patching duplicate
   Linux-specific fallbacks into those paths.

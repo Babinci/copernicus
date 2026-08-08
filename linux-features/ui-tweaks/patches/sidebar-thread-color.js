@@ -28,9 +28,9 @@ const MENU_MARKER =
   "[{id:`change-connection-color`";
 const MENU_REPLACEMENT =
   "{id:`rename-thread`,message:sK.renameThread,onSelect:Ke}," +
-  "...(v&&(O==null||O===`local`)?[{id:`change-thread-color`," +
-  "message:$u({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change pin color…`," +
-  "description:`Menu item that changes a pinned local chat color`})," +
+  "...((v||_.isGrouped===!0)&&(O==null||O===`local`)?[{id:`change-thread-color`," +
+  "message:$u({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
+  "description:`Menu item that changes a local chat color`})," +
   "submenu:codexLinuxSidebarThreadColorMenu(C,n)}]:[])," +
   "...O==null||O===`local`?[]:[{id:`change-connection-color`";
 
@@ -92,14 +92,14 @@ function sidebarThreadColorRuntimeSource() {
     `else{if(entry.labelColor===selected)return;entry.labelColor=selected}`,
     `Object.keys(entry).length>0?metadata[threadId]=entry:delete metadata[threadId];`,
     `try{await Sp(scope,Il.SIDEBAR_THREAD_METADATA,Object.keys(metadata).length>0?metadata:void 0,{throwOnFailure:!0})}`,
-    `catch(error){scope.get(Th).danger(\"Could not update pin color\")}}`,
+    `catch(error){scope.get(Th).danger(\"Could not update chat color\")}}`,
     `function codexLinuxSidebarThreadColorMenu(scope,threadId){return[`,
     `...codexLinuxSidebarThreadColors.map(item=>({id:\`change-thread-color-\${item.id}\`,`,
     `message:$u({id:\`codexLinux.sidebarThreadColor.\${item.id}\`,defaultMessage:item.label,`,
-    `description:\`Color choice for a pinned local chat\`}),`,
+    `description:\`Color choice for a local chat\`}),`,
     `onSelect:()=>codexLinuxSetSidebarThreadColor(scope,threadId,item.value)})),`,
     `{id:\`change-thread-color-clear\`,message:$u({id:\`codexLinux.sidebarThreadColor.clear\`,`,
-    `defaultMessage:\`No color\`,description:\`Remove the color from a pinned local chat\`}),`,
+    `defaultMessage:\`No color\`,description:\`Remove the color from a local chat\`}),`,
     `onSelect:()=>codexLinuxSetSidebarThreadColor(scope,threadId,null)}]}`,
     `;(()=>{const ${RUNTIME_MARKER}=true,STYLE_ID=${JSON.stringify(STYLE_ID)},CSS=${JSON.stringify(css)};`,
     `if(typeof document===\"undefined\")return;let style=document.getElementById(STYLE_ID);`,
