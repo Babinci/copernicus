@@ -2,6 +2,8 @@
 
 ## 2026-08-09
 
+- Linked the independently deployed Coding WebUI and Android companion, with its
+  authentication, workspace, release, and upstream-remote-control boundaries made explicit.
 - Added the self-contained HTML Report skill, its public workflow explanation,
   optional Excalidraw handoff, static safety gate, and practitioner-mode guide.
 - Added the temporary-diary, bounded DeepLuna discovery, verification, and OKF

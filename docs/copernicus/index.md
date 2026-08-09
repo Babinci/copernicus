@@ -14,10 +14,13 @@ problem-solving plugin.
 - [Practitioner HTML reports](html-reports.md) — turn evaluated work into a portable human-readable briefing or lesson.
 - [Architecture](architecture.md) — understand Fleet, SAS, receipts, evaluation, and OKF memory.
 - [Scheduled work](scheduled-work.md) — run attended Scheduled tasks or trusted local cron safely.
+- [Coding WebUI](https://github.com/Babinci/coding-webui) — optionally control host Codex sessions
+  from a self-hosted responsive web UI or the companion Android client.
 
 ## Product boundaries
 
 - The Linux wrapper locally converts a user-authorized upstream DMG; it does not redistribute it.
 - The plugin uses native Codex authentication and GPT models only.
+- Coding WebUI is an independent deployment with its own TLS, login, workspace, and release boundary.
 - Auto-research proposes memory from joined evidence at cycle boundaries; it never promotes guesses mid-cycle.
 - External writes, publishing, purchases, deployment, messaging, and destructive actions remain human-authorized.

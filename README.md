@@ -30,6 +30,7 @@ rebuilds future Linux packages from newer upstream DMGs.
 
 <p align="center">
   <a href="#install-the-copernicus-plugin">Plugin</a> ·
+  <a href="#optional-self-hosted-remote-companion">Remote companion</a> ·
   <a href="#how-to-install">Linux app</a> ·
   <a href="#uninstall">Uninstall</a> ·
   <a href="#feature-matrix">Features</a> ·
@@ -73,6 +74,18 @@ python3 plugins/copernicus/skills/html-report/scripts/test_report.py
 
 See the [Copernicus guide](docs/copernicus/index.md) for skill explanations,
 architecture, a first research cycle, Fleet manifests, and safe scheduled work.
+
+## Optional self-hosted remote companion
+
+[Coding WebUI](https://github.com/Babinci/coding-webui) is the separately deployed companion for
+controlling Codex sessions through a responsive VPS web interface or an installable Android client.
+Both clients use one owner login and the same HTTPS API; Android adds native voice input and file
+picking. The [v0.1.0 test release](https://github.com/Babinci/coding-webui/releases/tag/v0.1.0)
+includes a directly installable debug-signed APK.
+
+The companion is not embedded in Copernicus and does not inherit Desktop credentials. It runs beside
+the authenticated Codex CLI on the chosen host and has its own TLS, password, workspace, and update
+boundary. This is independent from the experimental upstream `remote-mobile-control` feature below.
 
 ### Custom chat colors
 
