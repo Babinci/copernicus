@@ -57,7 +57,7 @@ jobs:
           python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
           python3 -m json.tool plugins/copernicus/.codex-plugin/plugin.json >/dev/null
           ! grep -R '\[TODO\|TODO:' plugins/copernicus
-          ! grep -R -E '(/home/[^/]+/|bittensor_domination|continuous_proof_fleet|Cypher Arena)' plugins/copernicus docs/copernicus
+          ! grep -R --exclude-dir=__pycache__ -E '(/home/[^/]+/|bittensor_domination|continuous_proof_fleet|Cypher Arena)' plugins/copernicus docs/copernicus
 
       - name: Check Rust formatting
         run: cargo fmt --check
