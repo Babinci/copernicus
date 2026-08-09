@@ -7,19 +7,28 @@ description: Run a general Solution Autoresearch System (SAS) with an adaptive G
 
 SAS is the invention loop. OKF is its memory layer. Build the smallest graph the actual problem needs; do not import a standing agent society.
 
+Resolve `<auto-research-skill-dir>` to the directory containing this `SKILL.md`.
+Resolve all bundled scripts and references from that directory, never from the
+user's current working directory.
+
+Read [guide.md](references/guide.md) when explaining the method, designing a
+first research cycle, selecting an evaluator, or changing this skill. It defines
+the concepts, purpose, outputs, examples, self-contained boundary, and honest
+limitations.
+
 ## Start
 
 1. Write the user's problem and acceptance test into a plain Markdown file.
 2. Create a run bundle:
 
 ```bash
-python3 scripts/receipts.py init RUN_DIR --problem PROBLEM.md --title "Short title"
+python3 <auto-research-skill-dir>/scripts/receipts.py init RUN_DIR --problem PROBLEM.md --title "Short title"
 ```
 
 3. Read [contracts.md](references/contracts.md). Fill `graph.json`, set its status to `ready`, and run:
 
 ```bash
-python3 scripts/receipts.py verify RUN_DIR
+python3 <auto-research-skill-dir>/scripts/receipts.py verify RUN_DIR
 ```
 
 ## Invent the graph
@@ -42,7 +51,7 @@ Prefer deterministic controller/evaluator nodes. Use models as bounded mappers, 
 
 1. Snapshot the regime and append a `regime` receipt.
 2. Select applicable OKF cards deterministically and record their IDs plus file hashes. Baselines record an explicit empty-card receipt.
-3. Execute ready graph nodes through the `fleet` skill. Run independent nodes in parallel and dependency edges in order.
+3. Execute ready graph nodes through the sibling `$fleet` skill. Run independent nodes in parallel and dependency edges in order. If Fleet is unavailable, execute the same nodes sequentially; the evidence contract matters more than parallelism.
 4. Make each candidate content-addressed. Bind it to the regime, parent candidate, changed hypothesis, prompt/strategy identity, selected card hashes, and artifact hash.
 5. Run the cheapest trusted filter first, then the authoritative evaluator, then an independent semantic or normative review when correctness is broader than a test result.
 6. Retry only when the failure signature and hypothesis changed. Never retry identical candidate bytes or prompts.
@@ -52,8 +61,8 @@ Prefer deterministic controller/evaluator nodes. Use models as bounded mappers, 
 Append each receipt from a JSON object:
 
 ```bash
-python3 scripts/receipts.py append RUN_DIR/evidence.jsonl receipt.json
-python3 scripts/receipts.py verify RUN_DIR
+python3 <auto-research-skill-dir>/scripts/receipts.py append RUN_DIR/evidence.jsonl receipt.json
+python3 <auto-research-skill-dir>/scripts/receipts.py verify RUN_DIR
 ```
 
 ## OKF memory
@@ -73,3 +82,8 @@ Use relative Markdown links and keep `knowledge/index.md` as progressive navigat
 Stop and report rather than guessing when the evaluator is missing, the regime changed, evidence cannot be joined, a provider/model is unavailable, the same failure repeats, or the budget is exhausted. Stop for user authority before purchases, publishing, deployment, messaging, signing, secrets, or destructive/external mutations.
 
 Do not add a graph database, vector store, agent genome, role league, custom queue, dashboard, daemon, or second state store until a measured run proves the flat graph, files, and JSONL ledger insufficient.
+
+Auto-Research is self-contained: it uses Markdown, JSON, the bundled Python
+standard-library receipt tool, and optional sibling Fleet execution. It does not
+depend on a private repository, hosted database, external memory service, or
+undisclosed evaluator. The user must supply the problem and the real evaluator.

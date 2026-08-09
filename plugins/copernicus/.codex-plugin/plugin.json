@@ -1,18 +1,36 @@
 {
   "name": "copernicus",
-  "version": "0.1.0",
+  "version": "0.1.1+codex.20260809093010",
   "description": "GPT-only Fleet, adaptive SAS+OKF auto-research, and Rick Rubin subtraction for Codex.",
   "author": {
-    "name": "Wojtek (Babinci)"
+    "name": "Wojtek (Babinci)",
+    "url": "https://github.com/Babinci"
   },
+  "homepage": "https://github.com/Babinci/copernicus/tree/main/docs/copernicus",
+  "repository": "https://github.com/Babinci/copernicus",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "fleet",
+    "auto-research",
+    "okf",
+    "gpt-only"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Copernicus",
-    "shortDescription": "GPT-only fleets and evidence-grounded auto-research.",
-    "longDescription": "Copernicus combines bounded Sol, Terra, and Luna fleets with adaptive problem-solving graphs, locally integrity-checked evidence, OKF cycle memory, and Rick Rubin subtraction.",
+    "shortDescription": "GPT-only fleets and evidence-backed research.",
+    "longDescription": "Three self-contained Codex skills: subtract weak ideas, execute bounded Sol/Terra/Luna work, and learn through evaluated SAS cycles with locally integrity-checked receipts and human-readable OKF memory.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
-    "capabilities": [],
-    "defaultPrompt": "Use Copernicus to frame this problem, invent the smallest useful GPT-only agent graph, execute it with evidence, and cut anything that does not earn its place."
+    "capabilities": [
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/Babinci/copernicus",
+    "defaultPrompt": [
+      "Use $rick-rubin to find the essence, what stays, what goes, and the hardest cut.",
+      "Use $fleet to split this mission into bounded GPT-only seats and verify the synthesis.",
+      "Use $auto-research for one evidence-backed cycle and propose OKF knowledge."
+    ]
   }
 }

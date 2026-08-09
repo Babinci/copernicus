@@ -55,6 +55,11 @@ Then ask Codex to use `$fleet`, `$auto-research`, or `$rick-rubin`. Model access
 and reasoning controls remain account- and workspace-dependent; Copernicus does
 not unlock models or increase plan limits.
 
+One plugin installation provides all three self-contained skills. Open
+`/plugins`, choose **Copernicus**, and start a new task after installation. See
+[Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
+outputs, examples, privacy boundary, and limitations of each skill.
+
 To inspect a local checkout before installation:
 
 ```bash
@@ -63,8 +68,8 @@ python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
 python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
 ```
 
-See the [Copernicus guide](docs/copernicus/index.md) for architecture, a first
-research cycle, Fleet manifests, and safe scheduled work.
+See the [Copernicus guide](docs/copernicus/index.md) for skill explanations,
+architecture, a first research cycle, Fleet manifests, and safe scheduled work.
 
 ### Custom chat colors
 

@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   subtraction skill.
 - An OKF-clean Copernicus documentation bundle covering installation,
   architecture, and scheduled work.
+- Self-contained public guides for all three Copernicus skills, including their
+  purpose, execution model, outputs, examples, privacy boundary, and honest
+  limitations.
 - A shared upstream DMG acceptance profile now produces the same structured
   decision for local installs, updater rebuilds, and scheduled CI. Scheduled
   rejections create one fingerprinted drift issue and supersede issues for
@@ -42,6 +45,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   set.
 
 ### Fixed
+
+- Installed Copernicus skills now resolve bundled scripts and references from
+  their own skill directories instead of assuming the project working directory.
 
 - The opt-in Dock icon tweak now targets the current upstream main-process
   bundle, restoring Linux window, tray, and desktop icon synchronization.

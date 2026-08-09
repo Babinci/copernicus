@@ -1,4 +1,4 @@
 interface:
   display_name: "Copernicus Fleet"
   short_description: "Run bounded GPT-only Codex fleets."
-  default_prompt: "Use Copernicus Fleet to split this mission into bounded GPT-only seats and verify the synthesis."
+  default_prompt: "Use $fleet to split this mission into bounded GPT-only seats and independently verify the synthesis."

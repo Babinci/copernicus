@@ -7,6 +7,15 @@ description: Orchestrate bounded GPT-only Codex fleets across Sol, Terra, and Lu
 
 Route each seat to the cheapest GPT lane that can meet a checkable contract. The lead owns decomposition, width, evidence, and synthesis; workers never create more workers.
 
+Resolve `<fleet-skill-dir>` to the directory containing this `SKILL.md`. Resolve
+all bundled scripts, references, and model policy files from that directory,
+never from the user's current working directory.
+
+Read [guide.md](references/guide.md) when explaining Fleet, choosing between an
+interactive mission and a batch, designing a first mission, or changing this
+skill. It describes the purpose, execution model, outputs, examples, privacy
+boundary, and limitations.
+
 Open a fleet mission with:
 
 ```text
@@ -35,9 +44,9 @@ Read [model-policy.md](references/model-policy.md) before changing lane names, c
 Use Codex collaboration tools for interactive missions. For local scheduled or shell-driven batches, use the bundled runner:
 
 ```bash
-python3 scripts/fleet.py list
-python3 scripts/fleet.py batch manifest.jsonl --run-dir .copernicus/runs/example --workdir . --dry-run
-python3 scripts/fleet.py batch manifest.jsonl --run-dir .copernicus/runs/example --workdir .
+python3 <fleet-skill-dir>/scripts/fleet.py list
+python3 <fleet-skill-dir>/scripts/fleet.py batch manifest.jsonl --run-dir .copernicus/runs/example --workdir . --dry-run
+python3 <fleet-skill-dir>/scripts/fleet.py batch manifest.jsonl --run-dir .copernicus/runs/example --workdir .
 ```
 
 Manifest rows contain only `id`, `lane`, and `prompt`:
@@ -71,3 +80,8 @@ STOP: emit UNVERIFIED when evidence is missing; stop after the bounded result.
 - Do not count correlated Luna outputs as independent validation.
 
 Finish with a roster: `seat | lane | model | status | role | used in synthesis`, followed by verified claims, rejected claims, and the next commands.
+
+Fleet is self-contained: interactive work uses Codex's collaboration surface;
+batch work uses the bundled Python standard-library runner and the user's
+existing `codex` executable. It needs no provider proxy, API-key router,
+database, daemon, or private project files.

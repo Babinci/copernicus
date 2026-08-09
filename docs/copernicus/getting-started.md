@@ -21,6 +21,20 @@ codex plugin add copernicus@copernicus
 Restart the app if the skills do not appear. The plugin adds `$fleet`,
 `$auto-research`, and `$rick-rubin`.
 
+Confirm installation with:
+
+```bash
+codex plugin list
+```
+
+In the app, open `/plugins`, select **Copernicus**, and inspect the three bundled
+skills. Start a new task so Codex loads their current instructions. One plugin
+installation supplies all skills; no separate provider, database, daemon, or
+credential setup is required.
+
+Read [Skills](skills.md) for the full why, what, execution model, outputs,
+examples, privacy boundary, and limitations.
+
 ## Validate a checkout
 
 ```bash

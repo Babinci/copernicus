@@ -1,0 +1,102 @@
+---
+type: guide
+title: Copernicus skills
+description: Why the three installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, fleet, auto-research, rick-rubin]
+timestamp: 2026-08-09T00:00:00+02:00
+---
+
+# Copernicus skills
+
+Installing the single `copernicus` plugin installs three independent skills.
+They form a small sequence, not an agent society:
+
+```text
+$rick-rubin      remove weak branches
+      ↓
+$fleet           execute independent bounded work
+      ↓
+$auto-research   evaluate, join evidence, and curate learning
+```
+
+Each skill also works alone. Installing the plugin adds workflow instructions,
+references, and two Python standard-library tools; it does not install a daemon,
+database, provider proxy, or background service.
+
+## The skills
+
+| Skill | Why it exists | What it produces |
+| --- | --- | --- |
+| `$rick-rubin` | Idea generation is easier than principled selection. | Essence, what stays, what goes, and the hardest cut. |
+| `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Seat roster, typed outputs, verified synthesis, and explicit evidence gaps. |
+| `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
+
+The complete explanations ship inside the installed plugin:
+
+- [Fleet explained](../../plugins/copernicus/skills/fleet/references/guide.md)
+- [Auto-Research explained](../../plugins/copernicus/skills/auto-research/references/guide.md)
+- [Rick Rubin subtraction explained](../../plugins/copernicus/skills/rick-rubin/references/guide.md)
+
+## Why these three
+
+They address three different failure modes:
+
+1. **Too many possibilities** — subtraction reduces the search space.
+2. **One agent doing incompatible jobs** — Fleet separates bounded work and
+   verification while keeping one accountable lead.
+3. **Learning from unverified guesses** — Auto-Research freezes the regime,
+   evaluates candidates, joins evidence, and updates memory only at a cycle
+   boundary.
+
+No skill is authoritative by itself. Commands, tests, measurements, primary
+sources, and human decisions remain the evaluators.
+
+## Install and find them
+
+```bash
+codex plugin marketplace add Babinci/copernicus
+codex plugin add copernicus@copernicus
+codex plugin list
+```
+
+Start a new Codex task after installation. In the app, open `/plugins`, select
+**Copernicus**, and inspect its three skills. Invoke them explicitly as
+`$rick-rubin`, `$fleet`, and `$auto-research`.
+
+## A complete example
+
+```text
+Use $rick-rubin to reduce these options to the few that serve the named user.
+Use $fleet only for independent evidence work, with a maximum of five read-only
+seats. Then use $auto-research for one measured cycle: name the regime,
+evaluator, falsifier, evidence gaps, and proposed OKF cards. Do not promote
+memory or perform external actions without my approval.
+```
+
+## Self-contained public boundary
+
+The plugin contains everything specific to the method:
+
+- skill instructions and human-readable guides;
+- GPT-only lane policy;
+- the Fleet batch runner and tests;
+- the SAS graph/receipt contracts;
+- the receipt validator and tests.
+
+Public users supply only their own problem, authorized materials, real
+evaluator, Codex sign-in, and model access. The plugin contains no private
+project names, private paths, credentials, internal endpoints, wallets, trace
+identifiers, or copied research artifacts.
+
+The Fleet runner sends only explicitly named prompt files that resolve inside
+the selected work directory. Auto-Research writes only to the run directory the
+user chooses. Rick Rubin is prompt-only.
+
+## Deliberate limits
+
+- Model availability remains account- and workspace-dependent.
+- Local hash chains detect edits but not truncation to a valid prefix without
+  an external anchor.
+- Model consensus is not verification.
+- External publishing, deployment, purchases, messages, signatures,
+  credentials, and destructive actions remain separately authorized.

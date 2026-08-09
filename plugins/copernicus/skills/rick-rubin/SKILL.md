@@ -5,6 +5,11 @@ description: Apply the Less But Better principle to brainstorming, plans, produc
 
 # Rick Rubin
 
+Read [guide.md](references/guide.md) when explaining the method, applying it to
+a complex system, combining it with Fleet or Auto-Research, or changing this
+skill. The guide covers why subtraction matters, how to avoid shallow
+minimalism, examples, outputs, and limitations.
+
 ## The principle
 
 **Less, but better.**
@@ -32,3 +37,7 @@ That is the whole product. Do not dress it up.
 For brainstorming, first allow a divergent idea pass, then apply this subtraction pass before ideas enter an auto-research graph. Do not confuse novelty, effort already spent, or model agreement with value.
 
 To add to this skill, first remove twice as much.
+
+This is a self-contained prompt workflow. It uses no scripts, services, private
+project context, or biographical imitation; it is a general less-but-better
+decision method.

@@ -10,6 +10,7 @@ problem-solving plugin.
 ## Start here
 
 - [Getting started](getting-started.md) — install the plugin and run a first bounded mission.
+- [Skills](skills.md) — understand why each skill exists, what it does, what it produces, and its limits.
 - [Architecture](architecture.md) — understand Fleet, SAS, receipts, evaluation, and OKF memory.
 - [Scheduled work](scheduled-work.md) — run attended Scheduled tasks or trusted local cron safely.
 
