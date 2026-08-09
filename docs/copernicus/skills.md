@@ -1,14 +1,14 @@
 ---
 type: guide
 title: Copernicus skills
-description: Why the three installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
-tags: [copernicus, skills, fleet, auto-research, rick-rubin]
+description: Why the four installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, fleet, auto-research, rick-rubin, html-report]
 timestamp: 2026-08-09T00:00:00+02:00
 ---
 
 # Copernicus skills
 
-Installing the single `copernicus` plugin installs three independent skills.
+Installing the single `copernicus` plugin installs four independent skills.
 They form a small sequence, not an agent society:
 
 ```text
@@ -17,6 +17,8 @@ $rick-rubin      remove weak branches
 $fleet           execute independent bounded work
       ↓
 $auto-research   evaluate, join evidence, and curate learning
+      ↓
+$html-report     explain the evaluated work to a human reader
 ```
 
 Each skill also works alone. Installing the plugin adds workflow instructions,
@@ -30,16 +32,18 @@ database, provider proxy, or background service.
 | `$rick-rubin` | Idea generation is easier than principled selection. | Essence, what stays, what goes, and the hardest cut. |
 | `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Seat roster, typed outputs, verified synthesis, and explicit evidence gaps. |
 | `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
+| `$html-report` | Evaluated work still needs a clear human-facing explanation or decision aid. | One portable HTML brief, update, explanation, decision, review, or lesson. |
 
 The complete explanations ship inside the installed plugin:
 
 - [Fleet explained](../../plugins/copernicus/skills/fleet/references/guide.md)
 - [Auto-Research explained](../../plugins/copernicus/skills/auto-research/references/guide.md)
 - [Rick Rubin subtraction explained](../../plugins/copernicus/skills/rick-rubin/references/guide.md)
+- [HTML reports explained](../../plugins/copernicus/skills/html-report/references/guide.md)
 
-## Why these three
+## Why these four
 
-They address three different failure modes:
+They address four different failure modes:
 
 1. **Too many possibilities** — subtraction reduces the search space.
 2. **One agent doing incompatible jobs** — Fleet separates bounded work and
@@ -47,6 +51,9 @@ They address three different failure modes:
 3. **Learning from unverified guesses** — Auto-Research freezes the regime,
    evaluates candidates, joins evidence, and updates memory only at a cycle
    boundary.
+4. **Work that remains opaque after it is done** — HTML Report turns authorized,
+   evaluated material into a standalone reader-first explanation without making a
+   dashboard, hosted service, or new source of truth.
 
 No skill is authoritative by itself. Commands, tests, measurements, primary
 sources, and human decisions remain the evaluators.
@@ -60,8 +67,8 @@ codex plugin list
 ```
 
 Start a new Codex task after installation. In the app, open `/plugins`, select
-**Copernicus**, and inspect its three skills. Invoke them explicitly as
-`$rick-rubin`, `$fleet`, and `$auto-research`.
+**Copernicus**, and inspect its four skills. Invoke them explicitly as
+`$rick-rubin`, `$fleet`, `$auto-research`, and `$html-report`.
 
 ## A complete example
 
@@ -70,7 +77,9 @@ Use $rick-rubin to reduce these options to the few that serve the named user.
 Use $fleet only for independent evidence work, with a maximum of five read-only
 seats. Then use $auto-research for one measured cycle: name the regime,
 evaluator, falsifier, evidence gaps, and proposed OKF cards. Do not promote
-memory or perform external actions without my approval.
+memory or perform external actions without my approval. Finally, use
+$html-report to produce a standalone decision explanation from the joined
+evidence; separate observed facts, inferences, and unknowns.
 ```
 
 ## Self-contained public boundary
@@ -82,6 +91,7 @@ The plugin contains everything specific to the method:
 - the Fleet batch runner and tests;
 - the SAS graph/receipt contracts;
 - the receipt validator and tests.
+- the HTML report generator, static safety checker, and tests.
 
 Public users supply only their own problem, authorized materials, real
 evaluator, Codex sign-in, and model access. The plugin contains no private

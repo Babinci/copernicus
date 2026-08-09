@@ -1,0 +1,4 @@
+interface:
+  display_name: "Practitioner Reports"
+  short_description: "Portable reports for clarity and action."
+  default_prompt: "Use $html-report to create a standalone decision report from this evidence."

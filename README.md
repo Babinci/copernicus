@@ -11,12 +11,14 @@
 Copernicus is an unofficial, source-only Linux build wrapper for
 [OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
-pipeline with three deliberately small workflows:
+pipeline with four deliberately small workflows:
 
 - **Fleet** routes bounded work across native GPT Sol, Terra, and Luna lanes.
 - **Auto-Research** invents a problem-specific agent DAG, evaluates candidates,
   writes hash-chained local receipts, and learns through OKF only at cycle boundaries.
 - **Rick Rubin** reduces brainstorms and systems to the few ideas that earn their weight.
+- **HTML Report** turns evaluated work into a portable human-facing brief,
+  explanation, decision aid, review, or lesson.
 
 There are no third-party model providers, API-key routers, autonomous publishing
 paths, databases, or always-on agent societies. Commands and trusted evaluators
@@ -51,11 +53,11 @@ codex plugin marketplace add Babinci/copernicus
 codex plugin add copernicus@copernicus
 ```
 
-Then ask Codex to use `$fleet`, `$auto-research`, or `$rick-rubin`. Model access
+Then ask Codex to use `$fleet`, `$auto-research`, `$rick-rubin`, or `$html-report`. Model access
 and reasoning controls remain account- and workspace-dependent; Copernicus does
 not unlock models or increase plan limits.
 
-One plugin installation provides all three self-contained skills. Open
+One plugin installation provides all four self-contained skills. Open
 `/plugins`, choose **Copernicus**, and start a new task after installation. See
 [Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
 outputs, examples, privacy boundary, and limitations of each skill.
@@ -66,6 +68,7 @@ To inspect a local checkout before installation:
 python3 plugins/copernicus/skills/fleet/scripts/fleet.py list
 python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
 python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
+python3 plugins/copernicus/skills/html-report/scripts/test_report.py
 ```
 
 See the [Copernicus guide](docs/copernicus/index.md) for skill explanations,

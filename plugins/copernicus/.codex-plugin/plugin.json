@@ -1,7 +1,7 @@
 {
   "name": "copernicus",
-  "version": "0.1.1+codex.20260809093010",
-  "description": "GPT-only Fleet, adaptive SAS+OKF auto-research, and Rick Rubin subtraction for Codex.",
+  "version": "0.2.0+codex.20260809105309",
+  "description": "GPT-only Fleet, adaptive SAS+OKF auto-research, portable HTML reports, and Rick Rubin subtraction for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
     "url": "https://github.com/Babinci"
@@ -14,13 +14,14 @@
     "fleet",
     "auto-research",
     "okf",
-    "gpt-only"
+    "gpt-only",
+    "html-report"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Copernicus",
     "shortDescription": "GPT-only fleets and evidence-backed research.",
-    "longDescription": "Three self-contained Codex skills: subtract weak ideas, execute bounded Sol/Terra/Luna work, and learn through evaluated SAS cycles with locally integrity-checked receipts and human-readable OKF memory.",
+    "longDescription": "Four self-contained Codex skills: subtract weak ideas, execute bounded Sol/Terra/Luna work, learn through evaluated SAS cycles with locally integrity-checked receipts and human-readable OKF memory, then explain evaluated work in a portable HTML report.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
@@ -30,7 +31,8 @@
     "defaultPrompt": [
       "Use $rick-rubin to find the essence, what stays, what goes, and the hardest cut.",
       "Use $fleet to split this mission into bounded GPT-only seats and verify the synthesis.",
-      "Use $auto-research for one evidence-backed cycle and propose OKF knowledge."
+      "Use $auto-research for one evidence-backed cycle and propose OKF knowledge.",
+      "Use $html-report to turn evaluated evidence into a portable human-facing briefing."
     ]
   }
 }

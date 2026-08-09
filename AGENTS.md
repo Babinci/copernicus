@@ -46,6 +46,27 @@ update-builder bundle.
 - Auto-research writes canonical OKF memory only at cycle boundaries from joined
   evidence. Model consensus is never a verifier.
 
+## Practitioner Development Workflow
+
+- For a cross-cutting plugin, workflow, or documentation design, begin with an
+  ignored `.copernicus/diary/<mission>.md`: objective, authority boundary,
+  sanitized scope, a bounded Mermaid/DAG, evidence, decisions, and validation
+  commands. It is temporary working state, never canonical memory.
+- Default the discovery phase of a substantial autonomous design session to a
+  bounded **DeepLuna** review when the configured Fleet is available: inventory
+  deterministically first, use at most five Luna read-only lenses for breadth,
+  and one bounded DeepSeek skeptic for architecture or safety. Give workers only
+  sanitized evidence and explicit paths; they do not read secrets, environment
+  state, or unrelated projects and never write or spawn workers.
+- DeepLuna is maintainer research only. It must never change Copernicus's
+  shipped execution policy: the public plugin remains native Codex and GPT-only,
+  with no provider proxy, third-party fallback, credential handling, or runtime
+  dependency on the development fleet.
+- Before durable documentation, verify load-bearing claims with source or a
+  runnable check, update the appropriate `docs/copernicus/` concept and
+  `log.md`, then run the OKF validator. Reports and diagrams are derived human
+  artifacts; they do not become evaluator evidence or OKF memory by themselves.
+
 ## Issue And Pull Request Labels
 
 - [`.github/labels.json`](.github/labels.json) is the source of truth for label

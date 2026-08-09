@@ -23,6 +23,7 @@ flowchart TD
     G --> E["Hash-chained evidence ledger"]
     E --> J["Cycle-boundary join"]
     J --> O["OKF selection · strategy · risk cards"]
+    J --> H["HTML report: derived reader artifact"]
     O --> S
 ```
 
@@ -73,9 +74,18 @@ file with YAML frontmatter; relative links are knowledge edges; `index.md`
 provides progressive navigation; `log.md` records material curation changes.
 Copernicus begins with selection, strategy, and risk cards only.
 
+### Practitioner HTML reports
+
+HTML Report is a presentation layer after authorized evidence, Fleet synthesis,
+or an SAS cycle join. It emits one self-contained browser artifact and may link
+to a human-editable `.excalidraw` sidecar. Neither a report nor a diagram is an
+evaluator, receipt, candidate, or memory card; human edits require an explicit
+refresh before report claims change.
+
 ## Deliberate cuts
 
 There is no provider proxy, MCP server, daemon, database, graph database, vector
 store, agent league, model vote as truth, automatic canonical-memory promotion,
-or autonomous external-action path. Add one only after a measured run proves the
-current files, DAG, evaluator, and ledger cannot do the job.
+autonomous external-action path, hosted report viewer, tracker, or quiz service.
+Add one only after a measured run proves the current files, DAG, evaluator, and
+ledger cannot do the job.
