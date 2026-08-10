@@ -1,7 +1,7 @@
 {
   "name": "copernicus",
-  "version": "0.2.0+codex.20260809105309",
-  "description": "GPT-only Fleet, adaptive SAS+OKF auto-research, portable HTML reports, and Rick Rubin subtraction for Codex.",
+  "version": "0.3.0+codex.20260810065505",
+  "description": "GPT-only Fleet, decision-compressed Breathe investigations, SAS+OKF auto-research, HTML reports, and Rick Rubin subtraction for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
     "url": "https://github.com/Babinci"
@@ -15,13 +15,15 @@
     "auto-research",
     "okf",
     "gpt-only",
-    "html-report"
+    "html-report",
+    "breathe",
+    "decision-brief"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Copernicus",
-    "shortDescription": "GPT-only fleets and evidence-backed research.",
-    "longDescription": "Four self-contained Codex skills: subtract weak ideas, execute bounded Sol/Terra/Luna work, learn through evaluated SAS cycles with locally integrity-checked receipts and human-readable OKF memory, then explain evaluated work in a portable HTML report.",
+    "shortDescription": "GPT-only fleets, deep briefs, and research.",
+    "longDescription": "Five bundled Codex workflows: subtract weak ideas, execute bounded Sol/Terra/Luna work, compress deep investigation at the human decision boundary, learn through evaluated SAS cycles with locally integrity-checked receipts and OKF memory, then explain evaluated work in a portable HTML report.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
@@ -31,6 +33,7 @@
     "defaultPrompt": [
       "Use $rick-rubin to find the essence, what stays, what goes, and the hardest cut.",
       "Use $fleet to split this mission into bounded GPT-only seats and verify the synthesis.",
+      "Use $breathe to investigate deeply with Luna waves and return only a decision-complete brief.",
       "Use $auto-research for one evidence-backed cycle and propose OKF knowledge.",
       "Use $html-report to turn evaluated evidence into a portable human-facing briefing."
     ]

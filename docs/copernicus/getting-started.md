@@ -1,8 +1,8 @@
 ---
 type: runbook
 title: Getting started with Copernicus
-description: Install the marketplace plugin, validate its GPT-only tools, and run a first SAS/OKF research cycle.
-tags: [install, plugin, fleet, auto-research, html-report]
+description: Install the marketplace plugin, validate its GPT-only tools, and run a first deep brief or SAS/OKF research cycle.
+tags: [install, plugin, fleet, breathe, auto-research, html-report]
 timestamp: 2026-08-08T00:00:00+02:00
 ---
 
@@ -19,7 +19,7 @@ codex plugin add copernicus@copernicus
 ```
 
 Restart the app if the skills do not appear. The plugin adds `$fleet`,
-`$auto-research`, `$rick-rubin`, and `$html-report`.
+`$breathe`, `$auto-research`, `$rick-rubin`, and `$html-report`.
 
 Confirm installation with:
 
@@ -27,7 +27,7 @@ Confirm installation with:
 codex plugin list
 ```
 
-In the app, open `/plugins`, select **Copernicus**, and inspect the four bundled
+In the app, open `/plugins`, select **Copernicus**, and inspect the five bundled
 skills. Start a new task so Codex loads their current instructions. One plugin
 installation supplies all skills; no separate provider, database, daemon, or
 credential setup is required.
@@ -39,9 +39,11 @@ examples, privacy boundary, and limitations.
 
 ```bash
 python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
+python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
 python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
 python3 plugins/copernicus/skills/html-report/scripts/test_report.py
 python3 plugins/copernicus/skills/fleet/scripts/fleet.py list
+python3 plugins/copernicus/skills/breathe/scripts/experience.py summary
 python3 plugins/copernicus/skills/auto-research/scripts/receipts.py --help
 python3 plugins/copernicus/skills/html-report/scripts/report.py --help
 ```
@@ -63,6 +65,21 @@ name the evaluator and falsifier, run read-only, and leave an OKF proposal bundl
 The expected result is a small role graph, a roster, supported and `UNVERIFIED`
 claims, evaluator receipts, and proposed selection/strategy/risk cards. Review
 the first cycle before accepting any durable memory.
+
+## First Breathe mission
+
+Ask:
+
+```text
+Use $breathe to investigate this architecture decision deeply. Use at most
+three five-seat Luna map waves, stop when coverage closes, and interrupt me
+only for a decision that changes scope or risk. Return a decision-complete
+brief under 350 words with expandable evidence handles.
+```
+
+Breathe reuses Fleet for execution, verifies load-bearing claims, and puts the
+decision before the compact trace. Its optional experience ledger stores only
+explicit feedback categories, never project or conversation content.
 
 ## First human-facing report
 

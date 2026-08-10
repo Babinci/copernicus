@@ -1,5 +1,11 @@
 # Copernicus documentation log
 
+## 2026-08-10
+
+- Added Breathe: bounded deep Luna map-reduce investigation, independent
+  verification, decision-complete briefs, expandable traces, and a private
+  enum-only experience ledger that never stores project content or self-edits.
+
 ## 2026-08-09
 
 - Linked the independently deployed Coding WebUI and Android companion, with its

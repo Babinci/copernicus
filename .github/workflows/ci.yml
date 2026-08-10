@@ -52,6 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
+          python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
           python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
           python3 plugins/copernicus/skills/html-report/scripts/test_report.py
           python3 -m compileall -q plugins/copernicus/skills

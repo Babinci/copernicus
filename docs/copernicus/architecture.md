@@ -1,8 +1,8 @@
 ---
 type: concept
 title: Copernicus architecture
-description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet, SAS evidence loop, and OKF memory.
-tags: [copernicus, fleet, sas, okf, architecture]
+description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet, Breathe briefs, SAS evidence, and OKF memory.
+tags: [copernicus, fleet, breathe, sas, okf, architecture]
 timestamp: 2026-08-08T00:00:00+02:00
 ---
 
@@ -19,6 +19,8 @@ flowchart TD
     P --> S["SAS: problem-specific DAG"]
     F --> C["Native codex exec / collaboration"]
     C --> M["Sol · Terra · Luna"]
+    M --> B["Breathe: reduce to decision state"]
+    B --> U
     S --> G["Candidate + trusted evaluator"]
     G --> E["Hash-chained evidence ledger"]
     E --> J["Cycle-boundary join"]
@@ -37,6 +39,15 @@ authority ceiling, independent verifier, falsifier, and stop rule. Sol handles
 ambiguous high-value work, Terra handles everyday grounded work, and Luna Max
 handles repeatable width. Missing models fail closed; another provider never
 silently substitutes.
+
+### Breathe
+
+Breathe composes Fleet into a gap-driven loop: Luna maps bounded evidence,
+Terra reduces equivalent claims, deterministic checks and a fresh verifier
+test load-bearing conclusions, and the lead emits a short decision brief with
+expansion handles. The lead alone creates another bounded wave; workers never
+spawn. A private optional ledger records only controlled explicit feedback
+categories and never stores project content or rewrites the skill.
 
 ### Solution Autoresearch System
 
@@ -86,6 +97,7 @@ refresh before report claims change.
 
 There is no provider proxy, MCP server, daemon, database, graph database, vector
 store, agent league, model vote as truth, automatic canonical-memory promotion,
-autonomous external-action path, hosted report viewer, tracker, or quiz service.
+autonomous external-action path, hosted report viewer, tracker, quiz service,
+self-modifying skill, or learned personal profile.
 Add one only after a measured run proves the current files, DAG, evaluator, and
 ledger cannot do the job.
