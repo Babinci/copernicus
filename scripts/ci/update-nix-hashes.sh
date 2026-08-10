@@ -155,7 +155,7 @@ run_nix_build() {
     shift
     rm -f "$log_path"
     set +e
-    nix build "$@" --no-link --print-build-logs >"$log_path" 2>&1
+    nix build "$@" --no-link --impure --print-build-logs >"$log_path" 2>&1
     local status="$?"
     set -e
     cat "$log_path"

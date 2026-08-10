@@ -1,5 +1,5 @@
 {
-  description = "ChatGPT Desktop for Linux installer";
+  description = "Copernicus — unofficial community Linux wrapper for ChatGPT Desktop";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -53,7 +53,7 @@
           ];
         };
         flakeSourceCommit = self.rev or (self.dirtyRev or "");
-        flakeSourceRemote = "https://github.com/ilysenko/codex-desktop-linux.git";
+        flakeSourceRemote = "https://github.com/Babinci/copernicus.git";
         flakeSourceDateEpoch = toString (self.lastModified or 1);
         sourceRoot = pkgs.lib.cleanSourceWith {
           src = ./.;
@@ -753,11 +753,12 @@ PY
                 featureIds = enabledFeatureIds featureArgs;
               in
               if featureIds == [ ] then
-                "ChatGPT Desktop for Linux"
+                "Copernicus — unofficial community Linux wrapper for ChatGPT Desktop"
               else
-                "ChatGPT Desktop for Linux with ${pkgs.lib.concatStringsSep ", " featureIds} enabled";
-            homepage = "https://github.com/ilysenko/codex-desktop-linux";
-            license = pkgs.lib.licenses.mit;
+                "Copernicus — unofficial community Linux wrapper for ChatGPT Desktop with ${pkgs.lib.concatStringsSep ", " featureIds} enabled";
+            homepage = "https://github.com/Babinci/copernicus";
+            license = with pkgs.lib.licenses; [ mit unfree ];
+            sourceProvenance = with pkgs.lib.sourceTypes; [ fromSource binaryNativeCode ];
             platforms = pkgs.lib.platforms.linux;
             mainProgram = "codex-desktop";
           };

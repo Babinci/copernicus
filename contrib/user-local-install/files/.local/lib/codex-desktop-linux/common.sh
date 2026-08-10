@@ -476,7 +476,7 @@ extract_icon() {
         return 0
     fi
 
-    source_icon="${SOURCE_REPO_DIR:-$REPO_DIR_DEFAULT}/assets/codex-linux.png"
+    source_icon="${SOURCE_REPO_DIR:-$REPO_DIR_DEFAULT}/assets/codex.png"
     if [ -f "$source_icon" ]; then
         cp "$source_icon" "$ICON_PATH"
         return 0

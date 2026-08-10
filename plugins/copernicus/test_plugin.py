@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Small structural checks for the Copernicus skills-only plugin."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import re
+import unittest
+
+
+ROOT = Path(__file__).resolve().parent
+COMPANIONS = ("grill-me", "caveman", "handoff")
+
+
+class PluginTest(unittest.TestCase):
+    def test_manifest_keeps_supported_prompt_limit(self) -> None:
+        manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
+        self.assertEqual(manifest["skills"], "./skills/")
+        self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 3)
+
+    def test_companions_are_self_contained_opt_in_fallbacks(self) -> None:
+        for name in COMPANIONS:
+            skill = (ROOT / "skills" / name / "SKILL.md").read_text()
+            metadata = (ROOT / "skills" / name / "agents/openai.yaml").read_text()
+            declared = re.search(r"(?m)^name: ([a-z0-9-]+)$", skill)
+            self.assertIsNotNone(declared, name)
+            self.assertEqual(declared.group(1), name)
+            self.assertIn("non-Copernicus", skill)
+            self.assertIn("Do not probe skill\ndirectories or install anything", skill)
+            self.assertIn("allow_implicit_invocation: false", metadata)
+
+    def test_companion_safety_contracts_stay_load_bearing(self) -> None:
+        grill = (ROOT / "skills/grill-me/SKILL.md").read_text()
+        caveman = (ROOT / "skills/caveman/SKILL.md").read_text()
+        handoff = (ROOT / "skills/handoff/SKILL.md").read_text()
+        self.assertIn("Ask exactly one question per turn", grill)
+        self.assertIn("Give a recommended answer", grill)
+        self.assertIn("separately authorizes that action", grill)
+        self.assertIn("Preserve code, commands, paths, identifiers, error messages", caveman)
+        self.assertIn("complete, ordinary prose for security warnings", caveman)
+        self.assertIn("operating system's temporary directory", handoff)
+        self.assertIn("Perform a final redaction pass", handoff)
+
+    def test_third_party_notices_ship_with_the_plugin(self) -> None:
+        notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
+        self.assertIn("mattpocock/skills", notices)
+        self.assertIn("DietrichGebert/ponytail", notices)
+        self.assertIn("Copyright (c) 2026 Matt Pocock", notices)
+        self.assertIn("Copyright (c) 2026 DietrichGebert", notices)
+        self.assertEqual(notices.count("MIT License"), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "Interrogate plans one decision at a time"
+  default_prompt: "Use $grill-me to stress-test this plan one decision at a time."
+  brand_color: "#C2410C"
+policy:
+  allow_implicit_invocation: false

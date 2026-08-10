@@ -259,7 +259,7 @@ test_installer_prefers_compact_upstream_chatgpt_icon() {
     local selection_file="$workspace/selection.txt"
 
     mkdir -p "$(dirname "$compact_icon")" "$(dirname "$full_size_icon")"
-    cp "$REPO_DIR/assets/codex-linux.png" "$compact_icon"
+    cp "$REPO_DIR/assets/codex.png" "$compact_icon"
     printf '%s\n' full-size > "$full_size_icon"
 
     (
@@ -286,11 +286,11 @@ test_installer_prefers_compact_upstream_chatgpt_icon() {
         printf '%s\n' "$LINUX_ICON_SOURCE" > "$selection_file"
     )
 
-    [ "$(cat "$selection_file")" = "$REPO_DIR/assets/codex-linux.png" ] \
+    [ "$(cat "$selection_file")" = "$REPO_DIR/assets/codex.png" ] \
         || fail "Expected a missing compact ChatGPT icon to avoid the oversized upstream app icon"
 
     mkdir -p "$(dirname "$compact_icon")"
-    cp "$REPO_DIR/assets/codex-linux.png" "$compact_icon"
+    cp "$REPO_DIR/assets/codex.png" "$compact_icon"
     python3 - "$compact_icon" <<'PY'
 import struct
 import sys
@@ -309,7 +309,7 @@ PY
         printf '%s\n' "$LINUX_ICON_SOURCE" > "$selection_file"
     )
 
-    [ "$(cat "$selection_file")" = "$REPO_DIR/assets/codex-linux.png" ] \
+    [ "$(cat "$selection_file")" = "$REPO_DIR/assets/codex.png" ] \
         || fail "Expected an oversized upstream ChatGPT icon to fall back safely"
 }
 
@@ -797,7 +797,7 @@ JSON
     assert_contains "$update_builder_manifest" "record-replay-linux/Cargo.toml"
     assert_contains "$update_builder_manifest" "notification-actions-linux/Cargo.toml"
     assert_contains "$update_builder_manifest" "global-dictation-linux/Cargo.toml"
-    assert_contains "$update_builder_manifest" "assets/codex-linux.png"
+    assert_contains "$update_builder_manifest" "assets/codex.png"
     assert_not_contains "$update_builder_manifest" "^node-runtime/"
     assert_not_contains "$update_builder_manifest" "global-dictation-linux/target/"
     assert_file_exists "$root/opt/codex-desktop/update-builder/global-dictation-linux/Cargo.toml"
@@ -6424,7 +6424,7 @@ EOF
     assert_contains "$REPO_DIR/contrib/user-local-install/files/.local/bin/codex-desktop" 'exec "${APP_DIR}/start.sh" --wayland "$@"'
     assert_contains "$REPO_DIR/contrib/user-local-install/install-user-local.sh" "--force-x11"
     assert_contains "$REPO_DIR/contrib/user-local-install/install-user-local.sh" "user-local.env"
-    assert_contains "$REPO_DIR/contrib/user-local-install/files/.local/lib/codex-desktop-linux/common.sh" "assets/codex-linux.png"
+    assert_contains "$REPO_DIR/contrib/user-local-install/files/.local/lib/codex-desktop-linux/common.sh" "assets/codex.png"
     assert_contains "$REPO_DIR/contrib/user-local-install/files/.local/lib/codex-desktop-linux/common.sh" "CODEX_USER_LOCAL_RECORD_DMG_FINGERPRINT"
     assert_contains "$REPO_DIR/contrib/user-local-install/README.md" "--force-x11"
 
@@ -6964,9 +6964,10 @@ PY
     local workspace="$TMP_DIR/launcher-cli-policy"
     local fake_home="$workspace/home"
     local path_cli_bin="$workspace/path-cli-bin"
-    local clean_tool_path="/usr/bin:/bin"
+    local clean_tool_path="$workspace/clean-tool-path"
     local selected_cli
-    mkdir -p "$path_cli_bin" "$fake_home/.npm-global/bin"
+    mkdir -p "$path_cli_bin" "$clean_tool_path" "$fake_home/.npm-global/bin"
+    ln -s /usr/bin/bash "$clean_tool_path/bash"
     chmod 0755 "$workspace" "$path_cli_bin" "$fake_home" "$fake_home/.npm-global" "$fake_home/.npm-global/bin"
 
     printf '#!/usr/bin/env bash\nprintf "codex-cli 0.120.0\\n"\n' > "$path_cli_bin/codex"

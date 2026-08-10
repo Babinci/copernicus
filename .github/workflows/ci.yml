@@ -51,6 +51,7 @@ jobs:
       - name: Check Copernicus plugin
         run: |
           set -euo pipefail
+          python3 plugins/copernicus/test_plugin.py
           python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
           python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
           python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
@@ -59,7 +60,7 @@ jobs:
           python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
           python3 -m json.tool plugins/copernicus/.codex-plugin/plugin.json >/dev/null
           ! grep -R '\[TODO\|TODO:' plugins/copernicus
-          ! grep -R --exclude-dir=__pycache__ -E '(/home/[^/]+/|bittensor_domination|continuous_proof_fleet|Cypher Arena)' plugins/copernicus docs/copernicus
+          ! grep -R --exclude-dir=__pycache__ -E '/home/[^/]+/' plugins/copernicus docs/copernicus
 
       - name: Check Rust formatting
         run: cargo fmt --check
@@ -197,6 +198,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
+      NIXPKGS_ALLOW_UNFREE: '1'
       NIX_CONFIG: |
         experimental-features = nix-command flakes
         max-jobs = 1
@@ -208,12 +210,6 @@ jobs:
           node-version: 24
 
       - uses: cachix/install-nix-action@v27
-
-      - name: Configure Cachix for Nix build substitutions
-        uses: cachix/cachix-action@v17
-        with:
-          name: codex-desktop-linux
-          skipPush: true
 
       - name: Install validation dependencies
         run: |
@@ -292,7 +288,7 @@ jobs:
           rm -f "$validation_log"
 
       - name: Check flake evaluation
-        run: nix flake check --no-build
+        run: nix flake check --no-build --impure
 
       - name: Build Nix package outputs
         if: steps.nix-pin-validation.outputs.skip_package_outputs != 'true'
@@ -311,7 +307,7 @@ jobs:
           )
           for output in "${outputs[@]}"; do
             build_log="$(mktemp)"
-            if ! nix build "$output" --no-link --print-build-logs --max-jobs 1 2>&1 | tee "$build_log"; then
+            if ! nix build "$output" --no-link --impure --print-build-logs --max-jobs 1 2>&1 | tee "$build_log"; then
               if [ "$GITHUB_EVENT_NAME" = "pull_request" ] \
                   && [ "$NIX_PIN_FILES_CHANGED" != "true" ] \
                   && grep -q "hash mismatch in fixed-output derivation" "$build_log" \

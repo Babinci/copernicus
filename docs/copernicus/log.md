@@ -2,6 +2,12 @@
 
 ## 2026-08-10
 
+- Added self-contained Grill Me, Caveman, and Handoff companion fallbacks with
+  host-catalog global preference, explicit activation, and bundled MIT notices.
+- Audited licensing boundaries: corrected Arch/Nix generated-package metadata,
+  stopped application binary-cache uploads, removed the modified OpenAI icon,
+  documented the retained unmodified asset, corrected packaged source identity,
+  made Copernicus's unofficial status prominent, and added a binary-release preflight.
 - Added Breathe: bounded deep Luna map-reduce investigation, independent
   verification, decision-complete briefs, expandable traces, and a private
   enum-only experience ledger that never stores project content or self-edits.

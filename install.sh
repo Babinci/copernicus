@@ -262,13 +262,13 @@ select_linux_icon_source() {
         return 0
     fi
 
-    LINUX_ICON_SOURCE="$SCRIPT_DIR/assets/codex-linux.png"
+    LINUX_ICON_SOURCE="$ICON_SOURCE"
     if [ "${#chatgpt_icon_candidates[@]}" -gt 1 ]; then
-        warn "Found multiple compact upstream ChatGPT icons; using the bundled Linux icon"
+        warn "Found multiple compact upstream ChatGPT icons; using the unmodified bundled app icon"
     elif [ "${#chatgpt_icon_candidates[@]}" -eq 1 ]; then
-        warn "Upstream ChatGPT icon is invalid or larger than 512x512; using the bundled Linux icon"
+        warn "Upstream ChatGPT icon is invalid or larger than 512x512; using the unmodified bundled app icon"
     else
-        warn "Compact upstream ChatGPT icon not found; using the bundled Linux icon"
+        warn "Compact upstream ChatGPT icon not found; using the unmodified bundled app icon"
     fi
 }
 

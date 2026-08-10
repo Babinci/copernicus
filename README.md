@@ -8,11 +8,12 @@
   <a href="https://discord.gg/skCB3DXqgw"><img src="https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white" alt="Join the Discord community"></a>
 </p>
 
-Copernicus is an unofficial, source-only Linux build wrapper for
+Copernicus is an unofficial, local-build Linux wrapper for
 [OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
-pipeline with five deliberately small workflows:
+pipeline with eight deliberately small workflows:
 
+- **Grill Me** resolves a plan through one recommended question at a time.
 - **Fleet** routes bounded work across native GPT Sol, Terra, and Luna lanes.
 - **Breathe** runs bounded deep Luna map-reduce waves and compresses them into a
   decision-complete human brief with expandable evidence.
@@ -21,6 +22,8 @@ pipeline with five deliberately small workflows:
 - **Rick Rubin** reduces brainstorms and systems to the few ideas that earn their weight.
 - **HTML Report** turns evaluated work into a portable human-facing brief,
   explanation, decision aid, review, or lesson.
+- **Caveman** removes prose weight without weakening technical or safety detail.
+- **Handoff** transfers redacted session state while linking durable artifacts.
 
 There are no third-party model providers, API-key routers, autonomous publishing
 paths, databases, or always-on agent societies. Commands and trusted evaluators
@@ -56,11 +59,12 @@ codex plugin marketplace add Babinci/copernicus
 codex plugin add copernicus@copernicus
 ```
 
-Then ask Codex to use `$fleet`, `$breathe`, `$auto-research`, `$rick-rubin`, or
-`$html-report`. Model access and reasoning controls remain account- and
+Then ask Codex to use `$grill-me`, `$rick-rubin`, `$fleet`, `$breathe`,
+`$auto-research`, `$html-report`, `$caveman`, or `$handoff`. Model access and
+reasoning controls remain account- and
 workspace-dependent; Copernicus does not unlock models or increase plan limits.
 
-One plugin installation provides all five bundled skills. Open
+One plugin installation provides all eight bundled skills. Open
 `/plugins`, choose **Copernicus**, and start a new task after installation. See
 [Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
 outputs, examples, privacy boundary, and limitations of each skill.
@@ -68,6 +72,7 @@ outputs, examples, privacy boundary, and limitations of each skill.
 To inspect a local checkout before installation:
 
 ```bash
+python3 plugins/copernicus/test_plugin.py
 python3 plugins/copernicus/skills/fleet/scripts/fleet.py list
 python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
 python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
@@ -128,7 +133,7 @@ cd copernicus
 | Fedora | `make bootstrap-native` | Builds and installs an `.rpm` |
 | openSUSE | `make bootstrap-native` | Builds and installs an `.rpm` |
 | Arch, Manjaro, EndeavourOS | `make bootstrap-native` | Builds and installs a pacman package |
-| NixOS / Nix | `nix run github:Babinci/copernicus` | See [Nix docs](docs/nix.md) |
+| NixOS / Nix | `NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus` | See [Nix docs](docs/nix.md) |
 | Atomic desktops / other distros | `make build-app && make appimage` | Local self-build; no bundled updater |
 
 Recommended native install:
@@ -203,7 +208,7 @@ checkout with:
 rm -rf codex-app
 ```
 
-`nix run github:ilysenko/codex-desktop-linux` is ephemeral. If you installed
+`NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus` is ephemeral. If you installed
 the flake through a Nix profile, Home Manager, or a NixOS module, remove that
 profile or configuration entry and rebuild your profile/system.
 
@@ -268,7 +273,7 @@ workarounds.
 | Native packages | Always | `make package && make install` | [Build and packaging](docs/build-and-packaging.md) |
 | Auto-update manager | Native packages | Included unless `PACKAGE_WITH_UPDATER=0` | [Updater](docs/updater.md) |
 | AppImage self-build | Manual | `make build-app && make appimage` | [Build and packaging](docs/build-and-packaging.md#appimage-local-self-build) |
-| Nix flake | Manual | `nix run github:ilysenko/codex-desktop-linux` | [Nix](docs/nix.md) |
+| Nix flake | Manual | `NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus` | [Nix](docs/nix.md) |
 | GUI install prompts | If installed | Uses `kdialog` / `zenity`, then terminal fallback | [Native setup](docs/native-setup.md) |
 | Linux file manager integration | Always | Built into core Linux patches | [Architecture](docs/architecture.md) |
 | Chrome plugin native host | Always | Installed with bundled plugins | [Architecture](docs/architecture.md) |
@@ -438,6 +443,7 @@ Full list: [Troubleshooting](docs/troubleshooting.md).
 ## Project Docs
 
 - [Copernicus](docs/copernicus/index.md)
+- [Licensing and distribution](docs/licensing.md)
 - [Native setup](docs/native-setup.md)
 - [Nix](docs/nix.md)
 - [Linux Computer Use](docs/linux-computer-use.md)
@@ -459,11 +465,12 @@ ChatGPT Desktop, OpenAI services, trademarks, upstream application code, binarie
 and assets remain the property of OpenAI or their respective owners.
 
 The MIT license in this repository applies only to this wrapper's source code,
-packaging scripts, documentation, and Linux compatibility glue. It does not
-grant any rights to OpenAI software or services.
+packaging scripts, documentation, and Linux compatibility glue. Generated apps
+and native packages are composite outputs containing upstream proprietary
+software; they are not MIT-licensed as a whole.
 
-This repository does not redistribute OpenAI software or modified OpenAI
-application binaries. Users must obtain their own authorized copy of Codex
+This repository and its releases do not redistribute the upstream DMG or a
+converted OpenAI application package. Users must obtain their own authorized copy of Codex
 Desktop through OpenAI's official channels. The build process performs a local
 Linux compatibility conversion on the user's own copy so it can run on Linux.
 In practice, it automates the conversion process that users perform on their
@@ -471,6 +478,11 @@ own copies.
 
 Use of ChatGPT Desktop remains subject to OpenAI's applicable terms and
 server-side feature availability.
+
+The unmodified upstream application icon is excluded from MIT and remains an
+OpenAI asset. See the [licensing and distribution map](docs/licensing.md) and
+[`NOTICE.md`](NOTICE.md) for provenance, package metadata, companion-skill
+attribution, CI boundaries, and the binary-release preflight.
 
 ## License
 

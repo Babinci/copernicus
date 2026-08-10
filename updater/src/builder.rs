@@ -18,7 +18,7 @@ use tracing::info;
 
 const UPDATE_BUILDER_MANIFEST: &str = ".codex-linux/update-builder-manifest.txt";
 
-const REQUIRED_BUNDLE_FILES: [(&str, &str); 22] = [
+const REQUIRED_BUNDLE_FILES: [(&str, &str); 21] = [
     ("Cargo.toml", "Cargo.toml"),
     ("Cargo.lock", "Cargo.lock"),
     ("computer-use-linux", "computer-use-linux"),
@@ -51,7 +51,6 @@ const REQUIRED_BUNDLE_FILES: [(&str, &str); 22] = [
     ),
     ("packaging/linux", "packaging/linux"),
     ("assets/codex.png", "assets/codex.png"),
-    ("assets/codex-linux.png", "assets/codex-linux.png"),
     ("linux-features", "linux-features"),
 ];
 const OPTIONAL_BUNDLE_FILES: [(&str, &str); 5] = [
@@ -963,7 +962,6 @@ touch "${DIST_DIR_OVERRIDE}/codex-desktop-${VER}-1-x86_64.pkg.tar.zst"
             b"# fake webview server\n",
         )?;
         fs::write(bundle_root.join("assets/codex.png"), b"png")?;
-        fs::write(bundle_root.join("assets/codex-linux.png"), b"linux png")?;
         fs::write(
             bundle_root.join("packaging/linux/control"),
             "Package: codex",
@@ -1122,7 +1120,7 @@ fi
             .exists());
         assert!(artifacts
             .workspace_dir
-            .join("builder/assets/codex-linux.png")
+            .join("builder/assets/codex.png")
             .exists());
         assert!(artifacts
             .workspace_dir
@@ -1395,7 +1393,6 @@ fi
             b"[Unit]\nDescription=Codex Update Manager\n",
         )?;
         fs::write(source_root.join("assets/codex.png"), b"png")?;
-        fs::write(source_root.join("assets/codex-linux.png"), b"linux png")?;
 
         copy_builder_bundle(&source_root, &destination_root)?;
 
@@ -1416,7 +1413,7 @@ fi
         assert!(destination_root.join("read-aloud-linux").exists());
         assert!(destination_root.join("record-replay-linux").exists());
         assert!(destination_root.join("updater").exists());
-        assert!(destination_root.join("assets/codex-linux.png").exists());
+        assert!(destination_root.join("assets/codex.png").exists());
         assert!(destination_root
             .join("plugins/openai-bundled/plugins/computer-use/.mcp.json")
             .exists());
@@ -1444,7 +1441,7 @@ fi
         fs::create_dir_all(source_root.join("assets"))?;
         fs::create_dir_all(source_root.join("record-replay-linux"))?;
         fs::create_dir_all(source_root.join("scripts"))?;
-        fs::write(source_root.join("assets/codex-linux.png"), b"linux png")?;
+        fs::write(source_root.join("assets/codex.png"), b"png")?;
         fs::write(
             source_root.join("record-replay-linux/Cargo.toml"),
             b"[package]\nname = \"codex-record-replay-linux\"\n",
@@ -1452,12 +1449,12 @@ fi
         fs::write(source_root.join("scripts/build-deb.sh"), b"#!/bin/bash\n")?;
         fs::write(
             source_root.join(UPDATE_BUILDER_MANIFEST),
-            b"# generated\nassets/codex-linux.png\nrecord-replay-linux/Cargo.toml\n",
+            b"# generated\nassets/codex.png\nrecord-replay-linux/Cargo.toml\n",
         )?;
 
         copy_builder_bundle(&source_root, &destination_root)?;
 
-        assert!(destination_root.join("assets/codex-linux.png").exists());
+        assert!(destination_root.join("assets/codex.png").exists());
         assert!(destination_root
             .join("record-replay-linux/Cargo.toml")
             .exists());

@@ -28,8 +28,7 @@ jobs:
     timeout-minutes: 90
     env:
       NIX_CONFIG: experimental-features = nix-command flakes
-      CACHIX_CACHE_NAME: codex-desktop-linux
-      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      NIXPKGS_ALLOW_UNFREE: '1'
       NIX_VERIFY_OUTPUTS: |
         .#codex-desktop
         .#codex-desktop-computer-use-ui
@@ -83,13 +82,6 @@ jobs:
       - uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31
         if: steps.dedupe.outputs.skip_refresh != 'true'
 
-      - name: Configure Cachix for hash refresh builds
-        if: steps.dedupe.outputs.skip_refresh != 'true' && env.CACHIX_AUTH_TOKEN != ''
-        uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
-        with:
-          name: ${{ env.CACHIX_CACHE_NAME }}
-          authToken: ${{ env.CACHIX_AUTH_TOKEN }}
-
       - name: Install validation dependencies
         if: steps.dedupe.outputs.skip_refresh != 'true'
         run: |
@@ -139,7 +131,7 @@ jobs:
             git checkout -B "$REFRESH_BRANCH"
             git add "${pin_paths[@]}"
             # GITHUB_TOKEN already suppresses branch push workflows. Do not add
-            # a skip marker: squash merges copy it to main and suppress Cachix.
+            # a skip marker: squash merges copy it to main and suppress Nix validation.
             git commit \
               -m "fix(nix): refresh upstream Nix pins${CODEX_VERSION:+ for $CODEX_VERSION}" \
               -m "Refreshed Codex.dmg SRI hash to $CODEX_DMG_HASH and synced codexVersion / electronVersion / native-module pins to the current upstream DMG." \

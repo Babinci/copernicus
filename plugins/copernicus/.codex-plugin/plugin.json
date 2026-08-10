@@ -1,7 +1,7 @@
 {
   "name": "copernicus",
-  "version": "0.3.0+codex.20260810065505",
-  "description": "GPT-only Fleet, decision-compressed Breathe investigations, SAS+OKF auto-research, HTML reports, and Rick Rubin subtraction for Codex.",
+  "version": "0.4.0+codex.20260810120815",
+  "description": "GPT-only Fleet, Breathe briefs, SAS+OKF research, HTML reports, subtraction, plan grilling, terse delivery, and safe handoffs for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
     "url": "https://github.com/Babinci"
@@ -17,13 +17,16 @@
     "gpt-only",
     "html-report",
     "breathe",
-    "decision-brief"
+    "decision-brief",
+    "grill-me",
+    "caveman",
+    "handoff"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Copernicus",
-    "shortDescription": "GPT-only fleets, deep briefs, and research.",
-    "longDescription": "Five bundled Codex workflows: subtract weak ideas, execute bounded Sol/Terra/Luna work, compress deep investigation at the human decision boundary, learn through evaluated SAS cycles with locally integrity-checked receipts and OKF memory, then explain evaluated work in a portable HTML report.",
+    "shortDescription": "GPT-only research and practitioner workflows.",
+    "longDescription": "Eight bundled Codex workflows resolve a plan, subtract weak branches, execute bounded Sol/Terra/Luna work, compress deep investigation at the human decision boundary, learn through evaluated SAS cycles, explain evidence in portable HTML, deliver terse answers, and transfer redacted session state.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
@@ -31,11 +34,9 @@
     ],
     "websiteURL": "https://github.com/Babinci/copernicus",
     "defaultPrompt": [
-      "Use $rick-rubin to find the essence, what stays, what goes, and the hardest cut.",
-      "Use $fleet to split this mission into bounded GPT-only seats and verify the synthesis.",
-      "Use $breathe to investigate deeply with Luna waves and return only a decision-complete brief.",
-      "Use $auto-research for one evidence-backed cycle and propose OKF knowledge.",
-      "Use $html-report to turn evaluated evidence into a portable human-facing briefing."
+      "Use $grill-me, then $rick-rubin, to resolve and cut this plan.",
+      "Use $fleet and $breathe for a bounded GPT-only investigation and decision brief.",
+      "Use $auto-research, then $html-report, for an evaluated cycle and portable brief."
     ]
   }
 }

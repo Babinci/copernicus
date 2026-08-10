@@ -1,0 +1,7 @@
+interface:
+  display_name: "Handoff"
+  short_description: "Transfer session state without copying durable work"
+  default_prompt: "Use $handoff to prepare a redacted continuation brief in the OS temp directory."
+  brand_color: "#2563EB"
+policy:
+  allow_implicit_invocation: false

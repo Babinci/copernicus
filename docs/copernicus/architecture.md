@@ -14,6 +14,8 @@ authentication, sandbox, plugin, or Scheduled-task surfaces.
 ```mermaid
 flowchart TD
     U["Human in ChatGPT Desktop or Codex"] --> P["Copernicus plugin"]
+    P --> Q["Grill Me: resolve decisions"]
+    Q --> R
     P --> R["Rick Rubin: subtract"]
     P --> F["Fleet: bounded GPT seats"]
     P --> S["SAS: problem-specific DAG"]
@@ -27,6 +29,10 @@ flowchart TD
     J --> O["OKF selection · strategy · risk cards"]
     J --> H["HTML report: derived reader artifact"]
     O --> S
+    P --> V["Caveman: optional terse delivery"]
+    P --> T["Handoff: redacted temporary context"]
+    V --> U
+    T --> U
 ```
 
 ## Stable contracts
@@ -93,9 +99,19 @@ to a human-editable `.excalidraw` sidecar. Neither a report nor a diagram is an
 evaluator, receipt, candidate, or memory card; human edits require an explicit
 refresh before report claims change.
 
+### Companion fallbacks
+
+Grill Me, Caveman, and Handoff are prompt-only skills. They use the host's skill
+catalog as a best-effort signal to prefer a visible global equivalent, then fall
+back to their bundled contract. They never inspect or mutate global skill
+directories. Grill Me owns decision interrogation, Caveman owns response style,
+and Handoff owns a redacted temporary transport document; none is canonical
+memory, an evaluator, or a Fleet runner.
+
 ## Deliberate cuts
 
-There is no provider proxy, MCP server, daemon, database, graph database, vector
+There is no provider proxy, MCP server, daemon, global-skill installer or
+filesystem resolver, database, graph database, vector
 store, agent league, model vote as truth, automatic canonical-memory promotion,
 autonomous external-action path, hosted report viewer, tracker, quiz service,
 self-modifying skill, or learned personal profile.

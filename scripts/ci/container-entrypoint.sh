@@ -705,8 +705,8 @@ run_nix_job_as_root() {
     export NIX_CONFIG="${NIX_CONFIG:-experimental-features = nix-command flakes}"
 
     nix flake check --no-write-lock-file --option sandbox false
-    nix build .#codex-desktop --no-link --print-build-logs --option sandbox false
-    nix build .#installer --no-link --print-build-logs --option sandbox false
+    nix build .#codex-desktop --no-link --impure --print-build-logs --option sandbox false
+    nix build .#installer --no-link --impure --print-build-logs --option sandbox false
 
     append_summary "Nix Validation" \
         "Flake check passed." \

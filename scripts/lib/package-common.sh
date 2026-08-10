@@ -328,9 +328,9 @@ resolve_package_icon_source() {
     fi
 
     if [ "${#candidates[@]}" -gt 1 ]; then
-        warn "Multiple generated app icons found in $icon_dir; using the bundled Linux icon"
+        warn "Multiple generated app icons found in $icon_dir; using the unmodified bundled app icon"
     fi
-    printf '%s\n' "$REPO_DIR/assets/codex-linux.png"
+    printf '%s\n' "$REPO_DIR/assets/codex.png"
 }
 
 render_packaged_runtime_helper() {
@@ -919,7 +919,6 @@ stage_update_builder_bundle() {
     fi
     cp "$REPO_DIR/packaging/linux/codex-update-manager.postrm" "$update_builder_root/packaging/linux/codex-update-manager.postrm"
     cp "$REPO_DIR/assets/codex.png" "$update_builder_root/assets/codex.png"
-    cp "$REPO_DIR/assets/codex-linux.png" "$update_builder_root/assets/codex-linux.png"
     stage_update_builder_source_info "$update_builder_root"
     write_update_builder_manifest "$update_builder_root"
     if [ -d "$node_runtime_source" ]; then

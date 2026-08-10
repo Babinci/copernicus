@@ -3,13 +3,15 @@
 Run ChatGPT Desktop for Linux directly with:
 
 ```bash
-nix run github:ilysenko/codex-desktop-linux
+NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus
 ```
 
-The flake handles dependencies and patches Electron for NixOS. A GitHub Actions
-bot refreshes the upstream `Codex.dmg` hash and verifies the Nix package outputs
-in `main`. If you hit a hash mismatch right after an upstream release, wait for
-the next bot run and retry.
+The flake handles dependencies and patches Electron for NixOS. The explicit
+opt-in is required because the output combines MIT wrapper code with the
+upstream proprietary application. A GitHub Actions bot refreshes the upstream
+`Codex.dmg` hash and verifies Nix outputs in `main` without publishing them to a
+binary cache. If you hit a hash mismatch right after an upstream release, wait
+for the next bot run and retry.
 
 ## Codex CLI Requirement
 
@@ -70,10 +72,10 @@ For a declarative setup, add the CLI flake as an input:
 }
 ```
 
-The flake also publishes a third-party Cachix cache for prebuilt binaries. This
-cache is independent from this repository's `codex-desktop-linux` cache. Enabling
-it means trusting substitutes signed by that cache key; omit this step if you
-prefer local builds.
+The CLI flake also publishes its own third-party Cachix cache for prebuilt CLI
+binaries. It is independent from Copernicus and does not contain the Desktop
+application. Enabling it means trusting substitutes signed by that cache key;
+omit this step if you prefer local CLI builds.
 
 ```bash
 cachix use codex-cli
@@ -184,19 +186,19 @@ hermetically.
 Remote mobile control:
 
 ```bash
-nix run github:ilysenko/codex-desktop-linux#remote-mobile-control
+NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus#remote-mobile-control
 ```
 
 Computer Use UI plus remote mobile control:
 
 ```bash
-nix run github:ilysenko/codex-desktop-linux#computer-use-ui-remote-mobile-control
+NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus#computer-use-ui-remote-mobile-control
 ```
 
 Computer Use UI only:
 
 ```bash
-nix run github:ilysenko/codex-desktop-linux#codex-desktop-computer-use-ui
+NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus#codex-desktop-computer-use-ui
 ```
 
 The Home Manager and NixOS modules accept these feature IDs through
@@ -268,24 +270,16 @@ configurations that prefer a global user unit.
 ## Development Shell
 
 ```bash
-nix develop github:ilysenko/codex-desktop-linux
+nix develop github:Babinci/copernicus
 ```
 
-## Cachix
+## Local builds only
 
-CI can populate a Cachix cache named `codex-desktop-linux` for flake package
-outputs. To push to the cache, create it in Cachix and add a repository secret
-named `CACHIX_AUTH_TOKEN` with write access.
+Copernicus does not publish Desktop derivations to a binary cache. When a merge
+to `main` changes the pinned `Codex.dmg` hash, `Validate Nix Outputs` builds the
+default package, feature variants, watchdog check, and installer on an
+ephemeral runner, then garbage-collects each output. Users opt into the unfree
+classification and build locally.
 
-Users can opt in locally with:
-
-```bash
-cachix use codex-desktop-linux
-```
-
-When a merge to `main` changes the pinned `Codex.dmg` hash, the `Populate
-Cachix` workflow builds the default package, feature-specific package variants,
-the watchdog feature check, and `.#installer`. It uploads and garbage-collects
-each output before starting the next one so the hosted runner does not retain
-every large app variant at once. Maintainers can dispatch the workflow manually
-to backfill the current `main` pin after a skipped or interrupted run.
+The optional `codex-cli` cache described above is an independent third-party
+cache for the open-source CLI, not a Copernicus Desktop application cache.

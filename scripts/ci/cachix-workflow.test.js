@@ -11,8 +11,14 @@ const updateHashWorkflow = fs.readFileSync(
   path.resolve(__dirname, "../../.github/workflows/update-codex-hash.yml"),
   "utf8",
 );
+const flake = fs.readFileSync(path.resolve(__dirname, "../../flake.nix"), "utf8");
+const pkgbuild = fs.readFileSync(
+  path.resolve(__dirname, "../../packaging/linux/PKGBUILD.template"),
+  "utf8",
+);
 
-test("Cachix automatic population runs only for an actual Codex DMG hash change", () => {
+test("Nix output validation runs only for an actual Codex DMG hash change", () => {
+  assert.match(workflow, /name: Validate Nix Outputs/);
   assert.match(workflow, /paths:\n\s+- flake\.nix/);
   assert.doesNotMatch(workflow, /schedule:/);
   assert.match(workflow, /workflow_dispatch:/);
@@ -30,18 +36,30 @@ test("Nix refresh commits allow post-merge workflows to run", () => {
   assert.match(updateHashWorkflow, /gh workflow run ci\.yml/);
 });
 
-test("Cachix population pushes each output before collecting the Nix store", () => {
-  assert.match(workflow, /skipPush: true/);
-  assert.match(workflow, /nix build "\$output"[\s\S]*--print-out-paths/);
-  assert.doesNotMatch(workflow, /mapfile[^\n]*< <\(/);
-  assert.match(workflow, /printf '%s\\n' "\$\{store_paths\[@\]\}" \| cachix push "\$CACHIX_CACHE_NAME"/);
+test("Nix application builds are explicit unfree local checks, never cache uploads", () => {
+  for (const source of [workflow, updateHashWorkflow]) {
+    assert.match(source, /NIXPKGS_ALLOW_UNFREE: '1'/);
+    assert.doesNotMatch(source, /CACHIX_AUTH_TOKEN|cachix push|cachix-action/);
+  }
+  assert.match(workflow, /nix build "\$output"[\s\S]*--impure/);
   assert.match(workflow, /nix store gc/);
-  assert.ok(
-    workflow.indexOf("cachix push") < workflow.indexOf("nix store gc"),
-    "Cachix upload must complete before garbage collection",
-  );
+  assert.match(workflow, /No application output was uploaded to a binary cache/);
 });
 
-test("Cachix population pins every third-party action", () => {
+test("Nix validation pins every third-party action", () => {
   assert.doesNotMatch(workflow, /uses:\s+[^\s]+@v\d/);
+});
+
+test("generated app metadata does not mislabel the whole payload as MIT", () => {
+  assert.match(flake, /flakeSourceRemote = "https:\/\/github\.com\/Babinci\/copernicus\.git"/);
+  assert.match(flake, /Copernicus — unofficial community Linux wrapper/);
+  assert.match(flake, /license = with pkgs\.lib\.licenses; \[ mit unfree \];/);
+  assert.match(flake, /sourceProvenance = with pkgs\.lib\.sourceTypes; \[ fromSource binaryNativeCode \];/);
+  assert.match(pkgbuild, /pkgdesc="Copernicus — unofficial community Linux wrapper/);
+  assert.match(pkgbuild, /license=\('MIT' 'LicenseRef-Proprietary'\)/);
+  assert.equal(
+    fs.existsSync(path.resolve(__dirname, "../../assets/codex-linux.png")),
+    false,
+    "modified upstream icon must not return",
+  );
 });
