@@ -2,8 +2,8 @@
 
 ## 2026-08-10
 
-- Updated the required quit-drain and avatar input-shape patches for upstream
-  ChatGPT 26.803.41515 and verified candidate acceptance against its DMG.
+- Updated the quit-drain, avatar input-shape, and Simplified Chinese reasoning
+  label patches for ChatGPT 26.803.41515 and verified them against its DMG.
 - Added self-contained Grill Me, Caveman, and Handoff companion fallbacks with
   host-catalog global preference, explicit activation, and bundled MIT notices.
 - Audited licensing boundaries: corrected Arch/Nix generated-package metadata,
