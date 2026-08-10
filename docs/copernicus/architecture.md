@@ -1,8 +1,8 @@
 ---
 type: concept
 title: Copernicus architecture
-description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet, Breathe briefs, SAS evidence, and OKF memory.
-tags: [copernicus, fleet, breathe, sas, okf, architecture]
+description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet, Breathe briefs, SAS evidence, Retrospective review, and OKF memory.
+tags: [copernicus, fleet, breathe, sas, okf, retrospective, architecture]
 timestamp: 2026-08-08T00:00:00+02:00
 ---
 
@@ -29,9 +29,11 @@ flowchart TD
     J --> O["OKF selection · strategy · risk cards"]
     J --> H["HTML report: derived reader artifact"]
     O --> S
+    P --> K["Retrospective: evidence to next improvement"]
     P --> Y["Ponytail: minimum correct implementation"]
     P --> V["Caveman: optional terse delivery"]
     P --> T["Handoff: redacted temporary context"]
+    K --> U
     Y --> U
     V --> U
     T --> U
@@ -100,6 +102,14 @@ or an SAS cycle join. It emits one self-contained browser artifact and may link
 to a human-editable `.excalidraw` sidecar. Neither a report nor a diagram is an
 evaluator, receipt, candidate, or memory card; human edits require an explicit
 refresh before report claims change.
+
+### Retrospective
+
+Retrospective reads authorized task, repository, skill-use, or scheduled-run
+artifacts; separates observations from inferences; traces the first observable
+divergence; and proposes keep/change/try actions. It never reconstructs hidden
+reasoning. Scheduled reviews use the host's native automation surface and remain
+read-only and proposal-only until the user separately authorizes implementation.
 
 ### Companion fallbacks
 

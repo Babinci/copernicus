@@ -17,8 +17,9 @@ review of the terms that apply to a particular user, jurisdiction, or release.
 The upstream wrapper is MIT-licensed at
 [`ilysenko/codex-desktop-linux`](https://github.com/ilysenko/codex-desktop-linux/blob/main/LICENSE).
 Grill Me and Handoff derive from Matt Pocock's MIT-licensed
-[`skills`](https://github.com/mattpocock/skills); Caveman derives from the
-MIT-licensed [`Ponytail`](https://github.com/DietrichGebert/ponytail) workflow.
+[`skills`](https://github.com/mattpocock/skills); Ponytail and Caveman derive
+from the MIT-licensed [`Ponytail`](https://github.com/DietrichGebert/ponytail)
+workflow.
 Their full notices are inside the installable plugin at
 [`plugins/copernicus/THIRD_PARTY_NOTICES.md`](../plugins/copernicus/THIRD_PARTY_NOTICES.md).
 

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Retrospective"
+  short_description: "Turn work history into verified next actions"
+  default_prompt: "Use $retrospective to review this work, trace the first divergence, and propose evidence-backed next actions."
+policy:
+  allow_implicit_invocation: true

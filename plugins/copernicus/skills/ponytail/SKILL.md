@@ -20,9 +20,9 @@ bundled contract so Copernicus remains self-contained.
 ## Activation
 
 Activate only after an explicit invocation. Keep it active for the current task
-until the user says `stop ponytail` or `normal mode`. Treat `lite`, `full`, and
-`ultra` as increasing pressure to remove optional machinery; never relax
-correctness or the safety boundary.
+until the user says `stop ponytail` or `normal mode`. Default to **full**. Treat
+`lite`, `full`, and `ultra` as increasing pressure to remove optional machinery;
+never relax correctness or the safety boundary.
 
 ## Method
 

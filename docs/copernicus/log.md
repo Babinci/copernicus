@@ -2,6 +2,10 @@
 
 ## 2026-08-10
 
+- Added Retrospective for evidence-backed skill evolution, repository/session
+  reviews, blunder tracing, and proposal-only scheduled repository review.
+- Forward-tested Retrospective on repository evidence; corrected Ponytail's
+  default intensity and its central licensing-map attribution.
 - Added the MIT-licensed Ponytail workflow as a self-contained, explicitly
   activated companion with a global-skill preference and minimum-code safety contract.
 - Updated the quit-drain, avatar input-shape, and Simplified Chinese reasoning

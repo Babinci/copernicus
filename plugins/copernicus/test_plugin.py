@@ -42,10 +42,22 @@ class PluginTest(unittest.TestCase):
         self.assertIn("Bug fix = root cause", ponytail)
         self.assertIn("Never simplify away", ponytail)
         self.assertIn("one runnable check", ponytail)
+        self.assertIn("Default to **full**", ponytail)
         self.assertIn("Preserve code, commands, paths, identifiers, error messages", caveman)
         self.assertIn("complete, ordinary prose for security warnings", caveman)
         self.assertIn("operating system's temporary directory", handoff)
         self.assertIn("Perform a final redaction pass", handoff)
+
+    def test_retrospective_stays_evidence_first_and_proposal_only(self) -> None:
+        skill = (ROOT / "skills/retrospective/SKILL.md").read_text()
+        metadata = (ROOT / "skills/retrospective/agents/openai.yaml").read_text()
+        self.assertIn("Evidence before interpretation", skill)
+        self.assertIn("first observable divergence", skill)
+        self.assertIn("Never invent hidden reasoning", skill)
+        self.assertIn("proposal-only", skill)
+        self.assertIn("native scheduling", skill)
+        self.assertIn("Coverage", skill)
+        self.assertIn("allow_implicit_invocation: true", metadata)
 
     def test_third_party_notices_ship_with_the_plugin(self) -> None:
         notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
