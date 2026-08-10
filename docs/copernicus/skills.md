@@ -1,15 +1,16 @@
 ---
 type: guide
 title: Copernicus skills
-description: Why the eight installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
-tags: [copernicus, skills, grill-me, rick-rubin, fleet, breathe, auto-research, html-report, caveman, handoff]
+description: Why the nine installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, grill-me, rick-rubin, fleet, breathe, auto-research, html-report, ponytail, caveman, handoff]
 timestamp: 2026-08-10T00:00:00+02:00
 ---
 
 # Copernicus skills
 
-Installing the single `copernicus` plugin installs eight skills. Six form the
-main problem-solving sequence; two control delivery and continuation:
+Installing the single `copernicus` plugin installs nine skills. Six form the
+main problem-solving sequence; three govern implementation, delivery, and
+continuation:
 
 ```text
 $grill-me        resolve the decision tree
@@ -24,6 +25,7 @@ $auto-research   evaluate, join evidence, and curate learning
       ↓
 $html-report     explain the evaluated work to a human reader
 
+$ponytail        optionally constrain implementation to the smallest correct change
 $caveman         optionally compress any conversational answer
 $handoff         transfer current state to a fresh session
 ```
@@ -43,6 +45,7 @@ install a daemon, database, provider proxy, or background service.
 | `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next decision. | A decision-complete brief, expandable claim handles, and a compact trace. |
 | `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
 | `$html-report` | Evaluated work still needs a clear human-facing explanation or decision aid. | One portable HTML brief, update, explanation, decision, review, or lesson. |
+| `$ponytail` | Correct implementations often grow speculative machinery before the real path is traced. | The smallest complete change, one proportional check, and explicit skipped extensions. |
 | `$caveman` | Long conversational prose can obscure the result. | An opt-in terse answer that preserves exact commands, uncertainty, warnings, and evidence. |
 | `$handoff` | A fresh session needs decision state, not a duplicated transcript. | One redacted temporary Markdown brief linking durable artifacts and validation. |
 
@@ -54,12 +57,13 @@ The complete explanations ship inside the installed plugin:
 - [Rick Rubin subtraction explained](../../plugins/copernicus/skills/rick-rubin/references/guide.md)
 - [HTML reports explained](../../plugins/copernicus/skills/html-report/references/guide.md)
 - [Grill Me contract](../../plugins/copernicus/skills/grill-me/SKILL.md)
+- [Ponytail contract](../../plugins/copernicus/skills/ponytail/SKILL.md)
 - [Caveman contract](../../plugins/copernicus/skills/caveman/SKILL.md)
 - [Handoff contract](../../plugins/copernicus/skills/handoff/SKILL.md)
 
-## Why these eight
+## Why these nine
 
-They address eight different failure modes:
+They address nine different failure modes:
 
 1. **An unresolved plan** — Grill Me resolves one dependency-ordered decision at a time.
 2. **Too many possibilities** — subtraction reduces the search space.
@@ -73,9 +77,11 @@ They address eight different failure modes:
 6. **Work that remains opaque after it is done** — HTML Report turns authorized,
    evaluated material into a standalone reader-first explanation without making a
    dashboard, hosted service, or new source of truth.
-7. **Answers buried in prose** — Caveman compresses wording while retaining all
+7. **Implementation buried in machinery** — Ponytail traces the real flow, then
+   stops at the earliest native or existing solution that fully holds.
+8. **Answers buried in prose** — Caveman compresses wording while retaining all
    load-bearing technical and safety detail.
-8. **Context loss between sessions** — Handoff moves only current decision state
+9. **Context loss between sessions** — Handoff moves only current decision state
    and references the durable sources already in the workspace.
 
 No skill is authoritative by itself. Commands, tests, measurements, primary
@@ -90,17 +96,17 @@ codex plugin list
 ```
 
 Start a new Codex task after installation. In the app, open `/plugins`, select
-**Copernicus**, and inspect its eight skills. Invoke them explicitly as
+**Copernicus**, and inspect its nine skills. Invoke them explicitly as
 `$grill-me`, `$rick-rubin`, `$fleet`, `$breathe`, `$auto-research`,
-`$html-report`, `$caveman`, and `$handoff`.
+`$html-report`, `$ponytail`, `$caveman`, and `$handoff`.
 
 ## Global companion resolution
 
-Grill Me, Caveman, and Handoff are bundled fallbacks, so a Copernicus install is
-self-contained. The host namespaces plugin skills. At activation, each fallback
-checks only the skill catalog already supplied by the host and defers to a
-visible non-Copernicus equivalent. It never scans or writes global skill
-directories and never runs an installer hook.
+Grill Me, Ponytail, Caveman, and Handoff are bundled fallbacks, so a Copernicus
+install is self-contained. The host namespaces plugin skills. At activation,
+each fallback checks only the skill catalog already supplied by the host and
+defers to a visible non-Copernicus equivalent. It never scans or writes global
+skill directories and never runs an installer hook.
 
 This preference is best-effort because the host may disable or omit a global
 skill from a shortened catalog. In that case the bundled fallback runs. Use the
@@ -119,8 +125,10 @@ evaluator, falsifier, evidence gaps, and proposed OKF cards. Do not promote
 memory or perform external actions without my approval. Finally, use
 $html-report to produce a standalone decision explanation from the joined
 evidence; separate observed facts, inferences, and unknowns.
-Use $caveman only for the conversational summary. Use $handoff if the work must
-continue in a fresh session; link durable artifacts instead of copying them.
+Use $ponytail for the smallest correct implementation and one proportional
+check. Use $caveman only for the conversational summary. Use $handoff if the
+work must continue in a fresh session; link durable artifacts instead of
+copying them.
 ```
 
 ## Self-contained public boundary
@@ -133,8 +141,8 @@ The plugin contains everything specific to the method:
 - Breathe's decision-compression contract, guide, and private enum-only feedback tool;
 - the SAS graph/receipt contracts;
 - the receipt validator and tests;
-- the HTML report generator, static safety checker, and tests.
-- three prompt-only companion fallbacks and their bundled MIT notices.
+- the HTML report generator, static safety checker, and tests;
+- four prompt-only companion fallbacks and their bundled MIT notices.
 
 Public users supply only their own problem, authorized materials, real
 evaluator, Codex sign-in, and model access. The plugin contains no private

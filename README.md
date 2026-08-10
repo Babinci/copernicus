@@ -11,7 +11,7 @@
 Copernicus is an unofficial, local-build Linux wrapper for
 [OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
-pipeline with eight deliberately small workflows:
+pipeline with nine deliberately small workflows:
 
 - **Grill Me** resolves a plan through one recommended question at a time.
 - **Fleet** routes bounded work across native GPT Sol, Terra, and Luna lanes.
@@ -22,6 +22,7 @@ pipeline with eight deliberately small workflows:
 - **Rick Rubin** reduces brainstorms and systems to the few ideas that earn their weight.
 - **HTML Report** turns evaluated work into a portable human-facing brief,
   explanation, decision aid, review, or lesson.
+- **Ponytail** finds the smallest correct implementation after tracing the real flow.
 - **Caveman** removes prose weight without weakening technical or safety detail.
 - **Handoff** transfers redacted session state while linking durable artifacts.
 
@@ -60,11 +61,11 @@ codex plugin add copernicus@copernicus
 ```
 
 Then ask Codex to use `$grill-me`, `$rick-rubin`, `$fleet`, `$breathe`,
-`$auto-research`, `$html-report`, `$caveman`, or `$handoff`. Model access and
+`$auto-research`, `$html-report`, `$ponytail`, `$caveman`, or `$handoff`. Model access and
 reasoning controls remain account- and
 workspace-dependent; Copernicus does not unlock models or increase plan limits.
 
-One plugin installation provides all eight bundled skills. Open
+One plugin installation provides all nine bundled skills. Open
 `/plugins`, choose **Copernicus**, and start a new task after installation. See
 [Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
 outputs, examples, privacy boundary, and limitations of each skill.

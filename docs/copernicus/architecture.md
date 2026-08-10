@@ -29,8 +29,10 @@ flowchart TD
     J --> O["OKF selection · strategy · risk cards"]
     J --> H["HTML report: derived reader artifact"]
     O --> S
+    P --> Y["Ponytail: minimum correct implementation"]
     P --> V["Caveman: optional terse delivery"]
     P --> T["Handoff: redacted temporary context"]
+    Y --> U
     V --> U
     T --> U
 ```
@@ -101,12 +103,13 @@ refresh before report claims change.
 
 ### Companion fallbacks
 
-Grill Me, Caveman, and Handoff are prompt-only skills. They use the host's skill
-catalog as a best-effort signal to prefer a visible global equivalent, then fall
-back to their bundled contract. They never inspect or mutate global skill
-directories. Grill Me owns decision interrogation, Caveman owns response style,
-and Handoff owns a redacted temporary transport document; none is canonical
-memory, an evaluator, or a Fleet runner.
+Grill Me, Ponytail, Caveman, and Handoff are prompt-only skills. They use the
+host's skill catalog as a best-effort signal to prefer a visible global
+equivalent, then fall back to their bundled contract. They never inspect or
+mutate global skill directories. Grill Me owns decision interrogation,
+Ponytail owns implementation minimization, Caveman owns response style, and
+Handoff owns a redacted temporary transport document; none is canonical memory,
+an evaluator, or a Fleet runner.
 
 ## Deliberate cuts
 

@@ -20,7 +20,7 @@ codex plugin add copernicus@copernicus
 
 Restart the app if the skills do not appear. The plugin adds `$grill-me`,
 `$rick-rubin`, `$fleet`, `$breathe`, `$auto-research`, `$html-report`,
-`$caveman`, and `$handoff`.
+`$ponytail`, `$caveman`, and `$handoff`.
 
 Confirm installation with:
 
@@ -28,7 +28,7 @@ Confirm installation with:
 codex plugin list
 ```
 
-In the app, open `/plugins`, select **Copernicus**, and inspect the eight bundled
+In the app, open `/plugins`, select **Copernicus**, and inspect the nine bundled
 skills. Start a new task so Codex loads their current instructions. One plugin
 installation supplies all skills; no separate provider, database, daemon, or
 credential setup is required.

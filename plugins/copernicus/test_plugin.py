@@ -10,7 +10,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parent
-COMPANIONS = ("grill-me", "caveman", "handoff")
+COMPANIONS = ("grill-me", "ponytail", "caveman", "handoff")
 
 
 class PluginTest(unittest.TestCase):
@@ -32,11 +32,16 @@ class PluginTest(unittest.TestCase):
 
     def test_companion_safety_contracts_stay_load_bearing(self) -> None:
         grill = (ROOT / "skills/grill-me/SKILL.md").read_text()
+        ponytail = (ROOT / "skills/ponytail/SKILL.md").read_text()
         caveman = (ROOT / "skills/caveman/SKILL.md").read_text()
         handoff = (ROOT / "skills/handoff/SKILL.md").read_text()
         self.assertIn("Ask exactly one question per turn", grill)
         self.assertIn("Give a recommended answer", grill)
         self.assertIn("separately authorizes that action", grill)
+        self.assertIn("Does this need to exist", ponytail)
+        self.assertIn("Bug fix = root cause", ponytail)
+        self.assertIn("Never simplify away", ponytail)
+        self.assertIn("one runnable check", ponytail)
         self.assertIn("Preserve code, commands, paths, identifiers, error messages", caveman)
         self.assertIn("complete, ordinary prose for security warnings", caveman)
         self.assertIn("operating system's temporary directory", handoff)

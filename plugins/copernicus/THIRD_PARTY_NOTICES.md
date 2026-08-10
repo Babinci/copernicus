@@ -27,8 +27,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-The Copernicus `caveman` skill adapts the Caveman benchmark workflow from
-[`DietrichGebert/ponytail` v4.9.0](https://github.com/DietrichGebert/ponytail/blob/v4.9.0/benchmarks/arms/caveman-SKILL.md).
+The Copernicus `ponytail` skill adapts the main Ponytail workflow and `caveman`
+adapts its benchmark workflow from
+[`DietrichGebert/ponytail` v4.9.0](https://github.com/DietrichGebert/ponytail/tree/v4.9.0/skills/ponytail)
+and [the Caveman arm](https://github.com/DietrichGebert/ponytail/blob/v4.9.0/benchmarks/arms/caveman-SKILL.md).
 
 ```text
 MIT License

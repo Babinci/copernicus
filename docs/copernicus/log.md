@@ -2,6 +2,8 @@
 
 ## 2026-08-10
 
+- Added the MIT-licensed Ponytail workflow as a self-contained, explicitly
+  activated companion with a global-skill preference and minimum-code safety contract.
 - Updated the quit-drain, avatar input-shape, and Simplified Chinese reasoning
   label patches for ChatGPT 26.803.41515 and verified them against its DMG.
 - Added self-contained Grill Me, Caveman, and Handoff companion fallbacks with

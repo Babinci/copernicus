@@ -1,7 +1,7 @@
 {
   "name": "copernicus",
-  "version": "0.4.0+codex.20260810120815",
-  "description": "GPT-only Fleet, Breathe briefs, SAS+OKF research, HTML reports, subtraction, plan grilling, terse delivery, and safe handoffs for Codex.",
+  "version": "0.5.0+codex.20260810160759",
+  "description": "GPT-only Fleet, Breathe briefs, SAS+OKF research, HTML reports, subtraction, plan grilling, minimal implementation, terse delivery, and safe handoffs for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
     "url": "https://github.com/Babinci"
@@ -19,6 +19,7 @@
     "breathe",
     "decision-brief",
     "grill-me",
+    "ponytail",
     "caveman",
     "handoff"
   ],
@@ -26,7 +27,7 @@
   "interface": {
     "displayName": "Copernicus",
     "shortDescription": "GPT-only research and practitioner workflows.",
-    "longDescription": "Eight bundled Codex workflows resolve a plan, subtract weak branches, execute bounded Sol/Terra/Luna work, compress deep investigation at the human decision boundary, learn through evaluated SAS cycles, explain evidence in portable HTML, deliver terse answers, and transfer redacted session state.",
+    "longDescription": "Nine bundled Codex workflows resolve a plan, subtract weak branches, execute bounded Sol/Terra/Luna work, compress deep investigation at the human decision boundary, learn through evaluated SAS cycles, explain evidence in portable HTML, minimize implementation, deliver terse answers, and transfer redacted session state.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
