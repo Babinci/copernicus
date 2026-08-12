@@ -1,6 +1,6 @@
 {
   "name": "copernicus",
-  "version": "0.6.0+codex.20260810164903",
+  "version": "0.7.0+codex.20260812100824",
   "description": "GPT-only Fleet, Breathe briefs, SAS+OKF research, HTML reports, evidence-backed retrospectives, subtraction, minimal implementation, and safe handoffs for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
@@ -17,7 +17,7 @@
     "gpt-only",
     "html-report",
     "breathe",
-    "decision-brief",
+    "checkpoint-brief",
     "grill-me",
     "retrospective",
     "ponytail",
@@ -28,7 +28,7 @@
   "interface": {
     "displayName": "Copernicus",
     "shortDescription": "GPT-only research and practitioner workflows.",
-    "longDescription": "Ten bundled Codex workflows resolve a plan, subtract weak branches, execute bounded Sol/Terra/Luna work, compress deep investigation at the human decision boundary, learn through evaluated SAS cycles, explain evidence in portable HTML, review outcomes, minimize implementation, deliver terse answers, and transfer redacted session state.",
+    "longDescription": "Ten bundled Codex workflows resolve a plan, subtract weak branches, execute bounded Sol/Terra/Luna work with a Terra-first default, compress deep investigation at a human checkpoint, learn through evaluated SAS cycles, explain evidence in portable HTML, review outcomes, minimize implementation, deliver terse answers, and transfer redacted session state.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
@@ -37,7 +37,7 @@
     "websiteURL": "https://github.com/Babinci/copernicus",
     "defaultPrompt": [
       "Use $grill-me, then $rick-rubin, to resolve and cut this plan.",
-      "Use $fleet and $breathe for a bounded GPT-only investigation and decision brief.",
+      "Use $fleet and $breathe for a bounded GPT-only investigation and checkpoint brief.",
       "Use $auto-research, then $html-report, for an evaluated cycle and portable brief."
     ]
   }

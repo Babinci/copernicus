@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
-MODELS_FILE = SKILL_DIR / "models.json"
+CONFIG_FILE = SKILL_DIR / "fleet.yaml"
 SEAT_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 GPT_MODEL = re.compile(r"gpt-[a-z0-9][a-z0-9.-]*")
 
@@ -28,11 +28,17 @@ class FleetError(ValueError):
     pass
 
 
-def load_models(path: Path = MODELS_FILE) -> dict[str, dict]:
+def _load_value(path: Path) -> dict:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise FleetError(f"cannot load model policy: {exc}") from exc
+        raise FleetError(f"cannot load Fleet config: {exc}") from exc
+    if not isinstance(value, dict) or not value:
+        raise FleetError("Fleet config must be a non-empty object")
+    return value
+
+
+def _validate_models(value: dict) -> dict[str, dict]:
     if not isinstance(value, dict) or not value:
         raise FleetError("model policy must be a non-empty object")
     for lane, policy in value.items():
@@ -53,7 +59,41 @@ def load_models(path: Path = MODELS_FILE) -> dict[str, dict]:
     return value
 
 
-def load_manifest(path: Path, models: dict[str, dict], workdir: Path | None = None) -> list[dict]:
+def load_config(path: Path = CONFIG_FILE, preset: str | None = None) -> dict:
+    value = _load_value(path)
+    if set(value) != {"default_preset", "models", "presets"}:
+        if preset is not None:
+            raise FleetError("a legacy model policy does not define presets")
+        return {"preset": None, "default_lane": None, "models": _validate_models(value)}
+
+    models = _validate_models(value["models"])
+    presets = value["presets"]
+    default_preset = value["default_preset"]
+    if not isinstance(presets, dict) or not presets:
+        raise FleetError("Fleet config must define presets")
+    if not isinstance(default_preset, str) or default_preset not in presets:
+        raise FleetError("Fleet config has an unknown default preset")
+    for name, policy in presets.items():
+        if not SEAT_ID.fullmatch(name) or not isinstance(policy, dict) or set(policy) != {"default_lane"}:
+            raise FleetError(f"invalid preset: {name!r}")
+        if policy["default_lane"] not in models:
+            raise FleetError(f"preset {name!r} has an unknown default lane")
+    selected = preset or default_preset
+    if selected not in presets:
+        raise FleetError(f"unknown preset: {selected!r}")
+    return {"preset": selected, "default_lane": presets[selected]["default_lane"], "models": models}
+
+
+def load_models(path: Path = CONFIG_FILE) -> dict[str, dict]:
+    return load_config(path)["models"]
+
+
+def load_manifest(
+    path: Path,
+    models: dict[str, dict],
+    workdir: Path | None = None,
+    default_lane: str | None = None,
+) -> list[dict]:
     seats: list[dict] = []
     seen: set[str] = set()
     prompt_root = (workdir or path.parent).resolve()
@@ -68,13 +108,15 @@ def load_manifest(path: Path, models: dict[str, dict], workdir: Path | None = No
             row = json.loads(line)
         except json.JSONDecodeError as exc:
             raise FleetError(f"manifest row {number}: invalid JSON: {exc.msg}") from exc
-        if not isinstance(row, dict) or set(row) != {"id", "lane", "prompt"}:
-            raise FleetError(f"manifest row {number}: expected only id, lane, prompt")
-        seat_id, lane, prompt = row["id"], row["lane"], row["prompt"]
+        if not isinstance(row, dict) or set(row) not in ({"id", "prompt"}, {"id", "lane", "prompt"}):
+            raise FleetError(f"manifest row {number}: expected id, prompt, and optional lane")
+        seat_id, lane, prompt = row["id"], row.get("lane", default_lane), row["prompt"]
         if not isinstance(seat_id, str) or not SEAT_ID.fullmatch(seat_id):
             raise FleetError(f"manifest row {number}: invalid seat id")
         if seat_id in seen:
             raise FleetError(f"manifest row {number}: duplicate seat id {seat_id!r}")
+        if lane is None:
+            raise FleetError(f"manifest row {number}: lane is required without a preset default")
         if lane not in models:
             raise FleetError(f"manifest row {number}: unknown lane {lane!r}")
         if not isinstance(prompt, str) or not prompt.strip():
@@ -201,7 +243,8 @@ def run_seat(
     return result
 
 
-def command_list(models: dict[str, dict]) -> int:
+def command_list(models: dict[str, dict], preset: str | None, default_lane: str | None) -> int:
+    print(f"# preset={preset or 'custom'} default_lane={default_lane or 'explicit'}")
     print("lane\tmodel\teffort\twidth\ttimeout_seconds")
     for lane, policy in models.items():
         print(
@@ -211,16 +254,23 @@ def command_list(models: dict[str, dict]) -> int:
     return 0
 
 
-def command_batch(args: argparse.Namespace, models: dict[str, dict]) -> int:
+def command_batch(
+    args: argparse.Namespace,
+    models: dict[str, dict],
+    preset: str | None,
+    default_lane: str | None,
+) -> int:
     manifest = args.manifest.resolve()
     workdir = args.workdir.resolve()
-    seats = load_manifest(manifest, models, workdir)
+    seats = load_manifest(manifest, models, workdir, default_lane)
     if not workdir.is_dir():
         raise FleetError(f"workdir not found: {workdir}")
     if args.dry_run:
         print(
             json.dumps(
                 {
+                    "preset": preset,
+                    "default_lane": default_lane,
                     "sandbox": args.sandbox,
                     "width": min(args.width, len(seats)),
                     "seats": [
@@ -272,7 +322,6 @@ def parser() -> argparse.ArgumentParser:
     value = argparse.ArgumentParser(description=__doc__)
     subcommands = value.add_subparsers(dest="command", required=True)
     list_command = subcommands.add_parser("list", help="list the enforced GPT lanes")
-    list_command.add_argument("--models-file", type=Path, default=MODELS_FILE)
     batch = subcommands.add_parser("batch", help="run a JSONL seat manifest")
     batch.add_argument("manifest", type=Path)
     batch.add_argument("--run-dir", type=Path)
@@ -281,17 +330,19 @@ def parser() -> argparse.ArgumentParser:
     batch.add_argument("--sandbox", choices=("read-only", "workspace-write"), default="read-only")
     batch.add_argument("--codex-bin", default="codex")
     batch.add_argument("--dry-run", action="store_true")
-    batch.add_argument("--models-file", type=Path, default=MODELS_FILE)
+    for command in (list_command, batch):
+        command.add_argument("--config-file", "--models-file", dest="config_file", type=Path, default=CONFIG_FILE)
+        command.add_argument("--preset")
     return value
 
 
 def main(argv: list[str] | None = None) -> int:
     try:
         args = parser().parse_args(argv)
-        models = load_models(args.models_file.resolve())
+        config = load_config(args.config_file.resolve(), args.preset)
         if args.command == "list":
-            return command_list(models)
-        return command_batch(args, models)
+            return command_list(config["models"], config["preset"], config["default_lane"])
+        return command_batch(args, config["models"], config["preset"], config["default_lane"])
     except (FleetError, OSError, UnicodeError) as exc:
         print(f"fleet: {exc}", file=sys.stderr)
         return 2

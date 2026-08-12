@@ -59,6 +59,21 @@ class PluginTest(unittest.TestCase):
         self.assertIn("Coverage", skill)
         self.assertIn("allow_implicit_invocation: true", metadata)
 
+    def test_breathe_checkpoint_and_fleet_preset_contracts_stay_load_bearing(self) -> None:
+        breathe = (ROOT / "skills/breathe/SKILL.md").read_text()
+        fleet = (ROOT / "skills/fleet/SKILL.md").read_text()
+        self.assertTrue((ROOT / "skills/fleet/fleet.yaml").is_file())
+        self.assertIn("Checkpoint", breathe)
+        self.assertIn("no decision required", breathe)
+        self.assertIn("Only the lead invokes Breathe", breathe)
+        self.assertIn("Emit every heading", breathe)
+        self.assertIn("all seven exact", breathe)
+        self.assertIn("do not silently turn it into a decision", breathe)
+        self.assertIn("complete checkpoint brief", breathe)
+        self.assertIn("execution-heavy work", breathe)
+        self.assertIn("terra-first", fleet)
+        self.assertIn("luna-breadth", fleet)
+
     def test_third_party_notices_ship_with_the_plugin(self) -> None:
         notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
         self.assertIn("mattpocock/skills", notices)

@@ -8,25 +8,25 @@ person merely transfers the coordination burden. A short generic summary is
 also insufficient: it often erases disagreement, uncertainty, provenance, and
 the consequences of choosing one path.
 
-Breathe makes the human decision boundary the design constraint. It spends
+Breathe makes the human checkpoint the design constraint. It spends
 machine attention between checkpoints, then returns the smallest representation
-that is sufficient for the next real decision.
+that is sufficient for the next decision, verified delivery, or understanding.
 
 ## The autoencoder analogy
 
 The analogy is useful if its limits stay explicit:
 
 ```text
-map waves -> typed claims -> semantic reduction -> verified decision state
+map waves -> typed claims -> semantic reduction -> verified checkpoint state
                                                      |
-                                              decision brief
+                                             checkpoint brief
                                                      |
                               expansion handles -> evidence and roster
 ```
 
 - **Encoder:** Luna seats map distinct evidence and express it through one
   claim schema.
-- **Bottleneck:** reducers retain only information that changes a decision,
+- **Bottleneck:** reducers retain only information that changes a checkpoint,
   confidence, priority, risk, or next action.
 - **Decoder:** stable handles reopen the supporting evidence, dissent, or
   worker trace on demand.
@@ -40,36 +40,47 @@ not about material uncertainty or evidence.
 
 ```mermaid
 flowchart LR
-  F["Frame decision"] --> I["Deterministic inventory"]
-  I --> M["Luna map wave ≤5"]
+  F["Frame checkpoint"] --> I["Deterministic inventory"]
+  I --> M["Preset map wave ≤5"]
   M --> R["Terra reduction"]
   R --> V["Independent verification"]
-  V --> B["Decision brief"]
-  R -->|"decision-changing gap + budget"| M
-  B -->|"human decision"| F
+  V --> B["Checkpoint brief"]
+  R -->|"checkpoint-changing gap + budget"| M
+  B -->|"human response"| F
   B -->|"explicit feedback enum"| E["Private experience ledger"]
   E --> F
 ```
 
-The lead, not a worker, owns recursion. “Respawn” means creating another
+The lead, not a worker, owns Breathe and its recursion. “Respawn” means creating another
 bounded wave for a named evidence gap. It never means allowing leaf agents to
-create an uncontrolled tree.
+invoke Breathe or create an uncontrolled tree. The shipped `terra-first` Fleet
+preset uses Terra for unspecified map seats; select `luna-breadth` or explicit
+Luna seats only when the work is repeatable breadth.
 
 ## What the brief optimizes
 
-A good Breathe brief minimizes time-to-sound-decision, not word count alone. It
+A good Breathe brief minimizes time-to-sound-checkpoint, not word count alone. It
 must answer:
 
 1. What became true enough to act on?
-2. What choice is needed now, if any?
-3. What does the recommended choice gain, risk, and postpone?
+2. Is the checkpoint a choice, verified delivery, or understanding?
+3. What choice is needed now, if any, and what does it gain, risk, or postpone?
 4. Which uncertainty or dissent could still reverse it?
 5. What will continue without another interruption?
 6. How can the user reopen any compressed claim?
 
-The default asks for at most three decisions because a longer list is usually a
-planning document masquerading as a checkpoint. When no decision is needed,
-say so and continue autonomously inside the existing authority boundary.
+The default asks for at most three decisions when a choice is needed because a
+longer list is usually a planning document masquerading as a checkpoint. When
+no decision is needed, say `no decision required` and continue autonomously
+inside the existing authority boundary.
+
+Every completed lead mission emits the same checkpoint headings, including
+execution-heavy work. Empty sections say `none`; a generic completion summary
+does not replace the brief. Workers never emit the Breathe opening or brief.
+The user's requested interruption determines the checkpoint type: a likely
+remedy inside an explanation does not become a decision unless the user asked
+to choose or authorize it. Before sending, self-check all seven exact headings;
+`Expand` remains required even when its value is `none`.
 
 ## Experience without surveillance
 
@@ -92,17 +103,17 @@ promoting model prose to memory, or training a model.
 ## Example invocation
 
 ```text
-Use $breathe to investigate whether this service should be split before the
-next release. Work autonomously through at most three five-seat Luna map waves.
-Interrupt me only if the evidence requires a product or migration-risk choice.
-Return a decision brief under 350 words with expandable evidence handles.
+Use $breathe to investigate whether this migration is ready. Work autonomously
+through at most three five-seat map waves using the active Fleet preset.
+Interrupt me only at a decision, verified delivery, or understanding checkpoint.
+Return a checkpoint brief under 350 words with expandable evidence handles.
 ```
 
 ## Relationship to the other Copernicus skills
 
 - `$rick-rubin` reduces speculative branches before investigation.
 - `$fleet` owns GPT routing, worker execution, wave limits, and rosters.
-- `$breathe` owns iterative gap-driven reduction and the human checkpoint.
+- `$breathe` owns lead-only gap-driven reduction and the human checkpoint.
 - `$auto-research` owns evaluated experiment cycles and proposed OKF memory.
 - `$html-report` turns authorized results into a durable reader artifact when a
   conversation brief is not enough.
@@ -110,7 +121,7 @@ Return a decision brief under 350 words with expandable evidence handles.
 ## Honest limitations
 
 - Luna seats are correlated and do not create independent truth.
-- A compact brief can still frame the wrong decision; the trace makes that
+- A compact brief can still frame the wrong checkpoint; the trace makes that
   framing inspectable but does not eliminate judgment.
 - Model availability and plan capacity belong to the signed-in Codex account.
 - Preference counts are a tiny heuristic, not a learned user model.

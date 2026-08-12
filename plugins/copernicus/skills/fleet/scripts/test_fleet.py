@@ -13,6 +13,17 @@ SPEC.loader.exec_module(fleet)
 
 
 class FleetTest(unittest.TestCase):
+    def test_default_yaml_preset_is_terra_first(self):
+        config = fleet.load_config()
+        self.assertEqual(config["preset"], "terra-first")
+        self.assertEqual(config["default_lane"], "terra")
+        self.assertEqual(config["models"]["terra"]["model"], "gpt-5.6-terra")
+
+    def test_named_preset_restores_luna_breadth(self):
+        config = fleet.load_config(preset="luna-breadth")
+        self.assertEqual(config["preset"], "luna-breadth")
+        self.assertEqual(config["default_lane"], "luna")
+
     def test_models_fail_closed_on_non_gpt_model(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "models.json"
@@ -30,6 +41,46 @@ class FleetTest(unittest.TestCase):
             )
             with self.assertRaisesRegex(fleet.FleetError, "not GPT-only"):
                 fleet.load_models(path)
+
+    def test_legacy_json_model_map_remains_explicit_lane_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "models.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "terra": {
+                            "model": "gpt-5.6-terra",
+                            "effort": "medium",
+                            "max_concurrency": 1,
+                            "timeout_seconds": 30,
+                        }
+                    }
+                )
+            )
+            config = fleet.load_config(path)
+            self.assertIsNone(config["preset"])
+            self.assertIsNone(config["default_lane"])
+            self.assertEqual(set(config["models"]), {"terra"})
+
+    def test_manifest_uses_preset_default_without_overriding_explicit_lane(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "prompt.md").write_text("work")
+            manifest = root / "manifest.jsonl"
+            manifest.write_text(
+                json.dumps({"id": "default", "prompt": "prompt.md"})
+                + "\n"
+                + json.dumps({"id": "explicit", "lane": "luna", "prompt": "prompt.md"})
+                + "\n"
+            )
+            config = fleet.load_config()
+            seats = fleet.load_manifest(
+                manifest,
+                config["models"],
+                root,
+                default_lane=config["default_lane"],
+            )
+            self.assertEqual([seat["lane"] for seat in seats], ["terra", "luna"])
 
     def test_manifest_rejects_duplicate_ids(self):
         with tempfile.TemporaryDirectory() as directory:

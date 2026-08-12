@@ -26,11 +26,20 @@ Execute vs validate: <what runs now>.
 
 ## Route
 
+Read `fleet.yaml` before routing. It contains the GPT model bindings, named
+presets, and the active `default_preset`. The shipped default is `terra-first`:
+an omitted manifest lane resolves to Terra. Use `luna-breadth` when repeatable
+width should be the default, or name any lane explicitly to override a preset.
+
 - **Sol** (`gpt-5.6-sol`): ambiguous, high-value synthesis, architecture, and final verification. Use 3-4 seats only for an explicitly deep mission.
-- **Terra** (`gpt-5.6-terra`): everyday implementation, grounded review, and reducers.
+- **Terra** (`gpt-5.6-terra`): default everyday implementation, grounded review, mapping, and reducers.
 - **Luna Max** (`gpt-5.6-luna`, `max`): clear, repeatable extraction, classification, and bounded shards. Run waves of at most five.
 
-Read [model-policy.md](references/model-policy.md) before changing lane names, concurrency, model IDs, or reasoning efforts. If a configured model is unavailable to the signed-in account, report it as unavailable; never fall back to a non-GPT provider. For a different account catalog, copy `models.json`, bind only observed GPT IDs, and pass the copy with `--models-file`.
+Read [model-policy.md](references/model-policy.md) before changing lane names,
+presets, concurrency, model IDs, or reasoning efforts. If a configured model is
+unavailable to the signed-in account, report it as unavailable; never fall back
+to a non-GPT provider. For a different account catalog, copy `fleet.yaml`, bind
+only observed GPT IDs, and pass the copy with `--config-file`.
 
 ## Execute
 
@@ -45,13 +54,16 @@ Use Codex collaboration tools for interactive missions. For local scheduled or s
 
 ```bash
 python3 <fleet-skill-dir>/scripts/fleet.py list
+python3 <fleet-skill-dir>/scripts/fleet.py list --preset luna-breadth
 python3 <fleet-skill-dir>/scripts/fleet.py batch manifest.jsonl --run-dir .copernicus/runs/example --workdir . --dry-run
 python3 <fleet-skill-dir>/scripts/fleet.py batch manifest.jsonl --run-dir .copernicus/runs/example --workdir .
 ```
 
-Manifest rows contain only `id`, `lane`, and `prompt`:
+Manifest rows contain `id`, `prompt`, and an optional `lane`. Omitting `lane`
+uses the active preset's default; an explicit lane always wins:
 
 ```json
+{"id":"review-api","prompt":"prompts/review-api.md"}
 {"id":"map-api","lane":"luna","prompt":"prompts/map-api.md"}
 ```
 

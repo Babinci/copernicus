@@ -53,8 +53,10 @@ Fleet answers three questions:
 
 ## The three lanes
 
-The lane names are stable roles. The exact model bindings live in
-`../models.json` and remain account-dependent.
+The lane names are stable roles. The exact model bindings and presets live in
+`../fleet.yaml` and remain account-dependent. The file uses YAML's
+JSON-compatible subset so the runner can validate it with Python's standard
+library and ship no YAML dependency.
 
 | Lane | Best fit | Poor fit |
 | --- | --- | --- |
@@ -64,6 +66,15 @@ The lane names are stable roles. The exact model bindings live in
 
 Use the fewest seats that cover independent evidence. A five-wide limit is a
 safety ceiling, not a target.
+
+### Presets
+
+- `terra-first` is the shipped default. A manifest seat without `lane` resolves
+  to Terra for grounded everyday work.
+- `luna-breadth` resolves an omitted lane to Luna for repeatable extraction or
+  classification waves.
+- An explicit `lane` always overrides the preset. Sol is never selected
+  implicitly.
 
 ## Two execution modes
 
@@ -76,9 +87,11 @@ claims, and reports a roster. This mode needs no bundled runner.
 ### Batch Fleet
 
 Use `scripts/fleet.py` for trusted local scheduling or repeatable shell-driven
-work. A JSONL manifest binds each seat to a lane and a prompt file. The runner:
+work. A JSONL manifest binds each seat to a prompt file and either an explicit
+lane or the active preset's default. The runner:
 
 - validates every model as GPT-only;
+- validates the selected preset and resolves omitted lanes before execution;
 - rejects prompt paths that escape the selected work directory, including
   symlink escapes;
 - invokes `codex exec` without a shell;

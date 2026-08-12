@@ -1,4 +1,4 @@
 interface:
   display_name: "Breathe"
-  short_description: "Deep investigation, distilled for decisions"
-  default_prompt: "Use $breathe to investigate this deeply and return only the decision-complete brief."
+  short_description: "Deep investigation, distilled at human checkpoints"
+  default_prompt: "Use $breathe to investigate this deeply and return only the checkpoint-complete brief."
