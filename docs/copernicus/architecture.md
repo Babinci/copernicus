@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Copernicus architecture
-description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet, Breathe briefs, SAS evidence, Retrospective review, and OKF memory.
+description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and OKF memory.
 tags: [copernicus, fleet, breathe, sas, okf, retrospective, architecture]
-timestamp: 2026-08-08T00:00:00+02:00
+timestamp: 2026-08-12T00:00:00+02:00
 ---
 
 # Copernicus architecture
@@ -21,7 +21,7 @@ flowchart TD
     P --> S["SAS: problem-specific DAG"]
     F --> C["Native codex exec / collaboration"]
     C --> M["Sol · Terra · Luna"]
-    M --> B["Breathe: reduce to decision state"]
+    M --> B["Breathe: reduce to checkpoint state"]
     B --> U
     S --> G["Candidate + trusted evaluator"]
     G --> E["Hash-chained evidence ledger"]
@@ -47,16 +47,19 @@ The lead decomposes a mission into leaf seats. Commands settle mechanical
 questions before models. Every seat has bounded material, a typed output,
 authority ceiling, independent verifier, falsifier, and stop rule. Sol handles
 ambiguous high-value work, Terra handles everyday grounded work, and Luna Max
-handles repeatable width. Missing models fail closed; another provider never
-silently substitutes.
+handles repeatable width. The validated `fleet.yaml` selects `terra-first` by
+default, so an omitted lane resolves to Terra; `luna-breadth` is an explicit
+alternative and an explicit lane always wins. Missing models fail closed;
+another provider never silently substitutes.
 
 ### Breathe
 
-Breathe composes Fleet into a gap-driven loop: Luna maps bounded evidence,
-Terra reduces equivalent claims, deterministic checks and a fresh verifier
-test load-bearing conclusions, and the lead emits a short decision brief with
-expansion handles. The lead alone creates another bounded wave; workers never
-spawn. A private optional ledger records only controlled explicit feedback
+Breathe composes Fleet into a gap-driven loop: the active preset maps bounded
+evidence, Terra reduces equivalent claims, deterministic checks and a fresh
+verifier test load-bearing conclusions, and the lead emits a short checkpoint
+brief for a decision, verified delivery, or understanding. The lead alone
+invokes Breathe or creates another bounded wave; workers never invoke Breathe
+or spawn. A private optional ledger records only controlled explicit feedback
 categories and never stores project content or rewrites the skill.
 
 ### Solution Autoresearch System

@@ -11,7 +11,7 @@ problem-solving plugin.
 
 - [Getting started](getting-started.md) — install the plugin and run a first bounded mission.
 - [Skills](skills.md) — understand why each skill exists, what it does, what it produces, and its limits.
-- [Breathe explained](../../plugins/copernicus/skills/breathe/references/guide.md) — connect deep Luna investigation to short human decision checkpoints.
+- [Breathe explained](../../plugins/copernicus/skills/breathe/references/guide.md) — connect deep Fleet investigation to short decision, delivery, or understanding checkpoints.
 - [Practitioner HTML reports](html-reports.md) — turn evaluated work into a portable human-readable briefing or lesson.
 - [Architecture](architecture.md) — understand Fleet, SAS, receipts, evaluation, and OKF memory.
 - [Scheduled work](scheduled-work.md) — run attended Scheduled tasks or trusted local cron safely.

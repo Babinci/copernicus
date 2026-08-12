@@ -3,7 +3,7 @@ type: runbook
 title: Getting started with Copernicus
 description: Install the marketplace plugin, validate its GPT-only tools, and run a first deep brief, retrospective, or SAS/OKF research cycle.
 tags: [install, plugin, fleet, breathe, auto-research, html-report, retrospective]
-timestamp: 2026-08-08T00:00:00+02:00
+timestamp: 2026-08-12T00:00:00+02:00
 ---
 
 # Getting started
@@ -49,9 +49,13 @@ python3 plugins/copernicus/skills/auto-research/scripts/receipts.py --help
 python3 plugins/copernicus/skills/html-report/scripts/report.py --help
 ```
 
-All Fleet model IDs are declared in one validated `models.json`. If an account
-does not expose a declared model, copy the file, change only the available GPT
-binding, and pass it with `--models-file`. Non-GPT IDs are rejected.
+All Fleet model IDs and presets are declared in one validated `fleet.yaml`.
+`terra-first` is the shipped default: a manifest row without `lane` resolves to
+Terra. Select `--preset luna-breadth` for breadth-first work, or name a lane in
+the row to override either preset. If an account does not expose a declared
+model, copy the file, change only the available GPT binding, and pass it with
+`--config-file`. Non-GPT IDs are rejected. The file uses YAML's JSON-compatible
+subset so Fleet remains Python-standard-library-only.
 
 ## First interactive mission
 
@@ -72,15 +76,15 @@ the first cycle before accepting any durable memory.
 Ask:
 
 ```text
-Use $breathe to investigate this architecture decision deeply. Use at most
-three five-seat Luna map waves, stop when coverage closes, and interrupt me
-only for a decision that changes scope or risk. Return a decision-complete
-brief under 350 words with expandable evidence handles.
+Use $breathe to investigate this migration deeply. Use at most three five-seat
+map waves with the active Fleet preset, stop when coverage closes, and interrupt
+me only at a decision, verified delivery, or understanding checkpoint. Return a
+checkpoint-complete brief under 350 words with expandable evidence handles.
 ```
 
 Breathe reuses Fleet for execution, verifies load-bearing claims, and puts the
-decision before the compact trace. Its optional experience ledger stores only
-explicit feedback categories, never project or conversation content.
+human checkpoint before the compact trace. Its optional experience ledger
+stores only explicit feedback categories, never project or conversation content.
 
 ## First human-facing report
 
@@ -100,9 +104,13 @@ write OKF memory.
 Create `prompts/map.md` with a complete leaf-seat contract and `manifest.jsonl`:
 
 ```json
+{"id":"review","prompt":"prompts/review.md"}
 {"id":"map","lane":"luna","prompt":"prompts/map.md"}
 {"id":"challenge","lane":"terra","prompt":"prompts/challenge.md"}
 ```
+
+The first row uses the active preset and therefore resolves to Terra. The other
+rows demonstrate explicit lane overrides.
 
 Validate without using plan capacity:
 

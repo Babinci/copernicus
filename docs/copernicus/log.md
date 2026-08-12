@@ -1,5 +1,13 @@
 # Copernicus documentation log
 
+## 2026-08-12
+
+- Generalized Breathe's lead-owned closeout from decision-only briefs to one
+  evidence-backed human checkpoint: decision, verified delivery, or understanding.
+- Replaced Fleet's duplicated default model file with one validated `fleet.yaml`;
+  added `terra-first` and `luna-breadth` presets, made `terra-first` active, and
+  preserved explicit lane overrides plus legacy direct JSON model maps.
+
 ## 2026-08-10
 
 - Added Retrospective for evidence-backed skill evolution, repository/session

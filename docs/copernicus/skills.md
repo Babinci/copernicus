@@ -3,7 +3,7 @@ type: guide
 title: Copernicus skills
 description: Why the ten installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
 tags: [copernicus, skills, grill-me, rick-rubin, fleet, breathe, auto-research, html-report, retrospective, ponytail, caveman, handoff]
-timestamp: 2026-08-10T00:00:00+02:00
+timestamp: 2026-08-12T00:00:00+02:00
 ---
 
 # Copernicus skills
@@ -19,7 +19,7 @@ $rick-rubin      remove weak branches
       ↓
 $fleet           execute independent bounded work
       ↓
-$breathe         compress deep work at the human decision boundary
+$breathe         compress deep work at the next human checkpoint
       ↓
 $auto-research   evaluate, join evidence, and curate learning
       ↓
@@ -43,7 +43,7 @@ install a daemon, database, provider proxy, or background service.
 | `$grill-me` | Premature implementation hides unresolved product and architecture decisions. | One recommended question at a time, then a compact decision-ready design brief. |
 | `$rick-rubin` | Idea generation is easier than principled selection. | Essence, what stays, what goes, and the hardest cut. |
 | `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Seat roster, typed outputs, verified synthesis, and explicit evidence gaps. |
-| `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next decision. | A decision-complete brief, expandable claim handles, and a compact trace. |
+| `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next checkpoint. | A checkpoint-complete brief for a decision, verified delivery, or understanding, with expandable claim handles and a compact trace. |
 | `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
 | `$html-report` | Evaluated work still needs a clear human-facing explanation or decision aid. | One portable HTML brief, update, explanation, decision, review, or lesson. |
 | `$retrospective` | Work history is easy to turn into hindsight stories instead of useful learning. | An evidence timeline, first divergence, keep/change/try, and ranked proposal-only actions. |
@@ -73,7 +73,7 @@ They address ten different failure modes:
 3. **One agent doing incompatible jobs** — Fleet separates bounded work and
    verification while keeping one accountable lead.
 4. **Machine output becoming human coordination work** — Breathe reduces deep
-   map waves to the next decision while preserving expandable evidence and dissent.
+   map waves to the next human checkpoint while preserving expandable evidence and dissent.
 5. **Learning from unverified guesses** — Auto-Research freezes the regime,
    evaluates candidates, joins evidence, and updates memory only at a cycle
    boundary.
@@ -124,7 +124,8 @@ and you need to force one. Copernicus does not claim to control host precedence.
 Use $grill-me to resolve the highest-leverage unknowns one question at a time.
 Then use $rick-rubin to reduce the options to the few that serve the named user.
 Use $fleet only for independent evidence work, with a maximum of five read-only
-seats. Use $breathe to reduce the verified findings to at most three decisions
+seats and the default terra-first preset. Use $breathe to reduce the verified
+findings to the next decision, verified delivery, or understanding checkpoint
 with expandable evidence handles. Then use $auto-research for one measured cycle: name the regime,
 evaluator, falsifier, evidence gaps, and proposed OKF cards. Do not promote
 memory or perform external actions without my approval. Finally, use
@@ -145,7 +146,7 @@ The plugin contains everything specific to the method:
 - skill instructions and human-readable guides;
 - GPT-only lane policy;
 - the Fleet batch runner and tests;
-- Breathe's decision-compression contract, guide, and private enum-only feedback tool;
+- Breathe's checkpoint-compression contract, guide, and private enum-only feedback tool;
 - the SAS graph/receipt contracts;
 - the receipt validator and tests;
 - the HTML report generator, static safety checker, and tests;
