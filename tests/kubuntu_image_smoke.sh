@@ -57,7 +57,7 @@ xorriso -osirrox on -indev "$work/output.iso" \
 unsquashfs -d "$work/output-root" "$work/output.squashfs" >/dev/null
 [ -f "$work/output-root/etc/copernicus-image-release" ] \
     || fail "marker did not reach rebuilt SquashFS"
-rg -q '^PROFILE=marker-only$' "$work/output-root/etc/copernicus-image-release" \
+grep -q '^PROFILE=marker-only$' "$work/output-root/etc/copernicus-image-release" \
     || fail "marker profile is wrong"
 
 source_boot="$work/source.boot"
@@ -71,14 +71,14 @@ xorriso -indev "$work/output.iso" -report_el_torito plain 2>&1 \
     | sed -E -e 's/^(El Torito catalog  :).*/\1 <location>/' \
         -e '/^El Torito boot img/s/[[:space:]]+[0-9]+$/ <lba>/' >"$output_boot"
 [ -s "$source_boot" ] || fail "source boot catalog report was empty"
-rg -q 'BIOS' "$source_boot" || fail "source BIOS boot entry missing"
-rg -q 'UEFI' "$source_boot" || fail "source UEFI boot entry missing"
+grep -q 'BIOS' "$source_boot" || fail "source BIOS boot entry missing"
+grep -q 'UEFI' "$source_boot" || fail "source UEFI boot entry missing"
 cmp -s "$source_boot" "$output_boot" || fail "boot catalog was not replayed"
 
 xorriso -osirrox on -indev "$work/output.iso" \
     -extract /md5sum.txt "$work/output.md5" >/dev/null 2>&1
 expected_md5="$(md5sum "$work/output.squashfs" | awk '{print $1}')"
-rg -q "^${expected_md5} +\\./casper/filesystem.squashfs$" "$work/output.md5" \
+grep -Eq "^${expected_md5} +\\./casper/filesystem.squashfs$" "$work/output.md5" \
     || fail "SquashFS md5 metadata is stale"
 
 python3 - "$work/output.iso.provenance.json" "$base_sha" <<'PY'
@@ -133,9 +133,9 @@ for _ in 1 2; do
     CODEX_TEST_STATE="$work/codex-state" PATH="$work/bin:$PATH" \
         bash "$FIRST_RUN" >/dev/null
 done
-[ "$(rg -c '^plugin marketplace add ' "$work/codex-state/calls")" -eq 1 ] \
+[ "$(grep -c '^plugin marketplace add ' "$work/codex-state/calls")" -eq 1 ] \
     || fail "first-run helper added the marketplace more than once"
-[ "$(rg -c '^plugin add ' "$work/codex-state/calls")" -eq 1 ] \
+[ "$(grep -c '^plugin add ' "$work/codex-state/calls")" -eq 1 ] \
     || fail "first-run helper installed the plugin more than once"
 
 printf 'Kubuntu image smoke tests passed\n'
