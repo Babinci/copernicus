@@ -35,10 +35,15 @@ xorriso -as mkisofs -quiet -r -V TEST_KUBUNTU \
     -eltorito-alt-boot -e efi.img -no-emul-boot \
     -o "$work/base.iso" "$work/iso"
 base_sha="$(sha256sum "$work/base.iso" | awk '{print $1}')"
+if [ "${base_sha:0:1}" = 0 ]; then
+    bad_base_sha="1${base_sha:1}"
+else
+    bad_base_sha="0${base_sha:1}"
+fi
 
 "$BUILDER" --help >/dev/null
 
-if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "${base_sha%?}0" \
+if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$bad_base_sha" \
     --output "$work/bad.iso" --marker-only >/dev/null 2>&1; then
     fail "bad source hash was accepted"
 fi
