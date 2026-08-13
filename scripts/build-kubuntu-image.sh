@@ -140,7 +140,8 @@ checksum_path="$OUTPUT.sha256"
 provenance_path="$OUTPUT.provenance.json"
 mkdir -p "$output_dir"
 for path in "$OUTPUT" "$checksum_path" "$provenance_path"; do
-    [ ! -e "$path" ] || die "refusing to overwrite existing path: $path"
+    [ ! -e "$path" ] && [ ! -L "$path" ] \
+        || die "refusing to overwrite existing path: $path"
 done
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/copernicus-kubuntu-image.XXXXXX")"
@@ -255,6 +256,8 @@ if [ "$PROFILE" = "full" ]; then
     find "$marketplace" -type f -name '*.pyc' -delete
     find "$marketplace" -depth -type d -name __pycache__ -delete
     install -m 0644 "$REPO_DIR/LICENSE" "$marketplace/LICENSE"
+    chown -R 0:0 "$marketplace"
+    chmod -R u=rwX,go=rX "$marketplace"
     install -m 0755 "$REPO_DIR/packaging/kubuntu-image/copernicus-first-run" \
         "$rootfs/usr/local/bin/copernicus-first-run"
     install -m 0644 "$REPO_DIR/packaging/kubuntu-image/copernicus-first-run.desktop" \

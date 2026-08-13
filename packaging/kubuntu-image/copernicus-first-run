@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 MARKETPLACE_ROOT="/usr/share/copernicus/marketplace"
+UPDATE_SERVICE_FILE="${COPERNICUS_UPDATE_SERVICE_FILE:-/usr/lib/systemd/user/codex-update-manager.service}"
 
 if ! command -v codex >/dev/null 2>&1; then
     printf '%s\n' \
@@ -23,7 +24,7 @@ if [ "$has_plugin" != "True" ]; then
     codex plugin add copernicus@copernicus
 fi
 
-if [ -f /usr/lib/systemd/user/codex-update-manager.service ] \
+if [ -f "$UPDATE_SERVICE_FILE" ] \
     && command -v systemctl >/dev/null 2>&1 \
     && ! systemctl --user enable --now codex-update-manager.service; then
     printf '%s\n' \

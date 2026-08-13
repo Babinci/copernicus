@@ -5,6 +5,9 @@
 - Added the code-generated Kubuntu 24.04.4 image workflow: signed and pinned
   source verification, interactive Calamares safety, local package pinning,
   self-contained plugin onboarding, provenance sidecars, and remote-off defaults.
+- Added synthetic full-profile, boot-payload, metadata-coherence, and hermetic
+  first-run failure/retry coverage; output sidecars now reject dangling links,
+  and the bundled system marketplace is root-owned and non-user-writable.
 
 ## 2026-08-12
 

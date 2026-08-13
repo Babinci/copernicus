@@ -52,7 +52,9 @@ sudo scripts/build-kubuntu-image.sh \
 The builder refuses an unpinned local base ISO, an unpinned or non-amd64
 `codex-desktop` package, an existing output path, and a full build without the
 private-payload acknowledgement. It writes the ISO last, beside a checksum and
-JSON provenance record. It never writes to a disk device.
+JSON provenance record. The bundled system marketplace is normalized to
+`root:root` and is not group- or world-writable. The builder never writes to a
+disk device.
 
 The base ISO and local Desktop package are content-pinned, while Ubuntu archive
 dependencies are resolved when the image is built. Their exact installed
@@ -79,14 +81,23 @@ Run the deterministic smoke test:
 
 ```bash
 bash tests/kubuntu_image_smoke.sh
+bash tests/kubuntu_first_run_smoke.sh
 ```
+
+The image test exercises both marker-only and synthetic full-profile builds,
+including package identity and hash refusal, payload staging, resolver and
+service-start-policy restoration, manifest/checksum/provenance coherence, and
+BIOS/UEFI boot-image preservation. The first-run test covers missing Codex,
+list fallbacks, malformed state, partial retry, idempotency, and best-effort
+updater enablement without touching the host service.
 
 For a release candidate, also boot the marker ISO in disposable BIOS and UEFI
 virtual machines, complete one UEFI install to an empty virtual disk, boot that
 disk, and inspect `/etc/copernicus-image-release`. The repository includes
-`packaging/kubuntu-image/Containerfile.vm-test` for a pinned QEMU/OVMF/VNC test
-environment. The marker gate proves that Calamares transferred the rebuilt
-SquashFS; it does not certify every physical laptop, firmware, GPU, Wi-Fi
+`packaging/kubuntu-image/Containerfile.vm-test` for a reusable Ubuntu 24.04
+QEMU/OVMF/VNC test environment. The marker gate proves that Calamares
+transferred the rebuilt SquashFS; it does not certify every physical laptop,
+firmware, GPU, Wi-Fi
 adapter, or Secure Boot configuration.
 
 ## Remote sessions and hardware

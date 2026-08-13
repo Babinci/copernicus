@@ -3,21 +3,28 @@ set -Eeuo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILDER="$REPO_DIR/scripts/build-kubuntu-image.sh"
-FIRST_RUN="$REPO_DIR/packaging/kubuntu-image/copernicus-first-run"
 
 fail() {
     printf 'FAIL: %s\n' "$*" >&2
     exit 1
 }
 
-for tool in xorriso mksquashfs unsquashfs sha256sum python3; do
+for tool in dpkg-deb fakeroot xorriso mksquashfs unsquashfs sha256sum python3; do
     command -v "$tool" >/dev/null 2>&1 || fail "missing test dependency: $tool"
 done
 
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
-mkdir -p "$work/rootfs/etc" "$work/iso/casper"
+mkdir -p \
+    "$work/rootfs/etc" \
+    "$work/rootfs/tmp" \
+    "$work/rootfs/usr/sbin" \
+    "$work/rootfs/var/lib/apt/lists" \
+    "$work/iso/casper"
 printf 'ID=ubuntu\nVERSION_ID="24.04"\n' >"$work/rootfs/etc/os-release"
+ln -s /run/systemd/resolve/stub-resolv.conf "$work/rootfs/etc/resolv.conf"
+printf '# original policy\nexit 77\n' >"$work/rootfs/usr/sbin/policy-rc.d"
+chmod 0744 "$work/rootfs/usr/sbin/policy-rc.d"
 mksquashfs "$work/rootfs" "$work/iso/casper/filesystem.squashfs" \
     -noappend -all-root -comp xz -quiet >/dev/null
 du -sx --block-size=1 "$work/rootfs" | awk '{print $1}' \
@@ -43,6 +50,16 @@ fi
 
 "$BUILDER" --help >/dev/null
 
+ln -s missing "$work/symlink-output.iso.sha256"
+if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
+    --output "$work/symlink-output.iso" --marker-only >/dev/null 2>&1; then
+    fail "dangling output sidecar was overwritten"
+fi
+[ -L "$work/symlink-output.iso.sha256" ] \
+    || fail "dangling output sidecar was not preserved"
+[ ! -e "$work/symlink-output.iso" ] \
+    || fail "sidecar refusal still promoted an ISO"
+
 if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$bad_base_sha" \
     --output "$work/bad.iso" --marker-only >/dev/null 2>&1; then
     fail "bad source hash was accepted"
@@ -64,6 +81,29 @@ unsquashfs -d "$work/output-root" "$work/output.squashfs" >/dev/null
     || fail "marker did not reach rebuilt SquashFS"
 grep -q '^PROFILE=marker-only$' "$work/output-root/etc/copernicus-image-release" \
     || fail "marker profile is wrong"
+grep -q '^KUBUNTU_RELEASE=24.04.4$' "$work/output-root/etc/copernicus-image-release" \
+    || fail "marker release is wrong"
+grep -q '^ARCH=amd64$' "$work/output-root/etc/copernicus-image-release" \
+    || fail "marker architecture is wrong"
+grep -q "^SOURCE_ISO_SHA256=${base_sha}$" \
+    "$work/output-root/etc/copernicus-image-release" \
+    || fail "marker source hash is wrong"
+grep -q '^REMOTE_SERVICES_ENABLED=false$' \
+    "$work/output-root/etc/copernicus-image-release" \
+    || fail "marker remote policy is wrong"
+
+source_compression="$(unsquashfs -s "$work/iso/casper/filesystem.squashfs" \
+    | awk '$1 == "Compression" {print $2; exit}')"
+output_compression="$(unsquashfs -s "$work/output.squashfs" \
+    | awk '$1 == "Compression" {print $2; exit}')"
+source_block_size="$(unsquashfs -s "$work/iso/casper/filesystem.squashfs" \
+    | awk '$1 == "Block" && $2 == "size" {print $3; exit}')"
+output_block_size="$(unsquashfs -s "$work/output.squashfs" \
+    | awk '$1 == "Block" && $2 == "size" {print $3; exit}')"
+[ "$output_compression" = "$source_compression" ] \
+    || fail "SquashFS compression was not preserved"
+[ "$output_block_size" = "$source_block_size" ] \
+    || fail "SquashFS block size was not preserved"
 
 source_boot="$work/source.boot"
 output_boot="$work/output.boot"
@@ -79,23 +119,63 @@ xorriso -indev "$work/output.iso" -report_el_torito plain 2>&1 \
 grep -q 'BIOS' "$source_boot" || fail "source BIOS boot entry missing"
 grep -q 'UEFI' "$source_boot" || fail "source UEFI boot entry missing"
 cmp -s "$source_boot" "$output_boot" || fail "boot catalog was not replayed"
+for boot_image in bios.img efi.img; do
+    xorriso -osirrox on -indev "$work/base.iso" \
+        -extract "/$boot_image" "$work/base-$boot_image" >/dev/null 2>&1
+    xorriso -osirrox on -indev "$work/output.iso" \
+        -extract "/$boot_image" "$work/output-$boot_image" >/dev/null 2>&1
+    if [ "$boot_image" = bios.img ]; then
+        python3 - "$work/base-$boot_image" "$work/output-$boot_image" <<'PY'
+import pathlib
+import sys
+
+def normalized(path):
+    value = bytearray(pathlib.Path(path).read_bytes())
+    value[8:64] = b"\0" * 56  # El Torito boot-info table is layout-dependent.
+    return value
+
+assert normalized(sys.argv[1]) == normalized(sys.argv[2])
+PY
+    else
+        cmp -s "$work/base-$boot_image" "$work/output-$boot_image" \
+            || fail "$boot_image bytes changed during boot replay"
+    fi
+done
 
 xorriso -osirrox on -indev "$work/output.iso" \
     -extract /md5sum.txt "$work/output.md5" >/dev/null 2>&1
+xorriso -osirrox on -indev "$work/output.iso" \
+    -extract /casper/filesystem.size "$work/output.size" >/dev/null 2>&1
 expected_md5="$(md5sum "$work/output.squashfs" | awk '{print $1}')"
 grep -Eq "^${expected_md5} +\\./casper/filesystem.squashfs$" "$work/output.md5" \
     || fail "SquashFS md5 metadata is stale"
+expected_size_md5="$(md5sum "$work/output.size" | awk '{print $1}')"
+grep -Eq "^${expected_size_md5} +\\./casper/filesystem.size$" "$work/output.md5" \
+    || fail "filesystem.size md5 metadata is stale"
+expected_size="$(du -sx --block-size=1 "$work/output-root" | awk '{print $1}')"
+[ "$(cat "$work/output.size")" = "$expected_size" ] \
+    || fail "filesystem.size content is stale"
 
-python3 - "$work/output.iso.provenance.json" "$base_sha" <<'PY'
+python3 - "$work/output.iso.provenance.json" "$work/output.iso" "$base_sha" <<'PY'
+import hashlib
 import json
+import pathlib
 import sys
 
 value = json.load(open(sys.argv[1], encoding="utf-8"))
+output = pathlib.Path(sys.argv[2])
 assert value["schema_version"] == "copernicus.kubuntu-image.v1"
-assert value["source"]["sha256"] == sys.argv[2]
+assert value["source"] == {
+    "filename": "base.iso",
+    "sha256": sys.argv[3],
+    "verification": "local-pinned",
+}
 assert value["profile"] == "marker-only"
 assert value["codex_deb"] is None
+assert value["packages"] == []
 assert value["remote_services_enabled"] is False
+assert value["output"]["filename"] == output.name
+assert value["output"]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
 PY
 
 if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
@@ -103,44 +183,228 @@ if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
     fail "existing output was overwritten"
 fi
 
-mkdir -p "$work/bin" "$work/codex-state"
-cat >"$work/bin/codex" <<'SH'
+make_test_deb() {
+    package="$1"
+    arch="$2"
+    output="$3"
+    root="$work/deb-$package-$arch"
+    mkdir -p "$root/DEBIAN" "$root/usr/share/copernicus-image-test"
+    cat >"$root/DEBIAN/control" <<EOF
+Package: $package
+Version: 0.0.0-test
+Architecture: $arch
+Maintainer: Copernicus Tests <tests@example.invalid>
+Description: Synthetic package for the Kubuntu image smoke test
+EOF
+    printf '%s\n' "$package/$arch" >"$root/usr/share/copernicus-image-test/payload.txt"
+    dpkg-deb --build "$root" "$output" >/dev/null
+}
+
+mkdir -p "$work/fake-bin"
+cat >"$work/fake-bin/id" <<'SH'
 #!/usr/bin/env bash
 set -eu
-state="${CODEX_TEST_STATE:?}"
-printf '%s\n' "$*" >>"$state/calls"
-case "$*" in
-    'plugin marketplace list --json')
-        if [ -e "$state/marketplace" ]; then
-            printf '{"marketplaces":[{"name":"copernicus"}]}\n'
-        else
-            printf '{"marketplaces":[]}\n'
-        fi
+if [ "${1:-}" = -u ]; then
+    printf '0\n'
+else
+    exec /usr/bin/id "$@"
+fi
+SH
+cat >"$work/fake-bin/chroot" <<'SH'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+root="$1"
+shift
+printf '%q ' "$@" >>"${CODEX_TEST_CHROOT_LOG:?}"
+printf '\n' >>"$CODEX_TEST_CHROOT_LOG"
+if [ "${1:-}" = /usr/bin/env ]; then
+    shift
+    [ "${1:-}" = DEBIAN_FRONTEND=noninteractive ] && shift
+fi
+command_name="${1:-}"
+shift || true
+check_build_guards() {
+    [ -f "$root/etc/resolv.conf" ] && [ ! -L "$root/etc/resolv.conf" ]
+    set +e
+    "$root/usr/sbin/policy-rc.d"
+    policy_status=$?
+    set -e
+    [ "$policy_status" -eq 101 ]
+}
+case "$command_name" in
+    apt-get)
+        action="${1:-}"
+        case "$action" in
+            update)
+                [ "$*" = 'update -qq' ]
+                check_build_guards
+                ;;
+            install)
+                [ "$*" = 'install -y /tmp/copernicus-image-codex.deb' ]
+                check_build_guards
+                /usr/bin/dpkg-deb -x "$root/tmp/copernicus-image-codex.deb" "$root"
+                ;;
+            clean) [ "$*" = clean ] ;;
+            *) exit 90 ;;
+        esac
         ;;
-    'plugin marketplace add /usr/share/copernicus/marketplace')
-        touch "$state/marketplace"
+    dpkg-query)
+        case "$*" in
+            '-W -f=${db:Status-Status} codex-desktop') printf 'installed\n' ;;
+            '-W -f=${binary:Package}\t${Version}\n')
+                printf 'base-fixture\t1.0\ncodex-desktop\t0.0.0-test\n'
+                ;;
+            *) exit 92 ;;
+        esac
         ;;
-    'plugin list --json')
-        if [ -e "$state/plugin" ]; then
-            printf '{"installed":[{"pluginId":"copernicus@copernicus","installed":true}]}\n'
-        else
-            printf '{"installed":[]}\n'
-        fi
-        ;;
-    'plugin add copernicus@copernicus')
-        touch "$state/plugin"
-        ;;
-    *) exit 9 ;;
+    *) exit 91 ;;
 esac
 SH
-chmod +x "$work/bin/codex"
-for _ in 1 2; do
-    CODEX_TEST_STATE="$work/codex-state" PATH="$work/bin:$PATH" \
-        bash "$FIRST_RUN" >/dev/null
-done
-[ "$(grep -c '^plugin marketplace add ' "$work/codex-state/calls")" -eq 1 ] \
-    || fail "first-run helper added the marketplace more than once"
-[ "$(grep -c '^plugin add ' "$work/codex-state/calls")" -eq 1 ] \
-    || fail "first-run helper installed the plugin more than once"
+cat >"$work/fake-bin/chown" <<'SH'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+printf '%s\n' "$*" >>"${CODEX_TEST_CHOWN_LOG:?}"
+[ "${1:-}" = -R ] && [ "${2:-}" = 0:0 ]
+case "${3:-}" in
+    */rootfs/usr/share/copernicus/marketplace) ;;
+    *) exit 93 ;;
+esac
+exec /usr/bin/chown "$@"
+SH
+chmod +x "$work/fake-bin/id" "$work/fake-bin/chroot" "$work/fake-bin/chown"
+
+make_test_deb codex-desktop amd64 "$work/codex-desktop.deb"
+make_test_deb other-package amd64 "$work/other-package.deb"
+make_test_deb codex-desktop i386 "$work/codex-desktop-i386.deb"
+deb_sha="$(sha256sum "$work/codex-desktop.deb" | awk '{print $1}')"
+other_sha="$(sha256sum "$work/other-package.deb" | awk '{print $1}')"
+i386_sha="$(sha256sum "$work/codex-desktop-i386.deb" | awk '{print $1}')"
+
+expect_full_rejection() {
+    name="$1"
+    expected="$2"
+    shift 2
+    set +e
+    rejection_output="$(PATH="$work/fake-bin:$PATH" "$BUILDER" "$@" 2>&1)"
+    rejection_status=$?
+    set -e
+    [ "$rejection_status" -ne 0 ] || fail "$name was accepted"
+    printf '%s\n' "$rejection_output" | grep -Fq -- "$expected" \
+        || fail "$name returned the wrong error"
+    for suffix in '' .sha256 .provenance.json; do
+        [ ! -e "$work/$name.iso$suffix" ] && [ ! -L "$work/$name.iso$suffix" ] \
+            || fail "$name promoted an output"
+    done
+}
+
+common_full=(
+    --base-iso "$work/base.iso"
+    --base-sha256 "$base_sha"
+)
+expect_full_rejection missing-ack '--accept-private-codex-payload is required' \
+    "${common_full[@]}" --output "$work/missing-ack.iso" \
+    --codex-deb "$work/codex-desktop.deb" --codex-deb-sha256 "$deb_sha"
+expect_full_rejection bad-deb-sha 'Codex package SHA256 mismatch' \
+    "${common_full[@]}" --output "$work/bad-deb-sha.iso" \
+    --codex-deb "$work/codex-desktop.deb" --codex-deb-sha256 "$bad_base_sha" \
+    --accept-private-codex-payload
+expect_full_rejection wrong-package 'expected package codex-desktop' \
+    "${common_full[@]}" --output "$work/wrong-package.iso" \
+    --codex-deb "$work/other-package.deb" --codex-deb-sha256 "$other_sha" \
+    --accept-private-codex-payload
+expect_full_rejection wrong-architecture 'expected amd64 Codex package' \
+    "${common_full[@]}" --output "$work/wrong-architecture.iso" \
+    --codex-deb "$work/codex-desktop-i386.deb" --codex-deb-sha256 "$i386_sha" \
+    --accept-private-codex-payload
+[ ! -e "$work/chroot.log" ] || fail "rejected package reached chroot"
+
+CODEX_TEST_CHROOT_LOG="$work/chroot.log" CODEX_TEST_CHOWN_LOG="$work/chown.log" \
+    PATH="$work/fake-bin:$PATH" \
+    fakeroot -- "$BUILDER" "${common_full[@]}" --output "$work/full-output.iso" \
+    --codex-deb "$work/codex-desktop.deb" --codex-deb-sha256 "$deb_sha" \
+    --accept-private-codex-payload >/dev/null
+
+xorriso -osirrox on -indev "$work/full-output.iso" \
+    -extract /casper/filesystem.squashfs "$work/full-output.squashfs" >/dev/null 2>&1
+xorriso -osirrox on -indev "$work/full-output.iso" \
+    -extract /casper/filesystem.manifest "$work/full-output.manifest" >/dev/null 2>&1
+xorriso -osirrox on -indev "$work/full-output.iso" \
+    -extract /md5sum.txt "$work/full-output.md5" >/dev/null 2>&1
+unsquashfs -d "$work/full-output-root" "$work/full-output.squashfs" >/dev/null
+[ "$(wc -l <"$work/chown.log")" -eq 1 ] \
+    || fail "marketplace ownership was not normalized exactly once"
+
+full_root="$work/full-output-root"
+grep -q '^PROFILE=full$' "$full_root/etc/copernicus-image-release" \
+    || fail "full image marker profile is wrong"
+grep -q '^CODEX_DESKTOP_PACKAGE=codex-desktop$' "$full_root/etc/copernicus-image-release" \
+    || fail "full image marker package is wrong"
+grep -q '^CODEX_DESKTOP_VERSION=0.0.0-test$' "$full_root/etc/copernicus-image-release" \
+    || fail "full image marker version is wrong"
+grep -q "^CODEX_DEB_SHA256=${deb_sha}$" "$full_root/etc/copernicus-image-release" \
+    || fail "full image marker package hash is wrong"
+grep -q '^COPERNICUS_PLUGIN_BUNDLED=true$' "$full_root/etc/copernicus-image-release" \
+    || fail "full image marker omits plugin state"
+[ "$(cat "$full_root/usr/share/copernicus-image-test/payload.txt")" = 'codex-desktop/amd64' ] \
+    || fail "synthetic package payload is missing"
+[ -f "$full_root/usr/share/copernicus/marketplace/.agents/plugins/marketplace.json" ] \
+    || fail "bundled marketplace metadata is missing"
+[ -f "$full_root/usr/share/copernicus/marketplace/plugins/copernicus/.codex-plugin/plugin.json" ] \
+    || fail "bundled Copernicus plugin is missing"
+unsquashfs -ll "$work/full-output.squashfs" \
+    usr/share/copernicus/marketplace >"$work/full-marketplace.list"
+if ! awk '
+    $NF ~ /\/usr\/share\/copernicus\/marketplace(\/|$)/ && $2 != "root/root" {exit 1}
+' "$work/full-marketplace.list"; then
+    sed -n '1,40p' "$work/full-marketplace.list" >&2
+    fail "bundled marketplace is not root-owned"
+fi
+if ! awk '
+    $NF ~ /\/usr\/share\/copernicus\/marketplace(\/|$)/ &&
+        (substr($1, 6, 1) == "w" || substr($1, 9, 1) == "w") {exit 1}
+' "$work/full-marketplace.list"; then
+    sed -n '1,40p' "$work/full-marketplace.list" >&2
+    fail "bundled marketplace is group- or world-writable"
+fi
+[ -x "$full_root/usr/local/bin/copernicus-first-run" ] \
+    || fail "first-run helper is missing or not executable"
+[ -f "$full_root/usr/share/applications/copernicus-first-run.desktop" ] \
+    || fail "first-run desktop entry is missing"
+[ ! -e "$full_root/tmp/copernicus-image-codex.deb" ] \
+    || fail "staged package was left in the image"
+[ -L "$full_root/etc/resolv.conf" ] \
+    && [ "$(readlink "$full_root/etc/resolv.conf")" = /run/systemd/resolve/stub-resolv.conf ] \
+    || fail "resolver symlink was not restored"
+cmp -s "$work/rootfs/usr/sbin/policy-rc.d" "$full_root/usr/sbin/policy-rc.d" \
+    || fail "policy-rc.d was not restored"
+[ "$(stat -c '%a' "$full_root/usr/sbin/policy-rc.d")" = 744 ] \
+    || fail "policy-rc.d mode was not restored"
+grep -q $'^codex-desktop\t0.0.0-test$' "$work/full-output.manifest" \
+    || fail "full image manifest omits the installed package"
+manifest_md5="$(md5sum "$work/full-output.manifest" | awk '{print $1}')"
+grep -Eq "^${manifest_md5} +\\./casper/filesystem.manifest$" "$work/full-output.md5" \
+    || fail "full image manifest md5 metadata is stale"
+
+python3 - "$work/full-output.iso.provenance.json" "$work/full-output.iso" \
+    "$base_sha" "$deb_sha" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+value = json.load(open(sys.argv[1], encoding="utf-8"))
+output = pathlib.Path(sys.argv[2])
+assert value["profile"] == "full"
+assert value["source"]["sha256"] == sys.argv[3]
+assert value["output"]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
+assert value["codex_deb"] == {
+    "package": "codex-desktop",
+    "version": "0.0.0-test",
+    "architecture": "amd64",
+    "sha256": sys.argv[4],
+}
+assert value["packages"] == ["codex-desktop"]
+assert value["remote_services_enabled"] is False
+PY
 
 printf 'Kubuntu image smoke tests passed\n'
