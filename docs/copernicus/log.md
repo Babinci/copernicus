@@ -1,5 +1,11 @@
 # Copernicus documentation log
 
+## 2026-08-13
+
+- Added the code-generated Kubuntu 24.04.4 image workflow: signed and pinned
+  source verification, interactive Calamares safety, local package pinning,
+  self-contained plugin onboarding, provenance sidecars, and remote-off defaults.
+
 ## 2026-08-12
 
 - Generalized Breathe's lead-owned closeout from decision-only briefs to one

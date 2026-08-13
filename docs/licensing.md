@@ -11,6 +11,7 @@ review of the terms that apply to a particular user, jurisdiction, or release.
 | Copernicus and inherited wrapper source | MIT, with both copyrights in [`LICENSE`](../LICENSE) | Source may be used under MIT. |
 | Copernicus plugin | MIT, plus the bundled third-party notices | One plugin install may distribute the self-contained skills. |
 | Locally generated Desktop app or native package | Composite: MIT wrapper plus upstream proprietary application and other dependencies | Not an MIT package as a whole; build locally from an authorized upstream copy. |
+| Locally generated Kubuntu installer ISO with Desktop payload | Composite: Kubuntu and Ubuntu packages under their own licenses, MIT wrapper/plugin source, and the upstream proprietary application | Keep private unless a preflight clears redistribution of the exact image and all included components. |
 | `assets/codex.png` | OpenAI-owned application icon; excluded from MIT | Keep unmodified, acknowledge ownership, avoid implied endorsement, and follow current brand rules. |
 | Rust, npm, Electron, Node.js, and optional feature dependencies | Their own licenses, recorded by their upstream packages and lockfiles | Preserve the notices required by each dependency when distributing a generated binary. |
 
@@ -64,8 +65,8 @@ public plugin distribution, the current
 
 ## Before any binary release
 
-Do not add a generated `.deb`, `.rpm`, pacman package, AppImage, Nix store path,
-DMG, APK, or converted app to a release or binary cache without a new licensing
+Do not add a generated installer ISO, `.deb`, `.rpm`, pacman package, AppImage,
+Nix store path, DMG, APK, or converted app to a release or binary cache without a new licensing
 preflight. At minimum, that preflight must establish upstream redistribution
 authority, include all dependency notices, verify current brand rules, inspect
 the exact payload, and record the approval. Source CI success is not that

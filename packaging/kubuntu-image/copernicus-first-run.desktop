@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Install Copernicus Skills
+Comment=Install the bundled GPT-only Copernicus plugin for this user
+Exec=konsole -e /usr/local/bin/copernicus-first-run
+Icon=codex-desktop
+Terminal=false
+Categories=Development;

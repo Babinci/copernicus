@@ -39,6 +39,8 @@ jobs:
           bash -n scripts/build-rpm.sh
           bash -n scripts/build-pacman.sh
           bash -n scripts/build-appimage.sh
+          bash -n scripts/build-kubuntu-image.sh
+          bash -n packaging/kubuntu-image/copernicus-first-run
           bash -n scripts/ci/update-nix-hashes.sh
           bash -n scripts/ci/validate-nix-pins.sh
 
@@ -77,7 +79,10 @@ jobs:
       - name: Run script smoke tests
         run: |
           set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y fakeroot squashfs-tools xorriso
           bash tests/scripts_smoke.sh
+          bash tests/kubuntu_image_smoke.sh
           {
             echo "## Rust and Smoke Tests"
             echo ""

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+MARKETPLACE_ROOT="/usr/share/copernicus/marketplace"
+
+if ! command -v codex >/dev/null 2>&1; then
+    printf '%s\n' \
+        "Codex CLI is not available yet." \
+        "Launch ChatGPT Desktop once, complete its native sign-in, then run:" \
+        "  copernicus-first-run"
+    exit 3
+fi
+
+has_marketplace="$({ codex plugin marketplace list --json 2>/dev/null || printf '{"marketplaces":[]}'; } \
+    | python3 -c 'import json,sys; print(any(x.get("name") == "copernicus" for x in json.load(sys.stdin).get("marketplaces", [])))')"
+if [ "$has_marketplace" != "True" ]; then
+    codex plugin marketplace add "$MARKETPLACE_ROOT"
+fi
+
+has_plugin="$({ codex plugin list --json 2>/dev/null || printf '{"installed":[]}'; } \
+    | python3 -c 'import json,sys; print(any(x.get("pluginId") == "copernicus@copernicus" and x.get("installed") for x in json.load(sys.stdin).get("installed", [])))')"
+if [ "$has_plugin" != "True" ]; then
+    codex plugin add copernicus@copernicus
+fi
+
+if [ -f /usr/lib/systemd/user/codex-update-manager.service ] \
+    && command -v systemctl >/dev/null 2>&1 \
+    && ! systemctl --user enable --now codex-update-manager.service; then
+    printf '%s\n' \
+        "Copernicus plugin installed, but the Desktop updater could not be enabled." \
+        "Retry with: systemctl --user enable --now codex-update-manager.service" >&2
+fi
+
+printf '%s\n' "Copernicus plugin is installed for this user."

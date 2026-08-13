@@ -15,6 +15,7 @@ problem-solving plugin.
 - [Practitioner HTML reports](html-reports.md) — turn evaluated work into a portable human-readable briefing or lesson.
 - [Architecture](architecture.md) — understand Fleet, SAS, receipts, evaluation, and OKF memory.
 - [Scheduled work](scheduled-work.md) — run attended Scheduled tasks or trusted local cron safely.
+- [Code-generated Kubuntu image](kubuntu-image.md) — generate and verify a private plug-and-play Kubuntu installer without personal state.
 - [Licensing and distribution](../licensing.md) — distinguish MIT source, proprietary app output, third-party skills, assets, and CI boundaries.
 - [Coding WebUI](https://github.com/Babinci/coding-webui) — optionally control host Codex sessions
   from a self-hosted responsive web UI or the companion Android client.
