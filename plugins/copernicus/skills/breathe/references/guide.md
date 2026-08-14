@@ -21,7 +21,7 @@ map waves -> typed claims -> semantic reduction -> verified checkpoint state
                                                      |
                                              checkpoint brief
                                                      |
-                              expansion handles -> evidence and roster
+                              expansion handles -> evidence and dissent on request
 ```
 
 - **Encoder:** Luna seats map distinct evidence and express it through one
@@ -82,6 +82,11 @@ remedy inside an explanation does not become a decision unless the user asked
 to choose or authorize it. Before sending, self-check all seven exact headings;
 `Expand` remains required even when its value is `none`.
 
+Keep worker rosters and evidence indexes in the private mission trace by
+default. Do not append them to the conversational brief. Expose trace details
+only when the user requests an expansion; summarize only checkpoint-changing
+seat failures or dissent in `Risks and unknowns`.
+
 ## Experience without surveillance
 
 Breathe improves briefing style from explicit interaction signals. For
@@ -112,7 +117,7 @@ Return a checkpoint brief under 350 words with expandable evidence handles.
 ## Relationship to the other Copernicus skills
 
 - `$rick-rubin` reduces speculative branches before investigation.
-- `$fleet` owns GPT routing, worker execution, wave limits, and rosters.
+- `$fleet` owns GPT routing, worker execution, wave limits, and private seat provenance.
 - `$breathe` owns lead-only gap-driven reduction and the human checkpoint.
 - `$auto-research` owns evaluated experiment cycles and proposed OKF memory.
 - `$html-report` turns authorized results into a durable reader artifact when a

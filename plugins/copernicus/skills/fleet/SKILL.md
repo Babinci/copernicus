@@ -91,7 +91,11 @@ STOP: emit UNVERIFIED when evidence is missing; stop after the bounded result.
 - Do not create immortal agents. Durable state belongs in files, tests, receipts, or scheduled-task history.
 - Do not count correlated Luna outputs as independent validation.
 
-Finish with a roster: `seat | lane | model | status | role | used in synthesis`, followed by verified claims, rejected claims, and the next commands.
+Keep seat provenance in the private run trace. In a normal conversational
+response, lead with the verified outcome and omit the roster. Show a compact
+roster only when the user requests execution provenance, or when a failed or
+unavailable seat or material dissent changes confidence. Then give verified
+claims, rejected or unverified claims, and useful next commands.
 
 Fleet is self-contained: interactive work uses Codex's collaboration surface;
 batch work uses the bundled Python standard-library runner and the user's

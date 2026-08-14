@@ -71,8 +71,12 @@ class PluginTest(unittest.TestCase):
         self.assertIn("do not silently turn it into a decision", breathe)
         self.assertIn("complete checkpoint brief", breathe)
         self.assertIn("execution-heavy work", breathe)
+        self.assertIn("do not append them to a normal response", breathe)
         self.assertIn("terra-first", fleet)
         self.assertIn("luna-breadth", fleet)
+        self.assertIn("omit the roster", fleet)
+        self.assertNotIn("Finish with a roster", fleet)
+        self.assertNotIn("Put the compact Fleet roster", breathe)
 
     def test_third_party_notices_ship_with_the_plugin(self) -> None:
         notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()

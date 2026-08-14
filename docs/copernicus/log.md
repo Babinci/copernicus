@@ -1,5 +1,11 @@
 # Copernicus documentation log
 
+## 2026-08-14
+
+- Made Fleet rosters and Breathe traces opt-in for conversational responses
+  while preserving private execution provenance and checkpoint-changing
+  failures or dissent.
+
 ## 2026-08-13
 
 - Added the code-generated Kubuntu 24.04.4 image workflow: signed and pinned

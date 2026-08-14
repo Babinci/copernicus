@@ -42,8 +42,8 @@ install a daemon, database, provider proxy, or background service.
 | --- | --- | --- |
 | `$grill-me` | Premature implementation hides unresolved product and architecture decisions. | One recommended question at a time, then a compact decision-ready design brief. |
 | `$rick-rubin` | Idea generation is easier than principled selection. | Essence, what stays, what goes, and the hardest cut. |
-| `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Seat roster, typed outputs, verified synthesis, and explicit evidence gaps. |
-| `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next checkpoint. | A checkpoint-complete brief for a decision, verified delivery, or understanding, with expandable claim handles and a compact trace. |
+| `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Typed outputs, private seat provenance, verified synthesis, and explicit evidence gaps. |
+| `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next checkpoint. | A checkpoint-complete brief for a decision, verified delivery, or understanding, with evidence and dissent expandable on request. |
 | `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
 | `$html-report` | Evaluated work still needs a clear human-facing explanation or decision aid. | One portable HTML brief, update, explanation, decision, review, or lesson. |
 | `$retrospective` | Work history is easy to turn into hindsight stories instead of useful learning. | An evidence timeline, first divergence, keep/change/try, and ranked proposal-only actions. |

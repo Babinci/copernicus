@@ -67,9 +67,10 @@ $auto-research on the strongest remaining problem. Keep the graph to five seats,
 name the evaluator and falsifier, run read-only, and leave an OKF proposal bundle.
 ```
 
-The expected result is a small role graph, a roster, supported and `UNVERIFIED`
-claims, evaluator receipts, and proposed selection/strategy/risk cards. Review
-the first cycle before accepting any durable memory.
+The expected result is a small role graph, supported and `UNVERIFIED` claims,
+evaluator receipts, and proposed selection/strategy/risk cards. Execution
+provenance remains available in the private run trace. Review the first cycle
+before accepting any durable memory.
 
 ## First Breathe mission
 

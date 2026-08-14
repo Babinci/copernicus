@@ -82,7 +82,8 @@ safety ceiling, not a target.
 
 Use Codex collaboration when the user is present and the mission benefits from
 live steering. The lead creates bounded seats, waits for their outputs, verifies
-claims, and reports a roster. This mode needs no bundled runner.
+claims, and keeps seat provenance available as a private trace. This mode needs
+no bundled runner.
 
 ### Batch Fleet
 
@@ -107,11 +108,15 @@ Dry-run validates the roster without launching a model or writing a run.
 An interactive mission ends with:
 
 ```text
-seat | lane | model | status | role | used in synthesis
-verified claims
+verified outcome
 rejected or unverified claims
-next commands
+useful next commands
 ```
+
+Omit the roster from normal conversational responses. Include a compact roster
+only when the user asks for execution provenance, or when a failed or unavailable
+seat or material dissent changes confidence. Batch runs still preserve the full
+roster privately.
 
 A batch ends with `roster.json` plus one directory per seat containing
 `answer.md`, `events.jsonl`, `stderr.log`, and `status.json`.

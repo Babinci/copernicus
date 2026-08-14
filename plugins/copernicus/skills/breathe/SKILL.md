@@ -66,7 +66,8 @@ STOP: complete | UNVERIFIED reason
 ```
 
 Duplicate prompts are allowed only for named blind replication. A failed or
-timed-out seat is missing evidence, not a vote. Preserve it in the roster.
+timed-out seat is missing evidence, not a vote. Preserve it in the mission
+trace.
 
 For a shell-driven mission, use Fleet's existing runner rather than writing a
 new dispatcher:
@@ -97,8 +98,8 @@ remains necessary. Correlated model agreement is never verification.
 
 ## Exhale: emit the checkpoint brief
 
-Put the human layer first. Do not make the user read the roster to find the
-checkpoint.
+Put the human layer first. Do not make the user read the execution trace to
+find the checkpoint.
 
 ```text
 BREATHE BRIEF
@@ -124,16 +125,18 @@ Next boundary
 - what continues autonomously, what remains separately authorized, and the next trigger
 
 Expand
-- handles such as C17 evidence, R2 dissent, or W3 roster
+- handles such as C17 evidence or R2 dissent
 ```
 
 Emit every heading in that order. Write `none` when a section has no content;
 do not replace the checkpoint brief with a generic completion summary. Keep the
-section above the trace within the brief budget. Every load-bearing sentence
-must map to a verified claim handle. Put the compact Fleet roster and evidence
-index after the brief, preferably in a collapsed `Trace` section. If
-compression would hide a safety blocker or material dissent, exceed the word
-budget and say why.
+brief within its word budget. Every load-bearing sentence must map to a verified
+claim handle. Keep the evidence index and Fleet roster in the ignored mission
+artifacts; do not append them to a normal response. Expose them only when the
+user asks to expand the trace. If a failed or unavailable seat, safety blocker,
+or material dissent changes checkpoint confidence, summarize that fact in
+`Risks and unknowns` without dumping the roster. If compression would hide a
+safety blocker or material dissent, exceed the word budget and say why.
 
 Before sending the response, check the rendered brief for all seven exact
 headings. Add a missing heading with `none`; never omit `Expand`, including
