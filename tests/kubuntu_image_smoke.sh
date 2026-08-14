@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILDER="$REPO_DIR/scripts/build-kubuntu-image.sh"
+DEVELOPER_BUILDER="$REPO_DIR/scripts/build-kubuntu-developer-image.sh"
 
 fail() {
     printf 'FAIL: %s\n' "$*" >&2
@@ -48,7 +49,13 @@ else
     bad_base_sha="0${base_sha:1}"
 fi
 
-"$BUILDER" --help >/dev/null
+builder_help="$("$BUILDER" --help)"
+grep -q -- '--developer-tools' <<<"$builder_help" \
+    || fail "builder help omits the developer-tools profile"
+[ -x "$DEVELOPER_BUILDER" ] || fail "one-command developer image builder is missing"
+developer_help="$("$DEVELOPER_BUILDER" --help)"
+grep -q 'never writes to a block device' <<<"$developer_help" \
+    || fail "developer builder does not state its disk-safety boundary"
 
 ln -s missing "$work/symlink-output.iso.sha256"
 if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
@@ -65,6 +72,11 @@ if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$bad_base_sha" \
     fail "bad source hash was accepted"
 fi
 [ ! -e "$work/bad.iso" ] || fail "failed build promoted an output"
+if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
+    --output "$work/bad-developer-marker.iso" --marker-only --developer-tools \
+    >/dev/null 2>&1; then
+    fail "developer tools were accepted for the marker-only profile"
+fi
 
 "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
     --output "$work/output.iso" --marker-only >/dev/null
@@ -219,7 +231,7 @@ printf '%q ' "$@" >>"${CODEX_TEST_CHROOT_LOG:?}"
 printf '\n' >>"$CODEX_TEST_CHROOT_LOG"
 if [ "${1:-}" = /usr/bin/env ]; then
     shift
-    [ "${1:-}" = DEBIAN_FRONTEND=noninteractive ] && shift
+    while [[ "${1:-}" == *=* ]]; do shift; done
 fi
 command_name="${1:-}"
 shift || true
@@ -240,9 +252,12 @@ case "$command_name" in
                 check_build_guards
                 ;;
             install)
-                [ "$*" = 'install -y /tmp/copernicus-image-codex.deb' ]
                 check_build_guards
-                /usr/bin/dpkg-deb -x "$root/tmp/copernicus-image-codex.deb" "$root"
+                if [ "$*" = 'install -y /tmp/copernicus-image-codex.deb' ]; then
+                    /usr/bin/dpkg-deb -x "$root/tmp/copernicus-image-codex.deb" "$root"
+                else
+                    [[ " $* " == *' docker-ce '* ]] || exit 94
+                fi
                 ;;
             clean) [ "$*" = clean ] ;;
             *) exit 90 ;;
@@ -251,11 +266,17 @@ case "$command_name" in
     dpkg-query)
         case "$*" in
             '-W -f=${db:Status-Status} codex-desktop') printf 'installed\n' ;;
+            '-W -f=${Version} docker-ce') printf '29.6.1-test\n' ;;
             '-W -f=${binary:Package}\t${Version}\n')
-                printf 'base-fixture\t1.0\ncodex-desktop\t0.0.0-test\n'
+                printf 'base-fixture\t1.0\ncodex-desktop\t0.0.0-test\ndocker-ce\t29.6.1-test\n'
                 ;;
             *) exit 92 ;;
         esac
+        ;;
+    npm)
+        [ "$*" = 'install --global --no-audit --no-fund @openai/codex@0.147.0' ]
+        printf '#!/bin/sh\nexit 0\n' >"$root/opt/node-v24.19.0-linux-x64/bin/codex"
+        chmod +x "$root/opt/node-v24.19.0-linux-x64/bin/codex"
         ;;
     *) exit 91 ;;
 esac
@@ -271,7 +292,30 @@ case "${3:-}" in
 esac
 exec /usr/bin/chown "$@"
 SH
-chmod +x "$work/fake-bin/id" "$work/fake-bin/chroot" "$work/fake-bin/chown"
+cat >"$work/fake-bin/gpg" <<'SH'
+#!/usr/bin/env bash
+set -eu
+[ "${1:-}" = --show-keys ]
+printf 'fpr:::::::::9DC858229FC7DD38854AE2D88D81803C0EBFCD88:\n'
+SH
+chmod +x "$work/fake-bin/id" "$work/fake-bin/chroot" "$work/fake-bin/chown" \
+    "$work/fake-bin/gpg"
+
+mkdir -p "$work/node/node-v24.19.0-linux-x64/bin" \
+    "$work/uv/uv-x86_64-unknown-linux-gnu"
+for command_name in node npm npx; do
+    printf '#!/bin/sh\nexit 0\n' >"$work/node/node-v24.19.0-linux-x64/bin/$command_name"
+    chmod +x "$work/node/node-v24.19.0-linux-x64/bin/$command_name"
+done
+for command_name in uv uvx; do
+    printf '#!/bin/sh\nexit 0\n' >"$work/uv/uv-x86_64-unknown-linux-gnu/$command_name"
+    chmod +x "$work/uv/uv-x86_64-unknown-linux-gnu/$command_name"
+done
+tar -cJf "$work/node.tar.xz" -C "$work/node" node-v24.19.0-linux-x64
+tar -czf "$work/uv.tar.gz" -C "$work/uv" uv-x86_64-unknown-linux-gnu
+printf 'synthetic Docker key\n' >"$work/docker.asc"
+node_sha="$(sha256sum "$work/node.tar.xz" | awk '{print $1}')"
+uv_sha="$(sha256sum "$work/uv.tar.gz" | awk '{print $1}')"
 
 make_test_deb codex-desktop amd64 "$work/codex-desktop.deb"
 make_test_deb other-package amd64 "$work/other-package.deb"
@@ -279,6 +323,25 @@ make_test_deb codex-desktop i386 "$work/codex-desktop-i386.deb"
 deb_sha="$(sha256sum "$work/codex-desktop.deb" | awk '{print $1}')"
 other_sha="$(sha256sum "$work/other-package.deb" | awk '{print $1}')"
 i386_sha="$(sha256sum "$work/codex-desktop-i386.deb" | awk '{print $1}')"
+
+wrapper_output="$work/wrapper/out/developer.iso"
+wrapper_plan="$("$DEVELOPER_BUILDER" --dry-run --download-base --workspace "$work/wrapper" \
+    --codex-deb "$work/codex-desktop.deb" --output "$wrapper_output")"
+grep -q 'developer-tools profile' <<<"$wrapper_plan" \
+    || fail "one-command wrapper did not select the developer profile"
+[ ! -e "$work/wrapper" ] || fail "developer wrapper dry run wrote to its workspace"
+if "$DEVELOPER_BUILDER" --dry-run --download-base --workspace "$work/wrapper" \
+    --codex-deb "$work/codex-desktop.deb" --output "$work/outside.iso" \
+    >/dev/null 2>&1; then
+    fail "developer wrapper accepted output outside its workspace"
+fi
+mkdir -p "$work/wrapper-symlink" "$work/symlink-target"
+ln -s "$work/symlink-target" "$work/wrapper-symlink/out"
+if "$DEVELOPER_BUILDER" --dry-run --download-base --workspace "$work/wrapper-symlink" \
+    --codex-deb "$work/codex-desktop.deb" \
+    --output "$work/wrapper-symlink/out/developer.iso" >/dev/null 2>&1; then
+    fail "developer wrapper followed an output-directory symlink outside its workspace"
+fi
 
 expect_full_rejection() {
     name="$1"
@@ -316,13 +379,26 @@ expect_full_rejection wrong-architecture 'expected amd64 Codex package' \
     "${common_full[@]}" --output "$work/wrong-architecture.iso" \
     --codex-deb "$work/codex-desktop-i386.deb" --codex-deb-sha256 "$i386_sha" \
     --accept-private-codex-payload
+set +e
+invalid_version_output="$(COPERNICUS_NODE_VERSION=../../escape PATH="$work/fake-bin:$PATH" \
+    "$BUILDER" "${common_full[@]}" --output "$work/invalid-node-version.iso" \
+    --codex-deb "$work/codex-desktop.deb" --codex-deb-sha256 "$deb_sha" \
+    --accept-private-codex-payload --developer-tools 2>&1)"
+invalid_version_status=$?
+set -e
+[ "$invalid_version_status" -ne 0 ] || fail "invalid Node.js version was accepted"
+grep -Fq 'invalid Node.js version' <<<"$invalid_version_output" \
+    || fail "invalid Node.js version returned the wrong error"
 [ ! -e "$work/chroot.log" ] || fail "rejected package reached chroot"
 
 CODEX_TEST_CHROOT_LOG="$work/chroot.log" CODEX_TEST_CHOWN_LOG="$work/chown.log" \
+    COPERNICUS_NODE_URL="file://$work/node.tar.xz" COPERNICUS_NODE_SHA256="$node_sha" \
+    COPERNICUS_UV_URL="file://$work/uv.tar.gz" COPERNICUS_UV_SHA256="$uv_sha" \
+    COPERNICUS_DOCKER_GPG_URL="file://$work/docker.asc" \
     PATH="$work/fake-bin:$PATH" \
     fakeroot -- "$BUILDER" "${common_full[@]}" --output "$work/full-output.iso" \
     --codex-deb "$work/codex-desktop.deb" --codex-deb-sha256 "$deb_sha" \
-    --accept-private-codex-payload >/dev/null
+    --accept-private-codex-payload --developer-tools >/dev/null
 
 xorriso -osirrox on -indev "$work/full-output.iso" \
     -extract /casper/filesystem.squashfs "$work/full-output.squashfs" >/dev/null 2>&1
@@ -345,6 +421,27 @@ grep -q "^CODEX_DEB_SHA256=${deb_sha}$" "$full_root/etc/copernicus-image-release
     || fail "full image marker package hash is wrong"
 grep -q '^COPERNICUS_PLUGIN_BUNDLED=true$' "$full_root/etc/copernicus-image-release" \
     || fail "full image marker omits plugin state"
+grep -q '^DEVELOPER_TOOLS_ENABLED=true$' "$full_root/etc/copernicus-image-release" \
+    || fail "developer image marker omits its profile"
+grep -q '^NODE_VERSION=24.19.0$' "$full_root/etc/copernicus-developer-tools" \
+    || fail "developer tool manifest omits Node.js"
+grep -q '^UV_VERSION=0.11.32$' "$full_root/etc/copernicus-developer-tools" \
+    || fail "developer tool manifest omits uv"
+grep -q '^CODEX_CLI_VERSION=0.147.0$' "$full_root/etc/copernicus-developer-tools" \
+    || fail "developer tool manifest omits Codex CLI"
+grep -q '^DOCKER_VERSION=29.6.1-test$' "$full_root/etc/copernicus-developer-tools" \
+    || fail "developer tool manifest omits Docker"
+grep -q '^DOCKER_GROUP_ACCESS=false$' "$full_root/etc/copernicus-developer-tools" \
+    || fail "developer tool manifest granted root-equivalent Docker access"
+grep -q '^REMOTE_DOCKER_API=false$' "$full_root/etc/copernicus-developer-tools" \
+    || fail "developer tool manifest enabled the remote Docker API"
+for command_name in node npm npx uv uvx codex fd; do
+    [ -e "$full_root/usr/local/bin/$command_name" ] \
+        || [ -L "$full_root/usr/local/bin/$command_name" ] \
+        || fail "developer image omits $command_name"
+done
+[ -f "$full_root/etc/apt/sources.list.d/docker.sources" ] \
+    || fail "developer image omits Docker's apt source"
 [ "$(cat "$full_root/usr/share/copernicus-image-test/payload.txt")" = 'codex-desktop/amd64' ] \
     || fail "synthetic package payload is missing"
 [ -f "$full_root/usr/share/copernicus/marketplace/.agents/plugins/marketplace.json" ] \
@@ -381,6 +478,8 @@ cmp -s "$work/rootfs/usr/sbin/policy-rc.d" "$full_root/usr/sbin/policy-rc.d" \
     || fail "policy-rc.d mode was not restored"
 grep -q $'^codex-desktop\t0.0.0-test$' "$work/full-output.manifest" \
     || fail "full image manifest omits the installed package"
+grep -q $'^docker-ce\t29.6.1-test$' "$work/full-output.manifest" \
+    || fail "full image manifest omits Docker"
 manifest_md5="$(md5sum "$work/full-output.manifest" | awk '{print $1}')"
 grep -Eq "^${manifest_md5} +\\./casper/filesystem.manifest$" "$work/full-output.md5" \
     || fail "full image manifest md5 metadata is stale"
@@ -404,6 +503,14 @@ assert value["codex_deb"] == {
     "sha256": sys.argv[4],
 }
 assert value["packages"] == ["codex-desktop"]
+assert value["developer_tools"] == {
+    "node_version": "24.19.0",
+    "uv_version": "0.11.32",
+    "codex_cli_version": "0.147.0",
+    "docker_version": "29.6.1-test",
+    "docker_group_access": False,
+    "remote_docker_api": False,
+}
 assert value["remote_services_enabled"] is False
 PY
 

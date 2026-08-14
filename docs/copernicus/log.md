@@ -2,6 +2,9 @@
 
 ## 2026-08-14
 
+- Added a one-command, disk-safe Kubuntu developer image builder with an opt-in
+  Docker/Node/uv/Codex/Python tool profile, pinned standalone inputs, explicit
+  privilege boundaries, and synthetic ISO/provenance coverage.
 - Made Fleet rosters and Breathe traces opt-in for conversational responses
   while preserving private execution provenance and checkpoint-changing
   failures or dissent.

@@ -40,6 +40,7 @@ jobs:
           bash -n scripts/build-pacman.sh
           bash -n scripts/build-appimage.sh
           bash -n scripts/build-kubuntu-image.sh
+          bash -n scripts/build-kubuntu-developer-image.sh
           bash -n packaging/kubuntu-image/copernicus-first-run
           bash -n tests/kubuntu_first_run_smoke.sh
           bash -n scripts/ci/update-nix-hashes.sh

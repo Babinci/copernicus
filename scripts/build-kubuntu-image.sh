@@ -6,7 +6,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OFFICIAL_NAME="kubuntu-24.04.4-desktop-amd64.iso"
 OFFICIAL_BASE_URL="https://cdimage.ubuntu.com/kubuntu/releases/24.04.4/release"
 OFFICIAL_SHA256="02cda2568cb96c090b0438a31a7d2e7b07357fde16217c215e7c3f45263bcc49"
-STATE_DIR="$REPO_DIR/.copernicus/kubuntu-image"
+STATE_DIR="${COPERNICUS_KUBUNTU_STATE_DIR:-$REPO_DIR/.copernicus/kubuntu-image}"
 BASE_ISO=""
 BASE_SHA256=""
 OUTPUT="$STATE_DIR/out/copernicus-kubuntu-24.04.4-amd64.iso"
@@ -14,6 +14,16 @@ PROFILE="full"
 CODEX_DEB=""
 CODEX_DEB_SHA256=""
 ACCEPT_PRIVATE_PAYLOAD=0
+DEVELOPER_TOOLS=0
+NODE_VERSION="${COPERNICUS_NODE_VERSION:-24.19.0}"
+NODE_URL="${COPERNICUS_NODE_URL:-https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz}"
+NODE_SHA256="${COPERNICUS_NODE_SHA256:-14b342e71204f811bde6153be8e04b62aef63c236fef92b55f9c83154b409647}"
+UV_VERSION="${COPERNICUS_UV_VERSION:-0.11.32}"
+UV_URL="${COPERNICUS_UV_URL:-https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz}"
+UV_SHA256="${COPERNICUS_UV_SHA256:-aab924fd522efd06f1c5f3b93a243864fc453132c94b2dc49f1371b528a4b967}"
+CODEX_CLI_VERSION="${COPERNICUS_CODEX_CLI_VERSION:-0.147.0}"
+DOCKER_GPG_URL="${COPERNICUS_DOCKER_GPG_URL:-https://download.docker.com/linux/ubuntu/gpg}"
+DOCKER_GPG_FINGERPRINT="${COPERNICUS_DOCKER_GPG_FINGERPRINT:-9DC858229FC7DD38854AE2D88D81803C0EBFCD88}"
 
 usage() {
     cat <<'EOF'
@@ -31,6 +41,8 @@ Options:
   --accept-private-codex-payload
                         Confirm the generated ISO stays private unless its
                         proprietary payload is separately cleared for sharing.
+  --developer-tools     Add Docker, Node/npm, uv, Codex CLI, Python, and common
+                        native developer tools to the full profile.
   --marker-only         Add only the harmless transfer-test marker.
   -h, --help            Show this help.
 
@@ -85,6 +97,10 @@ while [ "$#" -gt 0 ]; do
             ACCEPT_PRIVATE_PAYLOAD=1
             shift
             ;;
+        --developer-tools)
+            DEVELOPER_TOOLS=1
+            shift
+            ;;
         --marker-only)
             PROFILE="marker-only"
             shift
@@ -110,9 +126,19 @@ if [ "$PROFILE" = "full" ]; then
     [ "$ACCEPT_PRIVATE_PAYLOAD" -eq 1 ] \
         || die "--accept-private-codex-payload is required for the full profile"
     [ "$(id -u)" -eq 0 ] || die "the full profile must run as root (use sudo or a privileged build container)"
+    if [ "$DEVELOPER_TOOLS" -eq 1 ]; then
+        [[ "$NODE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid Node.js version"
+        [[ "$UV_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid uv version"
+        [[ "$CODEX_CLI_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid Codex CLI version"
+        is_sha256 "$NODE_SHA256" || die "invalid Node.js SHA256"
+        is_sha256 "$UV_SHA256" || die "invalid uv SHA256"
+        [[ "$DOCKER_GPG_FINGERPRINT" =~ ^[0-9A-F]{40}$ ]] \
+            || die "invalid Docker repository key fingerprint"
+    fi
 else
     [ -z "$CODEX_DEB$CODEX_DEB_SHA256" ] && [ "$ACCEPT_PRIVATE_PAYLOAD" -eq 0 ] \
-        || die "Codex package options cannot be used with --marker-only"
+        && [ "$DEVELOPER_TOOLS" -eq 0 ] \
+        || die "full-profile options cannot be used with --marker-only"
 fi
 
 for tool in awk curl du git gpgv grep md5sum mksquashfs python3 sha256sum unsquashfs xorriso; do
@@ -123,6 +149,10 @@ if [ "$PROFILE" = "marker-only" ]; then
 else
     require_tool chroot
     require_tool dpkg-deb
+    if [ "$DEVELOPER_TOOLS" -eq 1 ]; then
+        require_tool gpg
+        require_tool tar
+    fi
 fi
 
 if [ "$PROFILE" = "marker-only" ] && [ "$(id -u)" -ne 0 ] && [ -z "${FAKEROOTKEY:-}" ]; then
@@ -230,6 +260,7 @@ ARCH=amd64
 PROFILE=$PROFILE
 SOURCE_ISO_SHA256=$BASE_SHA256
 REMOTE_SERVICES_ENABLED=false
+DEVELOPER_TOOLS_ENABLED=$([ "$DEVELOPER_TOOLS" -eq 1 ] && printf true || printf false)
 EOF
 if [ "$PROFILE" = "full" ]; then
     cat >>"$rootfs/etc/copernicus-image-release" <<EOF
@@ -242,6 +273,7 @@ fi
 chmod 0644 "$rootfs/etc/copernicus-image-release"
 
 rebuilt_manifest=""
+docker_version=""
 if [ "$PROFILE" = "full" ]; then
     marketplace="$rootfs/usr/share/copernicus/marketplace"
     install -d -m 0755 \
@@ -299,6 +331,79 @@ EOF
     installed_status="$(chroot "$rootfs" dpkg-query -W \
         -f='${db:Status-Status}' "$deb_package")"
     [ "$installed_status" = "installed" ] || die "Codex package did not reach installed state"
+
+    if [ "$DEVELOPER_TOOLS" -eq 1 ]; then
+        node_archive="$work/node.tar.xz"
+        uv_archive="$work/uv.tar.gz"
+        docker_key="$work/docker.asc"
+        curl -fsSL "$NODE_URL" -o "$node_archive"
+        [ "$(sha256sum "$node_archive" | awk '{print $1}')" = "$NODE_SHA256" ] \
+            || die "Node.js archive SHA256 mismatch"
+        curl -fsSL "$UV_URL" -o "$uv_archive"
+        [ "$(sha256sum "$uv_archive" | awk '{print $1}')" = "$UV_SHA256" ] \
+            || die "uv archive SHA256 mismatch"
+        curl -fsSL "$DOCKER_GPG_URL" -o "$docker_key"
+        docker_fingerprint="$(gpg --show-keys --with-colons "$docker_key" 2>/dev/null \
+            | awk -F: '$1 == "fpr" {print $10; exit}')"
+        [ "$docker_fingerprint" = "$DOCKER_GPG_FINGERPRINT" ] \
+            || die "Docker repository key fingerprint mismatch"
+
+        node_dir="/opt/node-v${NODE_VERSION}-linux-x64"
+        mkdir -p "$rootfs/opt" "$work/uv" "$rootfs/etc/apt/keyrings" \
+            "$rootfs/etc/apt/sources.list.d"
+        tar -xJf "$node_archive" -C "$rootfs/opt"
+        [ -x "$rootfs$node_dir/bin/node" ] && [ -x "$rootfs$node_dir/bin/npm" ] \
+            || die "Node.js archive layout is invalid"
+        for command_name in node npm npx; do
+            ln -s "$node_dir/bin/$command_name" "$rootfs/usr/local/bin/$command_name"
+        done
+        tar -xzf "$uv_archive" -C "$work/uv" --strip-components=1
+        install -m 0755 "$work/uv/uv" "$work/uv/uvx" "$rootfs/usr/local/bin/"
+        install -m 0644 "$docker_key" "$rootfs/etc/apt/keyrings/docker.asc"
+        cat >"$rootfs/etc/apt/sources.list.d/docker.sources" <<'EOF'
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: noble
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+        developer_packages=(
+            btop build-essential ca-certificates cmake containerd.io curl
+            docker-buildx-plugin docker-ce docker-ce-cli docker-compose-plugin
+            fd-find fzf gh git git-lfs jq ninja-build p7zip-full pkg-config
+            python3 python3-venv ripgrep rsync shellcheck sqlite3 tmux tree unzip
+            wget xz-utils zip zstd
+        )
+        chroot "$rootfs" /usr/bin/env DEBIAN_FRONTEND=noninteractive \
+            apt-get update -qq
+        chroot "$rootfs" /usr/bin/env DEBIAN_FRONTEND=noninteractive \
+            apt-get install -y "${developer_packages[@]}"
+        chroot "$rootfs" /usr/bin/env \
+            "PATH=$node_dir/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+            npm install --global --no-audit --no-fund "@openai/codex@$CODEX_CLI_VERSION"
+        [ -x "$rootfs$node_dir/bin/codex" ] || die "Codex CLI installation failed"
+        ln -s "$node_dir/bin/codex" "$rootfs/usr/local/bin/codex"
+        ln -s /usr/bin/fdfind "$rootfs/usr/local/bin/fd"
+        docker_version="$(chroot "$rootfs" dpkg-query -W -f='${Version}' docker-ce)"
+        cat >"$rootfs/etc/copernicus-developer-tools" <<EOF
+SCHEMA=copernicus.developer-tools.v1
+NODE_VERSION=$NODE_VERSION
+UV_VERSION=$UV_VERSION
+CODEX_CLI_VERSION=$CODEX_CLI_VERSION
+DOCKER_VERSION=$docker_version
+DOCKER_GROUP_ACCESS=false
+REMOTE_DOCKER_API=false
+EOF
+        cat >>"$rootfs/etc/copernicus-image-release" <<EOF
+NODE_VERSION=$NODE_VERSION
+UV_VERSION=$UV_VERSION
+CODEX_CLI_VERSION=$CODEX_CLI_VERSION
+DOCKER_VERSION=$docker_version
+EOF
+        chmod 0644 "$rootfs/etc/copernicus-developer-tools"
+    fi
     chroot "$rootfs" apt-get clean
     rm -f "$rootfs$staged_deb"
     find "$rootfs/var/lib/apt/lists" -mindepth 1 -delete
@@ -402,7 +507,9 @@ revision="$(git -c safe.directory="$REPO_DIR" -C "$REPO_DIR" \
     describe --always --dirty 2>/dev/null || printf unknown)"
 python3 - "$tmp_provenance" "$(basename "$BASE_ISO")" "$BASE_SHA256" \
     "$verification" "$output_name" "$output_sha" "$revision" "$PROFILE" \
-    "$deb_package" "$deb_version" "$deb_arch" "$CODEX_DEB_SHA256" <<'PY'
+    "$deb_package" "$deb_version" "$deb_arch" "$CODEX_DEB_SHA256" \
+    "$DEVELOPER_TOOLS" "$NODE_VERSION" "$UV_VERSION" "$CODEX_CLI_VERSION" \
+    "$docker_version" <<'PY'
 import datetime
 import json
 import sys
@@ -425,6 +532,14 @@ value = {
         "sha256": sys.argv[12],
     },
     "packages": [] if not sys.argv[9] else [sys.argv[9]],
+    "developer_tools": None if sys.argv[13] == "0" else {
+        "node_version": sys.argv[14],
+        "uv_version": sys.argv[15],
+        "codex_cli_version": sys.argv[16],
+        "docker_version": sys.argv[17],
+        "docker_group_access": False,
+        "remote_docker_api": False,
+    },
     "remote_services_enabled": False,
 }
 with open(sys.argv[1], "w", encoding="utf-8") as handle:

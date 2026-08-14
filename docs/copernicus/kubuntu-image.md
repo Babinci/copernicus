@@ -3,7 +3,7 @@ type: runbook
 title: Code-generated Kubuntu image
 description: Build and verify a private Kubuntu 24.04.4 installer with a locally built ChatGPT Desktop package and the self-contained Copernicus plugin.
 tags: [copernicus, kubuntu, installer, reproducibility, privacy]
-timestamp: 2026-08-13
+timestamp: 2026-08-14
 ---
 
 # Code-generated Kubuntu image
@@ -20,6 +20,42 @@ therefore private unless a separate [binary-release licensing
 preflight](../licensing.md#before-any-binary-release) clears that exact output.
 
 ## Build
+
+### One-command developer image
+
+When the pinned base ISO and a locally built `codex-desktop` package are already
+present in the repository, build the private developer image with:
+
+```bash
+# Builds and verifies an ISO under /mnt/d; it never writes to a disk or USB device.
+sudo ./scripts/build-kubuntu-developer-image.sh
+```
+
+The wrapper uses `/mnt/d/.copernicus-build-tmp`, selects the newest amd64
+`codex-desktop` package in `dist/`, and creates a timestamped ISO plus SHA-256
+and provenance sidecars under the workspace's `out/` directory. It refuses an
+output outside that workspace, follows no workspace symlink, needs at least 30
+GiB free, and never invokes a partitioning, formatting, mounting, or flashing
+tool. Use `--dry-run` to inspect the resolved paths without writing anything.
+
+The opt-in developer profile includes Docker Engine with containerd, Buildx and
+Compose; Node.js 24.19.0 with npm/npx; uv 0.11.32; Codex CLI 0.147.0; Python 3
+with venv; Git, Git LFS and GitHub CLI; common native build tools; and a compact
+set of terminal, archive, database, and diagnostic utilities. Node and uv are
+content-pinned. Docker packages come from Docker's signed Noble repository and
+their resolved versions are recorded in the filesystem manifest and provenance.
+No authentication state is copied into the image.
+
+Docker's local service is installed, but its remote API stays disabled and the
+installer does not add the desktop user to the root-equivalent `docker` group.
+After installation, a user who accepts that privilege can enable passwordless
+Docker and then log out and back in:
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+### Manual profiles
 
 On an amd64 Kubuntu or Ubuntu host, install `xorriso`, `squashfs-tools`,
 `fakeroot`, and the normal Copernicus build prerequisites. Build the application
@@ -46,7 +82,8 @@ Then build the full private image, substituting the exact package path and hash:
 sudo scripts/build-kubuntu-image.sh \
   --codex-deb dist/codex-desktop_VERSION_amd64.deb \
   --codex-deb-sha256 SHA256 \
-  --accept-private-codex-payload
+  --accept-private-codex-payload \
+  --developer-tools
 ```
 
 The builder refuses an unpinned local base ISO, an unpinned or non-amd64
@@ -108,6 +145,6 @@ surface—Codex Remote SSH/upstream remote sessions or the separate Coding WebUI
 companion—and configure its authentication for that machine.
 
 NVIDIA drivers, Secure Boot/MOK enrollment, vendor firmware, no-suspend policy,
-Docker, Cloudflare tunnels, and tablet tools remain explicit post-install choices.
-They are hardware- or account-specific and do not belong in a generous public
-default image.
+Cloudflare tunnels, Docker group membership, and tablet tools remain explicit
+post-install choices. They are hardware-, account-, or privilege-specific and
+do not belong in a generous public default image.
