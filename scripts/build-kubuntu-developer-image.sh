@@ -29,6 +29,7 @@ Options:
 
 This script only creates files under the workspace and never writes to a block device.
 It does not partition disks, format filesystems, or flash USB drives.
+Build output is preserved under .copernicus/logs/kubuntu-image/ (gitignored).
 EOF
 }
 
@@ -51,6 +52,24 @@ while [ "$#" -gt 0 ]; do
 done
 [ "$DOWNLOAD_BASE" -eq 0 ] || [ -z "$BASE_ISO" ] \
     || die "--download-base cannot be combined with --base-iso"
+
+if [ "$DRY_RUN" -eq 0 ]; then
+    log_dir="${COPERNICUS_BUILD_LOG_DIR:-$REPO_DIR/.copernicus/logs/kubuntu-image}"
+    [ ! -L "$log_dir" ] || die "log directory must not be a symlink: $log_dir"
+    mkdir -p "$log_dir"
+    log_file="$log_dir/kubuntu-developer-image-$(date -u +%Y%m%dT%H%M%SZ)-$$.log"
+    : >"$log_file"
+    chmod 0644 "$log_file"
+    exec > >(tee -a "$log_file") 2>&1
+    finish_log() {
+        status=$?
+        trap - EXIT
+        printf 'Build exited with status %s\nBuild log: %s\n' "$status" "$log_file"
+        exit "$status"
+    }
+    trap finish_log EXIT
+    printf 'Build log: %s\n' "$log_file"
+fi
 
 if [ -z "$CODEX_DEB" ]; then
     shopt -s nullglob

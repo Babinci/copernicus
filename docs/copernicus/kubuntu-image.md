@@ -3,7 +3,7 @@ type: runbook
 title: Code-generated Kubuntu image
 description: Build and verify a private Kubuntu 24.04.4 installer with a locally built ChatGPT Desktop package and the self-contained Copernicus plugin.
 tags: [copernicus, kubuntu, installer, reproducibility, privacy]
-timestamp: 2026-08-14
+timestamp: 2026-08-15
 ---
 
 # Code-generated Kubuntu image
@@ -36,7 +36,10 @@ The wrapper uses `/mnt/d/.copernicus-build-tmp`, selects the newest amd64
 and provenance sidecars under the workspace's `out/` directory. It refuses an
 output outside that workspace, follows no workspace symlink, needs at least 30
 GiB free, and never invokes a partitioning, formatting, mounting, or flashing
-tool. Use `--dry-run` to inspect the resolved paths without writing anything.
+tool. Every real run preserves stdout, stderr, and the final exit status under
+the gitignored `.copernicus/logs/kubuntu-image/` directory, including failed
+builds whose temporary root filesystem is safely removed. Use `--dry-run` to
+inspect the resolved paths without writing anything.
 
 The opt-in developer profile includes Docker Engine with containerd, Buildx and
 Compose; Node.js 24.19.0 with npm/npx; uv 0.11.32; Codex CLI 0.147.0; Python 3

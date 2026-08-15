@@ -342,6 +342,20 @@ if "$DEVELOPER_BUILDER" --dry-run --download-base --workspace "$work/wrapper-sym
     --output "$work/wrapper-symlink/out/developer.iso" >/dev/null 2>&1; then
     fail "developer wrapper followed an output-directory symlink outside its workspace"
 fi
+set +e
+COPERNICUS_BUILD_LOG_DIR="$work/logs" "$DEVELOPER_BUILDER" --download-base \
+    --workspace "$work/log-wrapper" --codex-deb "$work/codex-desktop.deb" \
+    --output "$work/log-wrapper/out/developer.iso" >"$work/log-wrapper.out" 2>&1
+logged_failure_status=$?
+set -e
+[ "$logged_failure_status" -ne 0 ] || fail "non-root developer build was accepted"
+build_logs=("$work"/logs/*.log)
+[ "${#build_logs[@]}" -eq 1 ] && [ -f "${build_logs[0]}" ] \
+    || fail "failed developer build did not preserve exactly one log"
+grep -q 'run this command with sudo' "${build_logs[0]}" \
+    || fail "developer build log omits the failure"
+grep -q '^Build exited with status 2$' "${build_logs[0]}" \
+    || fail "developer build log omits the exit status"
 
 expect_full_rejection() {
     name="$1"

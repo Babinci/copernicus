@@ -1,5 +1,10 @@
 # Copernicus documentation log
 
+## 2026-08-15
+
+- Preserved one-command Kubuntu image build output and failure status in a
+  timestamped, gitignored local log while retaining temporary-rootfs cleanup.
+
 ## 2026-08-14
 
 - Added a one-command, disk-safe Kubuntu developer image builder with an opt-in
