@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Copernicus architecture
-description: Product boundaries and data flow for the Linux wrapper, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and OKF memory.
-tags: [copernicus, fleet, breathe, sas, okf, retrospective, architecture]
-timestamp: 2026-08-12T00:00:00+02:00
+description: Product boundaries and data flow for the Linux wrapper, durable Planning workpacks, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and OKF memory.
+tags: [copernicus, planning, workpacks, fleet, breathe, sas, okf, retrospective, architecture]
+timestamp: 2026-08-15T21:52:03+02:00
 ---
 
 # Copernicus architecture
@@ -17,6 +17,8 @@ flowchart TD
     P --> Q["Grill Me: resolve decisions"]
     Q --> R
     P --> R["Rick Rubin: subtract"]
+    R --> W["Planning: design + workpack DAG"]
+    W --> F
     P --> F["Fleet: bounded GPT seats"]
     P --> S["SAS: problem-specific DAG"]
     F --> C["Native codex exec / collaboration"]
@@ -40,6 +42,22 @@ flowchart TD
 ```
 
 ## Stable contracts
+
+### Planning
+
+Planning leaves focused changes on Codex's native plan surface and adds a
+durable bundle only for substantial, dependency-linked, uncertain, or resumable
+work. The bundle uses one YAML-frontmatter design, one concept per workpack,
+relative links, generated indexes, and a living log. `parent` represents
+containment while `depends_on` represents execution blocking. A Python
+standard-library tool validates the restricted frontmatter contract, confined
+paths, IDs, cycles, independent path ownership, test-first readiness, indexes,
+and the next executable wave; it never executes workpack commands.
+
+Planning may compose Fleet for independent evidence gaps and Auto-Research for
+measured invention cycles. Workpacks are implementation contracts, not
+canonical OKF memory or evidence that work is complete. A planning-only request
+does not authorize source edits or implementation.
 
 ### Fleet
 

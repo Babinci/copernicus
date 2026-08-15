@@ -11,9 +11,11 @@
 Copernicus is an unofficial, local-build Linux wrapper for
 [OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
-pipeline with ten deliberately small workflows:
+pipeline with eleven deliberately small workflows:
 
 - **Grill Me** resolves a plan through one recommended question at a time.
+- **Planning** turns substantial or resumable changes into validated, test-first
+  linked workpacks while leaving focused work in native Plan Mode.
 - **Fleet** routes bounded work across native GPT Sol, Terra, and Luna lanes.
 - **Breathe** runs bounded deep Luna map-reduce waves and compresses them into a
   decision-complete human brief with expandable evidence.
@@ -61,12 +63,12 @@ codex plugin marketplace add Babinci/copernicus
 codex plugin add copernicus@copernicus
 ```
 
-Then ask Codex to use `$grill-me`, `$rick-rubin`, `$fleet`, `$breathe`,
+Then ask Codex to use `$grill-me`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`,
 `$auto-research`, `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, or
 `$handoff`. Model access and reasoning controls remain account- and
 workspace-dependent; Copernicus does not unlock models or increase plan limits.
 
-One plugin installation provides all ten bundled skills. Open
+One plugin installation provides all eleven bundled skills. Open
 `/plugins`, choose **Copernicus**, and start a new task after installation. See
 [Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
 outputs, examples, privacy boundary, and limitations of each skill.
@@ -80,6 +82,7 @@ python3 plugins/copernicus/skills/fleet/scripts/test_fleet.py
 python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
 python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
 python3 plugins/copernicus/skills/html-report/scripts/test_report.py
+python3 plugins/copernicus/skills/planning/scripts/test_workpacks.py
 ```
 
 See the [Copernicus guide](docs/copernicus/index.md) for skill explanations,

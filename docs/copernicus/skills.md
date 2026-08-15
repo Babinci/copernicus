@@ -1,21 +1,23 @@
 ---
 type: guide
 title: Copernicus skills
-description: Why the ten installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
-tags: [copernicus, skills, grill-me, rick-rubin, fleet, breathe, auto-research, html-report, retrospective, ponytail, caveman, handoff]
-timestamp: 2026-08-12T00:00:00+02:00
+description: Why the eleven installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, grill-me, rick-rubin, planning, fleet, breathe, auto-research, html-report, retrospective, ponytail, caveman, handoff]
+timestamp: 2026-08-15T00:00:00+02:00
 ---
 
 # Copernicus skills
 
-Installing the single `copernicus` plugin installs ten skills. Six form the
-main problem-solving sequence; four govern review, implementation, delivery,
-and continuation:
+Installing the single `copernicus` plugin installs eleven skills. Seven form
+the main problem-solving sequence; four govern review, implementation,
+delivery, and continuation:
 
 ```text
 $grill-me        resolve the decision tree
       ↓
 $rick-rubin      remove weak branches
+      ↓
+$planning        turn substantial work into linked, test-first workpacks
       ↓
 $fleet           execute independent bounded work
       ↓
@@ -33,7 +35,7 @@ $handoff         transfer current state to a fresh session
 
 Each skill can be invoked independently; Breathe deliberately composes the
 sibling Fleet execution contract. Installing the plugin adds workflow
-instructions, references, and four Python standard-library tools; it does not
+instructions, references, and dependency-free Python tools; it does not
 install a daemon, database, provider proxy, or background service.
 
 ## The skills
@@ -42,6 +44,7 @@ install a daemon, database, provider proxy, or background service.
 | --- | --- | --- |
 | `$grill-me` | Premature implementation hides unresolved product and architecture decisions. | One recommended question at a time, then a compact decision-ready design brief. |
 | `$rick-rubin` | Idea generation is easier than principled selection. | Essence, what stays, what goes, and the hardest cut. |
+| `$planning` | Substantial or resumable work needs an implementation contract that survives context loss. | One evidence-backed design, linked workpacks, tests or explicit waivers, and deterministic dependency indexes. |
 | `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Typed outputs, private seat provenance, verified synthesis, and explicit evidence gaps. |
 | `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next checkpoint. | A checkpoint-complete brief for a decision, verified delivery, or understanding, with evidence and dissent expandable on request. |
 | `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
@@ -57,6 +60,7 @@ The complete explanations ship inside the installed plugin:
 - [Breathe explained](../../plugins/copernicus/skills/breathe/references/guide.md)
 - [Auto-Research explained](../../plugins/copernicus/skills/auto-research/references/guide.md)
 - [Rick Rubin subtraction explained](../../plugins/copernicus/skills/rick-rubin/references/guide.md)
+- [Planning explained](../../plugins/copernicus/skills/planning/references/guide.md)
 - [HTML reports explained](../../plugins/copernicus/skills/html-report/references/guide.md)
 - [Grill Me contract](../../plugins/copernicus/skills/grill-me/SKILL.md)
 - [Retrospective contract](../../plugins/copernicus/skills/retrospective/SKILL.md)
@@ -64,29 +68,32 @@ The complete explanations ship inside the installed plugin:
 - [Caveman contract](../../plugins/copernicus/skills/caveman/SKILL.md)
 - [Handoff contract](../../plugins/copernicus/skills/handoff/SKILL.md)
 
-## Why these ten
+## Why these eleven
 
-They address ten different failure modes:
+They address eleven different failure modes:
 
 1. **An unresolved plan** — Grill Me resolves one dependency-ordered decision at a time.
 2. **Too many possibilities** — subtraction reduces the search space.
-3. **One agent doing incompatible jobs** — Fleet separates bounded work and
+3. **A substantial plan that disappears with the session** — Planning keeps one
+   evidence-backed design and a validated workpack DAG while leaving focused
+   changes in native Plan Mode.
+4. **One agent doing incompatible jobs** — Fleet separates bounded work and
    verification while keeping one accountable lead.
-4. **Machine output becoming human coordination work** — Breathe reduces deep
+5. **Machine output becoming human coordination work** — Breathe reduces deep
    map waves to the next human checkpoint while preserving expandable evidence and dissent.
-5. **Learning from unverified guesses** — Auto-Research freezes the regime,
+6. **Learning from unverified guesses** — Auto-Research freezes the regime,
    evaluates candidates, joins evidence, and updates memory only at a cycle
    boundary.
-6. **Work that remains opaque after it is done** — HTML Report turns authorized,
+7. **Work that remains opaque after it is done** — HTML Report turns authorized,
    evaluated material into a standalone reader-first explanation without making a
    dashboard, hosted service, or new source of truth.
-7. **History becoming hindsight fiction** — Retrospective separates observed
+8. **History becoming hindsight fiction** — Retrospective separates observed
    evidence from inference, finds the first divergence, and proposes a check.
-8. **Implementation buried in machinery** — Ponytail traces the real flow, then
+9. **Implementation buried in machinery** — Ponytail traces the real flow, then
    stops at the earliest native or existing solution that fully holds.
-9. **Answers buried in prose** — Caveman compresses wording while retaining all
+10. **Answers buried in prose** — Caveman compresses wording while retaining all
    load-bearing technical and safety detail.
-10. **Context loss between sessions** — Handoff moves only current decision state
+11. **Context loss between sessions** — Handoff moves only current decision state
    and references the durable sources already in the workspace.
 
 No skill is authoritative by itself. Commands, tests, measurements, primary
@@ -101,8 +108,8 @@ codex plugin list
 ```
 
 Start a new Codex task after installation. In the app, open `/plugins`, select
-**Copernicus**, and inspect its ten skills. Invoke them explicitly as
-`$grill-me`, `$rick-rubin`, `$fleet`, `$breathe`, `$auto-research`,
+**Copernicus**, and inspect its eleven skills. Invoke them explicitly as
+`$grill-me`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`,
 `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
 
 ## Global companion resolution
@@ -123,6 +130,9 @@ and you need to force one. Copernicus does not claim to control host precedence.
 ```text
 Use $grill-me to resolve the highest-leverage unknowns one question at a time.
 Then use $rick-rubin to reduce the options to the few that serve the named user.
+Use $planning when the remaining work is substantial or resumable: write one
+evidence-backed design, materialize tests when authorized, and validate the
+linked workpacks before implementation. Keep focused work in native Plan Mode.
 Use $fleet only for independent evidence work, with a maximum of five read-only
 seats and the default terra-first preset. Use $breathe to reduce the verified
 findings to the next decision, verified delivery, or understanding checkpoint
@@ -146,6 +156,7 @@ The plugin contains everything specific to the method:
 - skill instructions and human-readable guides;
 - GPT-only lane policy;
 - the Fleet batch runner and tests;
+- the Planning workpack validator/indexer and tests;
 - Breathe's checkpoint-compression contract, guide, and private enum-only feedback tool;
 - the SAS graph/receipt contracts;
 - the receipt validator and tests;
@@ -162,6 +173,8 @@ The Fleet runner sends only explicitly named prompt files that resolve inside
 the selected work directory. Breathe's optional experience ledger stores only
 controlled feedback categories in private local state. Auto-Research writes only
 to the run directory the user chooses. Rick Rubin is prompt-only.
+Planning writes only to the bundle path the user chooses and never executes
+workpack commands.
 Retrospective is prompt-only and proposal-only unless the user separately
 authorizes an implementation.
 

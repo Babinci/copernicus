@@ -2,6 +2,10 @@
 
 ## 2026-08-15
 
+- Added Copernicus Planning with native, durable-workpack, discovery, and review
+  modes; an OKF-style design/workpack contract; optional bounded Fleet graphs;
+  test-first readiness; and a standard-library validator that initializes,
+  validates, indexes, and traverses dependency-linked workpacks.
 - Updated required window-surface, native-titlebar, and tray compatibility for
   ChatGPT 26.810.52044, and verified the exact upstream DMG inspection report.
 - Added named heavy-phase checkpoints to Kubuntu image logs and covered them in

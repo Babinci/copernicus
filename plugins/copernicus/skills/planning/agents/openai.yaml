@@ -1,0 +1,4 @@
+interface:
+  display_name: "Copernicus Planning"
+  short_description: "Create implementation-ready linked workpacks"
+  default_prompt: "Use $planning to turn this substantial change into a validated, test-first workpack bundle."

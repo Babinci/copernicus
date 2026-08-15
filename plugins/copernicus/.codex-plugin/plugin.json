@@ -1,7 +1,7 @@
 {
   "name": "copernicus",
-  "version": "0.7.0+codex.20260812100824",
-  "description": "GPT-only Fleet, Breathe briefs, SAS+OKF research, HTML reports, evidence-backed retrospectives, subtraction, minimal implementation, and safe handoffs for Codex.",
+  "version": "0.8.0+codex.20260815215203",
+  "description": "Implementation-ready planning, GPT-only Fleet, Breathe briefs, SAS+OKF research, HTML reports, evidence-backed retrospectives, subtraction, minimal implementation, and safe handoffs for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
     "url": "https://github.com/Babinci"
@@ -14,6 +14,8 @@
     "fleet",
     "auto-research",
     "okf",
+    "planning",
+    "workpacks",
     "gpt-only",
     "html-report",
     "breathe",
@@ -28,7 +30,7 @@
   "interface": {
     "displayName": "Copernicus",
     "shortDescription": "GPT-only research and practitioner workflows.",
-    "longDescription": "Ten bundled Codex workflows resolve a plan, subtract weak branches, execute bounded Sol/Terra/Luna work with a Terra-first default, compress deep investigation at a human checkpoint, learn through evaluated SAS cycles, explain evidence in portable HTML, review outcomes, minimize implementation, deliver terse answers, and transfer redacted session state.",
+    "longDescription": "Eleven bundled Codex workflows resolve decisions, subtract weak branches, create validated test-first workpacks, execute bounded Sol/Terra/Luna work with a Terra-first default, compress deep investigation at a human checkpoint, learn through evaluated SAS cycles, explain evidence in portable HTML, review outcomes, minimize implementation, deliver terse answers, and transfer redacted session state.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
@@ -36,7 +38,7 @@
     ],
     "websiteURL": "https://github.com/Babinci/copernicus",
     "defaultPrompt": [
-      "Use $grill-me, then $rick-rubin, to resolve and cut this plan.",
+      "Use $planning to turn this substantial change into a validated, test-first workpack bundle.",
       "Use $fleet and $breathe for a bounded GPT-only investigation and checkpoint brief.",
       "Use $auto-research, then $html-report, for an evaluated cycle and portable brief."
     ]

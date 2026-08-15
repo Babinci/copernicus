@@ -78,6 +78,21 @@ class PluginTest(unittest.TestCase):
         self.assertNotIn("Finish with a roster", fleet)
         self.assertNotIn("Put the compact Fleet roster", breathe)
 
+    def test_planning_stays_durable_test_first_and_dependency_checked(self) -> None:
+        skill = (ROOT / "skills/planning/SKILL.md").read_text()
+        guide = (ROOT / "skills/planning/references/guide.md").read_text()
+        script = (ROOT / "skills/planning/scripts/workpacks.py").read_text()
+        metadata = (ROOT / "skills/planning/agents/openai.yaml").read_text()
+        for mode in ("native", "workpacks", "discovery", "review"):
+            self.assertIn(f"`{mode}`", skill)
+        self.assertIn("tests written before implementation", skill)
+        self.assertIn("A plan is not progress, evidence, or permission", skill)
+        self.assertIn("parent", guide)
+        self.assertIn("depends_on", guide)
+        self.assertIn("TopologicalSorter", script)
+        self.assertIn("implementation-ready", script)
+        self.assertIn("$planning", metadata)
+
     def test_third_party_notices_ship_with_the_plugin(self) -> None:
         notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
         self.assertIn("mattpocock/skills", notices)
