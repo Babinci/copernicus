@@ -79,7 +79,11 @@ if "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
 fi
 
 "$BUILDER" --base-iso "$work/base.iso" --base-sha256 "$base_sha" \
-    --output "$work/output.iso" --marker-only >/dev/null
+    --output "$work/output.iso" --marker-only >"$work/marker-build.log"
+grep -q 'Extracting the Kubuntu filesystem' "$work/marker-build.log" \
+    || fail "marker build omitted extraction progress"
+grep -q 'Publishing the verified image' "$work/marker-build.log" \
+    || fail "marker build omitted publication progress"
 [ -s "$work/output.iso" ] || fail "output ISO missing"
 [ -s "$work/output.iso.sha256" ] || fail "output checksum missing"
 [ -s "$work/output.iso.provenance.json" ] || fail "provenance missing"
@@ -412,7 +416,11 @@ CODEX_TEST_CHROOT_LOG="$work/chroot.log" CODEX_TEST_CHOWN_LOG="$work/chown.log" 
     PATH="$work/fake-bin:$PATH" \
     fakeroot -- "$BUILDER" "${common_full[@]}" --output "$work/full-output.iso" \
     --codex-deb "$work/codex-desktop.deb" --codex-deb-sha256 "$deb_sha" \
-    --accept-private-codex-payload --developer-tools >/dev/null
+    --accept-private-codex-payload --developer-tools >"$work/full-build.log"
+grep -q 'Installing Copernicus into the filesystem' "$work/full-build.log" \
+    || fail "full build omitted Copernicus progress"
+grep -q 'Installing the developer toolchain' "$work/full-build.log" \
+    || fail "full build omitted developer-tool progress"
 
 xorriso -osirrox on -indev "$work/full-output.iso" \
     -extract /casper/filesystem.squashfs "$work/full-output.squashfs" >/dev/null 2>&1

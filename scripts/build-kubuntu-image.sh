@@ -58,6 +58,10 @@ die() {
     exit 2
 }
 
+phase() {
+    printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
+}
+
 require_tool() {
     command -v "$1" >/dev/null 2>&1 || die "missing required tool: $1"
 }
@@ -191,6 +195,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 verification="local-pinned"
+phase "Verifying pinned inputs"
 if [ -z "$BASE_ISO" ]; then
     keyring="/usr/share/keyrings/ubuntu-archive-keyring.gpg"
     [ -r "$keyring" ] || die "Ubuntu archive keyring is required: $keyring"
@@ -245,6 +250,7 @@ rebuilt_squash="$work/filesystem.squashfs"
 rebuilt_size="$work/filesystem.size"
 rebuilt_md5="$work/md5sum.txt"
 
+phase "Extracting the Kubuntu filesystem"
 xorriso -osirrox on -indev "$BASE_ISO" \
     -extract /casper/filesystem.squashfs "$source_squash" >/dev/null 2>&1 \
     || die "base ISO lacks /casper/filesystem.squashfs"
@@ -275,6 +281,7 @@ chmod 0644 "$rootfs/etc/copernicus-image-release"
 rebuilt_manifest=""
 docker_version=""
 if [ "$PROFILE" = "full" ]; then
+    phase "Installing Copernicus into the filesystem"
     marketplace="$rootfs/usr/share/copernicus/marketplace"
     install -d -m 0755 \
         "$marketplace/.agents/plugins" \
@@ -333,6 +340,7 @@ EOF
     [ "$installed_status" = "installed" ] || die "Codex package did not reach installed state"
 
     if [ "$DEVELOPER_TOOLS" -eq 1 ]; then
+        phase "Installing the developer toolchain"
         node_archive="$work/node.tar.xz"
         uv_archive="$work/uv.tar.gz"
         docker_key="$work/docker.asc"
@@ -424,6 +432,7 @@ EOF
         | LC_ALL=C sort >"$rebuilt_manifest"
 fi
 
+phase "Repacking the Kubuntu filesystem"
 compression="$(unsquashfs -s "$source_squash" | awk '$1 == "Compression" {print $2; exit}')"
 block_size="$(unsquashfs -s "$source_squash" | awk '$1 == "Block" && $2 == "size" {print $3; exit}')"
 case "$compression" in
@@ -480,12 +489,14 @@ map_args=(
 if [ -n "$rebuilt_manifest" ]; then
     map_args+=(-map "$rebuilt_manifest" /casper/filesystem.manifest)
 fi
+phase "Rebuilding the installer ISO"
 xorriso -indev "$BASE_ISO" -outdev "$tmp_iso" \
     -boot_image any replay -overwrite on \
     "${map_args[@]}" \
     -commit -end >/dev/null 2>&1 \
     || die "xorriso failed to rebuild the ISO"
 
+phase "Verifying the rebuilt installer"
 check_squash="$work/check.squashfs"
 xorriso -osirrox on -indev "$tmp_iso" \
     -extract /casper/filesystem.squashfs "$check_squash" >/dev/null 2>&1
@@ -547,6 +558,7 @@ with open(sys.argv[1], "w", encoding="utf-8") as handle:
     handle.write("\n")
 PY
 
+phase "Publishing the verified image"
 mv -- "$tmp_checksum" "$checksum_path"
 mv -- "$tmp_provenance" "$provenance_path"
 mv -- "$tmp_iso" "$OUTPUT"

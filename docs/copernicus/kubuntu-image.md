@@ -38,8 +38,9 @@ output outside that workspace, follows no workspace symlink, needs at least 30
 GiB free, and never invokes a partitioning, formatting, mounting, or flashing
 tool. Every real run preserves stdout, stderr, and the final exit status under
 the gitignored `.copernicus/logs/kubuntu-image/` directory, including failed
-builds whose temporary root filesystem is safely removed. Use `--dry-run` to
-inspect the resolved paths without writing anything.
+builds whose temporary root filesystem is safely removed. The log names each
+heavy phase, so its last phase identifies where a failed or interrupted build
+stopped. Use `--dry-run` to inspect the resolved paths without writing anything.
 
 The opt-in developer profile includes Docker Engine with containerd, Buildx and
 Compose; Node.js 24.19.0 with npm/npx; uv 0.11.32; Codex CLI 0.147.0; Python 3

@@ -22,33 +22,33 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     );
   }
 
-  const trayWhenReadyFallbackPattern =
-    /if\(typeof ([A-Za-z_$][\w$]*)\.whenReady!=`function`\)return process\.platform!==`linux`;try\{return await \1\.whenReady\(\),!0\}catch\{return!1\}/;
-  const compatibleTrayWhenReadyPattern =
-    /if\(typeof ([A-Za-z_$][\w$]*)\.whenReady!=`function`\)return!0;try\{return await \1\.whenReady\(\),!0\}catch\{return!1\}/;
-  if (!compatibleTrayWhenReadyPattern.test(patchedSource)) {
-    if (!trayWhenReadyFallbackPattern.test(patchedSource)) {
-      console.warn("WARN: Could not find current Linux tray whenReady fallback — skipping Linux tray compatibility patch");
+  const trayIsReadyConsumerPattern =
+    /isReady\(\)\{return [A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.tray\)\}/;
+  const compatibleTrayIsReadyPattern =
+    /isReady\(\)\{return typeof this\.tray\.isReady==`function`\?this\.tray\.isReady\(\):!0\}/;
+  if (!compatibleTrayIsReadyPattern.test(patchedSource)) {
+    if (!trayIsReadyConsumerPattern.test(patchedSource)) {
+      console.warn("WARN: Could not find current Linux tray isReady consumer — skipping Linux tray compatibility patch");
       return currentSource;
     }
     patchedSource = patchedSource.replace(
-      trayWhenReadyFallbackPattern,
-      "if(typeof $1.whenReady!=`function`)return!0;try{return await $1.whenReady(),!0}catch{return!1}",
+      trayIsReadyConsumerPattern,
+      "isReady(){return typeof this.tray.isReady==`function`?this.tray.isReady():!0}",
     );
   }
 
-  const trayIsReadyFallbackPattern =
-    /return typeof ([A-Za-z_$][\w$]*)\.isReady==`function`\?\1\.isReady\(\):process\.platform!==`linux`/;
-  const compatibleTrayIsReadyPattern =
-    /return typeof ([A-Za-z_$][\w$]*)\.isReady==`function`\?\1\.isReady\(\):!0/;
-  if (!compatibleTrayIsReadyPattern.test(patchedSource)) {
-    if (!trayIsReadyFallbackPattern.test(patchedSource)) {
-      console.warn("WARN: Could not find current Linux tray isReady fallback — skipping Linux tray compatibility patch");
+  const trayWhenReadyConsumerPattern =
+    /waitForReady\(\)\{return [A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.tray\)\}/;
+  const compatibleTrayWhenReadyPattern =
+    /async waitForReady\(\)\{if\(typeof this\.tray\.whenReady!=`function`\)return!0;try\{return await this\.tray\.whenReady\(\),!0\}catch\{return!1\}\}/;
+  if (!compatibleTrayWhenReadyPattern.test(patchedSource)) {
+    if (!trayWhenReadyConsumerPattern.test(patchedSource)) {
+      console.warn("WARN: Could not find current Linux tray whenReady consumer — skipping Linux tray compatibility patch");
       return currentSource;
     }
     patchedSource = patchedSource.replace(
-      trayIsReadyFallbackPattern,
-      "return typeof $1.isReady==`function`?$1.isReady():!0",
+      trayWhenReadyConsumerPattern,
+      "async waitForReady(){if(typeof this.tray.whenReady!=`function`)return!0;try{return await this.tray.whenReady(),!0}catch{return!1}}",
     );
   }
 

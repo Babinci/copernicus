@@ -2,6 +2,10 @@
 
 ## 2026-08-15
 
+- Updated required window-surface, native-titlebar, and tray compatibility for
+  ChatGPT 26.810.52044, and verified the exact upstream DMG inspection report.
+- Added named heavy-phase checkpoints to Kubuntu image logs and covered them in
+  marker-only and synthetic full-profile builds.
 - Preserved one-command Kubuntu image build output and failure status in a
   timestamped, gitignored local log while retaining temporary-rootfs cleanup.
 
