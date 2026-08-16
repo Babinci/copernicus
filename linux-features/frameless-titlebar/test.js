@@ -148,6 +148,24 @@ test("frameless-titlebar stays disabled until listed in features.json", () => {
   }
 });
 
+test("frameless titlebar composes with the current compiler-generated header slot", () => {
+  const source = [
+    "var Q=Object.freeze({default:Object.freeze({left:0,right:0}),applicationMenu:Object.freeze({left:0,right:0})});",
+    "function platform(e,t){if(e!==`electron`)return`native`;switch(t){case`win32`:case`linux`:return`application-menu`;case`darwin`:return`native`}}",
+    "function layout(){let e=navigator.userAgent.toLowerCase();return e.includes(`win`)||e.includes(`windows`)||e.includes(`linux`)?fallback??Q.applicationMenu:Q.default}",
+    "function header(e){let t=cache(2),{isHeaderEdgeScroll:n,isApplicationMenuBarEnabled:r}=e,A=jsx(slot,{entries:h,fitWidth:a,slotWidth:u,side:`end`});return A}",
+    "function slot(e){let t=cache(14),{entries:n,fitWidth:r,side:i,slotWidth:a}=e,o=n.some(end),s=classes({\"pe-2\":i===`start`&&o||i===`end`});return jsx(s)}",
+    "document.documentElement.dataset.codexWindowChrome===`application-menu`;",
+  ].join("");
+  const core = applyLinuxWindowControlsSafeAreaPatch(source, CORE_CONTEXT);
+  const patched = applyFramelessTitlebarWebviewPatch(core, FEATURE_CONTEXT);
+
+  assert.notEqual(patched, core);
+  assert.match(patched, /codexLinuxUseWindowControlsSafeArea:!1,side:`end`/);
+  assert.match(patched, /case`win32`:return`application-menu`;case`linux`:return`native`/);
+  assert.equal(applyFramelessTitlebarWebviewPatch(patched, FEATURE_CONTEXT), patched);
+});
+
 test("frameless-titlebar removes current Linux overlay controls from primary and quick chat windows", () => {
   const source = [
     "case`quickChat`:case`primary`:return n===`darwin`?{titleBarStyle:`hiddenInset`,trafficLightPosition:A9(r),...e===`quickChat`?{hasShadow:!0,resizable:!0,transparent:!0}:{},...t?{}:{vibrancy:`menu`}}:n===`win32`||n===`linux`?{titleBarStyle:`hidden`,titleBarOverlay:n===`linux`?codexLinuxTitleBarOverlay(r):j9(r),...e===`quickChat`?{resizable:!0}:{}}:{titleBarStyle:`default`,...e===`quickChat`?{resizable:!0}:{}};",

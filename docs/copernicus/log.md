@@ -11,6 +11,9 @@
 - Clarified that the Kubuntu wrapper's most-recently-modified package selection
   is not an upstream freshness guarantee; embedded build info and explicit
   package hashes remain authoritative.
+- Restored the all-features acceptance profile for ChatGPT 26.810.52044 across
+  AppShots, global dictation, frameless safe areas, Codex Micro, and its verified
+  `node-hid@3.4.0` Linux prebuilds.
 
 ## 2026-08-15
 

@@ -122,9 +122,9 @@
         };
 
         codexMicroNodeHidArchive = pkgs.fetchurl {
-          name = "node-hid-3.3.0.tgz";
-          url = "https://registry.npmjs.org/node-hid/-/node-hid-3.3.0.tgz";
-          hash = "sha512-j+dFgJLRAE0nufQKXk3IfS6T6YuHhCgMvz4TrG0sgtb6DSCdYpfJ1etcdmeCmPQjUgO+yo32ktVrRliNs/+fmg==";
+          name = "node-hid-3.4.0.tgz";
+          url = "https://registry.npmjs.org/node-hid/-/node-hid-3.4.0.tgz";
+          hash = "sha512-Br7EO3bJARAJBdtcsGzF/Vs5TjfbkaMdglqLQ+Rk9GOGgVqv5DxYUVH5znLerJU+OfBWw8sd552Ujcprz1bG9g==";
         };
 
         browserUseNodeReplRuntime = pkgs.fetchurl {

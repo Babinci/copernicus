@@ -151,7 +151,7 @@ function createBundledFixture(t, options = {}) {
   });
   writeJson(path.join(nodeHidDir, "package.json"), {
     name: "node-hid",
-    version: options.bundledVersion ?? "3.3.0",
+    version: options.bundledVersion ?? "3.4.0",
     license: "(MIT OR X11)",
     main: "./nodehid.js",
     binary: { napi_versions: [4] },
@@ -179,7 +179,7 @@ function createMaterializedPackage(t, options = {}) {
   );
   writeJson(path.join(packageDir, "package.json"), {
     name: options.name ?? "node-hid",
-    version: options.version ?? "3.3.0",
+    version: options.version ?? "3.4.0",
     license: options.license ?? "(MIT OR X11)",
     scripts: { install: "must never execute" },
   });
@@ -529,19 +529,35 @@ test("Codex Micro gate patch targets only the current app-initial bundle shape",
   assert.equal(descriptor.pattern.test("app-initial~old-chunk.js"), false);
 });
 
+test("Codex Micro gate patch handles the current compiler gate call", () => {
+  const source = [
+    "const warning=`useFeatureGate hook failed to find a valid StatsigClient`;",
+    `let enabled=Qh(\`${CODEX_MICRO_GATE_ID}\`);`,
+    `let settingsEnabled=Qh(\`${CODEX_MICRO_GATE_ID}\`);`,
+    `const route=\`${CODEX_MICRO_ROUTE}\`;`,
+  ].join("");
+  const patched = applyCodexMicroFeatureGatePatch(source);
+
+  assert.equal(matchesCodexMicroFeatureGateContract(source), true);
+  assert.notEqual(patched, source);
+  assert.match(patched, /Qh\(`3207467860`\)\|\|navigator\.userAgent\.includes\(`Linux`\)/);
+  assert.equal((patched.match(/navigator\.userAgent\.includes\(`Linux`\)/g) ?? []).length, 2);
+  assert.equal(applyCodexMicroFeatureGatePatch(patched), patched);
+});
+
 test("the shipped artifact manifest is prebuild-only and pinned for x64 and arm64", () => {
   const artifact = shippedArtifact();
   assert.doesNotThrow(() => validateArtifactManifest(artifact));
   assert.equal(artifact.name, "node-hid");
-  assert.equal(artifact.version, "3.3.0");
+  assert.equal(artifact.version, "3.4.0");
   assert.deepEqual(Object.keys(artifact.prebuilds).sort(), ["arm64", "x64"]);
   assert.equal(
     artifact.prebuilds.x64.sha256,
-    "6c7f3b3fcc238a74e7e3237b50b2ff05181e94862b1963e8074ff8fc75885021",
+    "5b50d9229ca6ebc78eba1dd9a8c73de18035addf041dbc5a1323cb904dd838c4",
   );
   assert.equal(
     artifact.prebuilds.arm64.sha256,
-    "06ea97f377e2246a1e9bf3770186727e72ff3c166579d9c259c6d32a07aeaa60",
+    "b0e734bfcca7a2f6ce8e9543a2d39836ff61d3dadf17de5ae5a4387118457b58",
   );
   assert.equal(fs.existsSync(path.join(__dirname, "source-build")), false);
 });
@@ -837,7 +853,7 @@ test("the nested discovery path cannot be substituted with a hoisted node-hid", 
   const root = tempDirectory(t, "codex-micro-hoisted-");
   writeJson(path.join(root, "node_modules/node-hid/package.json"), {
     name: "node-hid",
-    version: "3.3.0",
+    version: "3.4.0",
   });
   assert.throws(
     () => discoverBundledNodeHid(root),

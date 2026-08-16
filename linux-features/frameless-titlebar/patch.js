@@ -334,6 +334,12 @@ function hasCompleteFramelessWindowControlsSafeAreaComposition(source) {
       "gu",
     ),
   ) ?? [];
+  const compilerSlotSignatureMatches = source.match(
+    new RegExp(
+      `function [A-Za-z_$][\\w$]*\\(([A-Za-z_$][\\w$]*)\\)\\{let [^;{}]{0,300}?\\{entries:[A-Za-z_$][\\w$]*,fitWidth:[A-Za-z_$][\\w$]*,side:[A-Za-z_$][\\w$]*,slotWidth:[A-Za-z_$][\\w$]*,${prop}\\}=\\1`,
+      "gu",
+    ),
+  ) ?? [];
   const paddingMatches = source.match(
     new RegExp(
       `"pe-2":([A-Za-z_$][\\w$]*)===\`start\`&&[A-Za-z_$][\\w$]*\\|\\|\\1===\`end\`&&!${prop},"pe-\\(--spacing-token-safe-header-right\\)":\\1===\`end\`&&${prop}`,
@@ -351,7 +357,7 @@ function hasCompleteFramelessWindowControlsSafeAreaComposition(source) {
     overrideMatches.length === 1 &&
     insetMatches.length > 0 &&
     insetMatches.every((match) => match[1] === "0") &&
-    slotSignatureMatches.length === 1 &&
+    slotSignatureMatches.length + compilerSlotSignatureMatches.length === 1 &&
     paddingMatches.length === 1 &&
     nativeBrowserGateMatches.length === 1 &&
     nativeChromeMappingMatches.length === 1

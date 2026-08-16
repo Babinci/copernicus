@@ -71,6 +71,17 @@ function hasCodexMicroCallsite(source, hookName) {
     && source.includes(`\`${CODEX_MICRO_ROUTE}\``);
 }
 
+function currentCodexMicroGateCalls(source) {
+  return [...source.matchAll(
+    new RegExp(`(${JS_IDENT})\\(\\\`${CODEX_MICRO_GATE_ID}\\\`\\)`, "g"),
+  )];
+}
+
+function hasCurrentCodexMicroGateCalls(source) {
+  const calls = currentCodexMicroGateCalls(source);
+  return calls.length > 1 && new Set(calls.map((call) => call[1])).size === 1;
+}
+
 function matchesCodexMicroFeatureGateContract(source) {
   if (typeof source !== "string") {
     return false;
@@ -80,8 +91,9 @@ function matchesCodexMicroFeatureGateContract(source) {
   }
   const hook = exportedFeatureGateHook(source);
   return source.includes(FEATURE_GATE_WARNING)
-    && hook != null
-    && hasCodexMicroCallsite(source, hook.hookName);
+    && ((hook != null && hasCodexMicroCallsite(source, hook.hookName))
+      || (source.includes(`\`${CODEX_MICRO_ROUTE}\``)
+        && hasCurrentCodexMicroGateCalls(source)));
 }
 
 function applyCodexMicroFeatureGatePatch(source) {
@@ -90,16 +102,21 @@ function applyCodexMicroFeatureGatePatch(source) {
   }
 
   const hook = exportedFeatureGateHook(source);
-  if (hook == null) {
+  if (hook == null || !hasCodexMicroCallsite(source, hook.hookName)) {
+    const calls = currentCodexMicroGateCalls(source);
+    if (source.includes(`\`${CODEX_MICRO_ROUTE}\``) && hasCurrentCodexMicroGateCalls(source)) {
+      const gateHookName = calls[0][1];
+      return source.replace(
+        new RegExp(`${escapeRegExp(gateHookName)}\\(\\\`${CODEX_MICRO_GATE_ID}\\\`\\)`, "g"),
+        `(${gateHookName}(\`${CODEX_MICRO_GATE_ID}\`)||navigator.userAgent.includes(\`Linux\`))/*${CODEX_MICRO_GATE_MARKER}*/`,
+      );
+    }
     if (source.includes(FEATURE_GATE_WARNING)) {
       console.warn(
-        "WARN: Could not find the current exported feature-gate hook - " +
+        "WARN: Could not find the current Codex Micro feature-gate call - " +
           "skipping Codex Micro gate override",
       );
     }
-    return source;
-  }
-  if (!hasCodexMicroCallsite(source, hook.hookName)) {
     return source;
   }
 
@@ -323,7 +340,7 @@ module.exports = {
       phase: "extracted-app:post-webview",
       order: 29_000,
       ciPolicy: "opt-in",
-      targetSummary: "current Work Louder nested node-hid 3.3.0 dependency",
+      targetSummary: "current Work Louder nested node-hid 3.4.0 dependency",
       apply: (extractedDir) => stageNativeBinding(extractedDir),
       status: (result) => ({
         status: result?.changed
