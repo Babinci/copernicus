@@ -276,6 +276,13 @@ function syntheticSshInstallSettingsBundle() {
   ].join("");
 }
 
+function syntheticReactCompilerSshInstallSettingsBundle() {
+  return syntheticSshInstallSettingsBundle().replace(
+    "bt=e=>{et.mutate({hostId:e},{onSuccess:({state:t,error:n})=>{vt(e,t,n)}})}",
+    "bt=e=>{et.mutate({hostId:e},{onSuccess:t=>{let{state:n,error:r}=t;vt(e,n,r)}})}",
+  );
+}
+
 function syntheticSettingsRefreshBundle() {
   return [
     "var Qn=15e3,Z=React;",
@@ -305,6 +312,14 @@ function syntheticCurrentSettingsRefreshBundle() {
     "var Jn=`[remote-connections/settings]`,Yn=15e3,Xn=[],Zn=[];",
     "function Qn(){let ge=me(),et=!1,ne=B,ft=(0,Z.useEffectEvent)(async e=>{if(!et)try{let t=[];t.push(ne(`refresh-remote-connections`,{signal:e})),ge&&t.push(ne(`refresh-remote-control-connections`,{signal:e})),await Promise.all(t)}catch(e){if(e instanceof DOMException&&e.name===`AbortError`)return;M.debug(`${Jn} auto_refresh_failed`,{safe:{},sensitive:{error:e}})}});",
     "(0,Z.useEffect)(()=>{let e=null,t=!1,n=async()=>{if(!t){t=!0,e=new AbortController;try{await ft(e.signal)}finally{e=null,t=!1}}},r=window.setInterval(()=>{n()},Yn);return()=>{e?.abort(),window.clearInterval(r)}},[]);return null}",
+  ].join("");
+}
+
+function syntheticReactCompilerSettingsRefreshBundle() {
+  return [
+    "var qs=15e3,As=React;function tr(){let xn=(0,As.useEffectEvent)(async e=>{await P(`refresh-remote-connections`,{signal:e})}),Sn;",
+    "cache[0]===xn?Sn=cache[1]:(Sn=()=>{let e=null,t=!1,n=async()=>{t||(t=!0,e=new AbortController,await(async()=>{await xn(e.signal)})().finally(()=>{e=null,t=!1}))},r=window.setInterval(()=>{n()},qs);return()=>{e?.abort(),window.clearInterval(r)}},cache[0]=xn,cache[1]=Sn);",
+    "let Cn=[];(0,As.useEffect)(Sn,Cn);return null}",
   ].join("");
 }
 
@@ -366,6 +381,13 @@ function syntheticCompletedItemRecoveryBundle() {
     "if(e.type===`hookPrompt`){bP(n,s);return}",
     "yV(e)&&(n.firstTurnWorkItemStartedAtMs=n.firstTurnWorkItemStartedAtMs??Date.now()),!(e.type!==`subAgentActivity`&&!LB(n,e.id,e.type))&&(e.type,bP(n,s))});break}}}}",
   ].join("");
+}
+
+function syntheticDurableSleepCompletedItemRecoveryBundle() {
+  return syntheticCompletedItemRecoveryBundle().replace(
+    "!(e.type!==`subAgentActivity`&&!LB(n,e.id,e.type))&&(e.type,bP(n,s))",
+    "!(e.type!==`subAgentActivity`&&(e.type!==`sleep`||t.mode!==`durable`)&&!LB(n,e.id,e.type))&&(e.type,bP(n,s))",
+  );
 }
 
 function syntheticRemoteTerminalStatusBundle() {
@@ -1631,6 +1653,17 @@ test("Linux remote-control SSH install sends the local Desktop app-server versio
   assert.equal(applyLinuxRemoteControlSettingsUxPatch(patched), patched);
 });
 
+test("Linux remote-control SSH install handles the current compiler success callback", () => {
+  const source = syntheticReactCompilerSshInstallSettingsBundle();
+  const patched = applyLinuxRemoteControlSettingsUxPatch(source);
+
+  assert.notEqual(patched, source);
+  assert.match(patched, /codexLinuxRemoteControlSshInstallRelease/);
+  assert.match(patched, /release=codexLinuxRemoteControlSshInstallResolvedRelease/);
+  assert.doesNotMatch(patched, /onSuccess:t=>\{let\{state:n,error:r\}=t/);
+  assert.equal(applyLinuxRemoteControlSettingsUxPatch(patched), patched);
+});
+
 test("Linux remote-control SSH install prefers update-required minRequiredVersion", () => {
   const patched = applyLinuxRemoteControlSettingsUxPatch(syntheticSshInstallSettingsBundle());
   const context = {
@@ -1718,6 +1751,18 @@ test("Linux remote-connections refresh patch handles current interval alias", ()
   assert.notEqual(patched, source);
   assert.match(patched, /Yn=5e3/);
   assert.doesNotMatch(patched, /Yn=15e3/);
+  assert.match(patched, /codexLinuxRemoteConnectionsRefreshNow/);
+  assert.match(patched, /document\.addEventListener\(`visibilitychange`,codexLinuxRemoteConnectionsRefreshNow\)/);
+  assert.match(patched, /window\.addEventListener\(`resume`,codexLinuxRemoteConnectionsRefreshNow\)/);
+  assert.equal(applyLinuxRemoteConnectionsRefreshPatch(patched), patched);
+});
+
+test("Linux remote-connections refresh patch handles the current compiler-cached effect", () => {
+  const source = syntheticReactCompilerSettingsRefreshBundle();
+  const patched = applyLinuxRemoteConnectionsRefreshPatch(source);
+
+  assert.notEqual(patched, source);
+  assert.match(patched, /qs=5e3/);
   assert.match(patched, /codexLinuxRemoteConnectionsRefreshNow/);
   assert.match(patched, /document\.addEventListener\(`visibilitychange`,codexLinuxRemoteConnectionsRefreshNow\)/);
   assert.match(patched, /window\.addEventListener\(`resume`,codexLinuxRemoteConnectionsRefreshNow\)/);
@@ -2334,6 +2379,16 @@ test("remote mobile completed-item recovery restores a missing started item", ()
   assert.equal(behavior.missing.errors.length, 0);
   assert.equal(behavior.existing.errors.length, 0);
   assert.equal(behavior.wrongType.errors.length, 1);
+});
+
+test("remote mobile completed-item recovery preserves the durable sleep exception", () => {
+  const source = syntheticDurableSleepCompletedItemRecoveryBundle();
+  const patched = applyLinuxRemoteMobileCompletedItemRecoveryPatch(source);
+
+  assert.notEqual(patched, source);
+  assert.match(patched, /e\.type!==`sleep`\|\|t\.mode!==`durable`/);
+  assert.match(patched, /codexLinuxCompletedItemExists=n\.items\.some\(e=>e\.id===s\.id\)/);
+  assert.equal(applyLinuxRemoteMobileCompletedItemRecoveryPatch(patched), patched);
 });
 
 test("Linux remote-control status guard skips slow remote SSH status reads", async () => {
