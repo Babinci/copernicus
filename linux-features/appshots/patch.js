@@ -15,11 +15,45 @@ function warn(message, patchName) {
 }
 
 function applyLinuxAppshotAvailabilityPatch(currentSource) {
+  if (currentSource.includes("codexLinuxAppshotsCurrentAvailability")) {
+    return currentSource;
+  }
   if (
     currentSource.includes("codexLinuxAppshotsPlatformAvailable") &&
     currentSource.includes("!==`linux`&&(")
   ) {
     return currentSource;
+  }
+
+  const currentPlatformMatch = currentSource.match(
+    /function ([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\)\{return \2===`macOS`\|\|\2===`windows`&&\3!=null&&([A-Za-z_$][\w$]*)\.isInternal\(\3\)\}/,
+  );
+  if (currentPlatformMatch != null) {
+    const [platformContract, platformFunction, platformVar, buildFlavorVar, buildFlavorType] =
+      currentPlatformMatch;
+    let currentPatched = currentSource.replace(
+      platformContract,
+      `function ${platformFunction}(${platformVar},${buildFlavorVar}){return ${platformVar}===\`macOS\`||${platformVar}===\`linux\`||${platformVar}===\`windows\`&&${buildFlavorVar}!=null&&${buildFlavorType}.isInternal(${buildFlavorVar})}/*codexLinuxAppshotsCurrentAvailability*/`,
+    );
+    const asyncGate = new RegExp(
+      `(async function [A-Za-z_$][\\w$]*\\(\\{scope:([A-Za-z_$][\\w$]*),hostId:[A-Za-z_$][\\w$]*,queryClient:[A-Za-z_$][\\w$]*\\}\\)\\{let ([A-Za-z_$][\\w$]*)=\\2\\.get\\([A-Za-z_$][\\w$]*\\);return[^;]+?\\|\\|)!([A-Za-z_$][\\w$]*)\\(\\2,\u00601304276663\u0060\\)`,
+    );
+    const atomGate = new RegExp(
+      `(let ([A-Za-z_$][\\w$]*)=([A-Za-z_$][\\w$]*)\\([A-Za-z_$][\\w$]*\\);if\\([^;]+?\\|\\|)!\\3\\(([A-Za-z_$][\\w$]*),\u00601304276663\u0060\\)`,
+    );
+    const asyncMatch = currentPatched.match(asyncGate);
+    const atomMatch = currentPatched.match(atomGate);
+    if (asyncMatch != null && atomMatch != null) {
+      currentPatched = currentPatched.replace(
+        asyncGate,
+        `$1$3!==\`linux\`&&!$4($2,\`1304276663\`)`,
+      );
+      currentPatched = currentPatched.replace(
+        atomGate,
+        `$1$2!==\`linux\`&&!$3($4,\`1304276663\`)`,
+      );
+      return currentPatched;
+    }
   }
 
   let changed = false;
@@ -76,6 +110,23 @@ function applyLinuxAppshotMainProcessPatch(currentSource) {
     },
   );
 
+  if (!patchedFrontmost && !patchedCapture) {
+    patchedSource = currentSource.replace(
+      /"computer-use-frontmost-window":async\(\{origin:([A-Za-z_$][\w$]*),signal:([A-Za-z_$][\w$]*)\}\)=>process\.platform===`win32`\?([A-Za-z_$][\w$]*)\(\)\.appshotsEnabled\?this\.windowsCaptureNativeBridge\?\.getFrontmostWindow\(\1,\2\)\?\?null:null:process\.platform===`darwin`\?([A-Za-z_$][\w$]*)\(\):null/g,
+      (match, originVar, signalVar, appshotFlagsFn, macFrontmostFn) => {
+        patchedFrontmost = true;
+        return `"computer-use-frontmost-window":async({origin:${originVar},signal:${signalVar}})=>process.platform===\`linux\`?codexLinuxAppshotFrontmostWindow():process.platform===\`win32\`?${appshotFlagsFn}().appshotsEnabled?this.windowsCaptureNativeBridge?.getFrontmostWindow(${originVar},${signalVar})??null:null:process.platform===\`darwin\`?${macFrontmostFn}():null`;
+      },
+    );
+    patchedSource = patchedSource.replace(
+      /"computer-use-start-capture":async\(\{animationDestination:([A-Za-z_$][\w$]*),bundleIdentifier:([A-Za-z_$][\w$]*),origin:([A-Za-z_$][\w$]*),requestId:([A-Za-z_$][\w$]*),signal:([A-Za-z_$][\w$]*)\}\)=>\{if\(process\.platform!==`darwin`&&process\.platform!==`win32`\)return null;/g,
+      (match, animationDestinationVar, bundleIdentifierVar, originVar, requestIdVar, signalVar) => {
+        patchedCapture = true;
+        return `"computer-use-start-capture":async({animationDestination:${animationDestinationVar},bundleIdentifier:${bundleIdentifierVar},origin:${originVar},requestId:${requestIdVar},signal:${signalVar}})=>{if(process.platform===\`linux\`)return codexLinuxAppshotStartCapture({origin:${originVar},requestId:${requestIdVar},bundleIdentifier:${bundleIdentifierVar},windowManager:this.windowManager});if(process.platform!==\`darwin\`&&process.platform!==\`win32\`)return null;`;
+      },
+    );
+  }
+
   if (!patchedFrontmost || !patchedCapture) {
     if (currentSource.includes("computer-use-frontmost-window") || currentSource.includes("computer-use-start-capture")) {
       warn("Could not find AppShots main-process handlers", "Linux AppShots main-process patch");
@@ -87,6 +138,45 @@ function applyLinuxAppshotMainProcessPatch(currentSource) {
 }
 
 function applyLinuxAppshotHotkeyPatch(currentSource) {
+  if (
+    currentSource.includes("process.platform===`linux`?null:process.platform===`win32`") &&
+    currentSource.includes("linuxWayland:codexLinuxAppshotIsWayland()")
+  ) {
+    return currentSource;
+  }
+
+  if (
+    currentSource.includes("windowsCaptureNativeBridgeFailed") &&
+    currentSource.includes("getStored(`appshotHotkey`)")
+  ) {
+    let currentPatched = currentSource;
+    const counts = [];
+    function replaceCurrent(pattern, replacement) {
+      const matches = [...currentPatched.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))];
+      counts.push(matches.length);
+      if (matches.length === 1) currentPatched = currentPatched.replace(pattern, replacement);
+    }
+    replaceCurrent(
+      /([A-Za-z_$][\w$]*)===void 0\?this\.configuredHotkey=process\.platform===`win32`\?([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*):this\.configuredHotkey=\1/,
+      (match, storedVar, windowsDefaultVar, macDefaultVar) =>
+        `${storedVar}===void 0?this.configuredHotkey=process.platform===\`linux\`?null:process.platform===\`win32\`?${windowsDefaultVar}:${macDefaultVar}:this.configuredHotkey=${storedVar}`,
+    );
+    replaceCurrent(
+      /getState\(\)\{return\{supported:this\.enabled&&\(process\.platform===`darwin`\|\|process\.platform===`win32`&&this\.windowsCaptureNativeBridge!=null&&!this\.windowsCaptureNativeBridgeFailed\),configuredHotkey:this\.configuredHotkey,isActive:this\.registration!=null\}\}/,
+      "getState(){return{supported:this.enabled&&(process.platform===`darwin`||process.platform===`linux`||process.platform===`win32`&&this.windowsCaptureNativeBridge!=null&&!this.windowsCaptureNativeBridgeFailed),configuredHotkey:this.configuredHotkey,isActive:this.registration!=null,linuxWayland:codexLinuxAppshotIsWayland()}}",
+    );
+    replaceCurrent(
+      /new Set\(\[\.\.\.([A-Za-z_$][\w$]*),`shift`\]\)/,
+      (match, baseModifiersVar) =>
+        `new Set([...${baseModifiersVar},\`shift\`,\`super\`,\`meta\`,\`win\`])`,
+    );
+    if (counts.every((count) => count === 1)) {
+      return withLinuxAppshotWaylandHelper(currentPatched);
+    }
+    warn("Could not find current Windows-aware AppShots hotkey class", "Linux AppShots hotkey patch");
+    return currentSource;
+  }
+
   const alreadyPatched = [
     /this\.configuredHotkey=[A-Za-z_$][\w$]*===void 0\?\(process\.platform===`linux`\?null:[A-Za-z_$][\w$]*\):[A-Za-z_$][\w$]*/,
     /supported:this\.enabled&&\(process\.platform===`darwin`\|\|process\.platform===`linux`\),configuredHotkey:this\.configuredHotkey,isActive:this\.registration!=null,linuxWayland:codexLinuxAppshotIsWayland\(\)/,
@@ -170,6 +260,19 @@ function applyLinuxAppshotSettingsHotkeyPatch(currentSource) {
   ).join(",")}]`;
   if (currentSource.includes("codexLinuxAppshotHotkeyOptions")) {
     return currentSource;
+  }
+  if (currentSource.includes("===`linux`?[{hotkey:`Ctrl+Super+A`")) {
+    return currentSource;
+  }
+
+  const currentWindowsOptions =
+    /let ([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)===`windows`\?(\[\{hotkey:`DoubleAlt`,label:[^\]]+\},\{hotkey:`DoubleShift`,label:[^\]]+\}\]):([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)=\1\.find/;
+  if (currentWindowsOptions.test(currentSource)) {
+    return currentSource.replace(
+      currentWindowsOptions,
+      (match, optionsVar, platformVar, windowsOptions, macOptionsVar, selectedVar) =>
+        `let ${optionsVar}=${platformVar}===\`linux\`?[{hotkey:\`Ctrl+Super+A\`,label:\`Ctrl + Super + A\`}]:${platformVar}===\`windows\`?${windowsOptions}:${macOptionsVar},${selectedVar}=${optionsVar}.find`,
+    );
   }
 
   const stateDataVar =

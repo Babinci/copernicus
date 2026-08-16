@@ -132,15 +132,21 @@ function applyLinuxHeaderSlotSafeAreaPatch(currentSource) {
   const headerMatch = currentSource.match(
     /function [A-Za-z_$][\w$]*\(\{isHeaderEdgeScroll:[A-Za-z_$][\w$]*,isApplicationMenuBarEnabled:([A-Za-z_$][\w$]*)\}\)\{/u,
   );
-  if (headerMatch == null) {
+  const compilerHeaderMatch = currentSource.match(
+    /function [A-Za-z_$][\w$]*\(([A-Za-z_$][\w$]*)\)\{let [^;{}]{0,300}?\{isHeaderEdgeScroll:[A-Za-z_$][\w$]*,isApplicationMenuBarEnabled:([A-Za-z_$][\w$]*)\}=\1/u,
+  );
+  const selectedHeaderMatch = headerMatch ?? compilerHeaderMatch;
+  if (selectedHeaderMatch == null) {
     return null;
   }
-  const headerOpenBrace = headerMatch.index + headerMatch[0].length - 1;
+  const headerOpenBrace = headerMatch == null
+    ? currentSource.indexOf("{", selectedHeaderMatch.index)
+    : selectedHeaderMatch.index + selectedHeaderMatch[0].length - 1;
   const headerCloseBrace = findMatchingBrace(currentSource, headerOpenBrace);
   if (headerCloseBrace === -1) {
     return null;
   }
-  const headerSource = currentSource.slice(headerMatch.index, headerCloseBrace + 1);
+  const headerSource = currentSource.slice(selectedHeaderMatch.index, headerCloseBrace + 1);
   const endSlotPattern = /(slotWidth:[A-Za-z_$][\w$]*),side:`end`/gu;
   const endSlotMatches = [...headerSource.matchAll(endSlotPattern)];
   if (endSlotMatches.length !== 1) {
@@ -150,17 +156,23 @@ function applyLinuxHeaderSlotSafeAreaPatch(currentSource) {
   const slotMatches = [...currentSource.matchAll(
     /function [A-Za-z_$][\w$]*\(\{entries:[A-Za-z_$][\w$]*,fitWidth:[A-Za-z_$][\w$]*,side:([A-Za-z_$][\w$]*),slotWidth:[A-Za-z_$][\w$]*\}\)\{/gu,
   )];
-  if (slotMatches.length !== 1) {
+  const compilerSlotMatches = [...currentSource.matchAll(
+    /function [A-Za-z_$][\w$]*\(([A-Za-z_$][\w$]*)\)\{let [^;{}]{0,300}?\{entries:[A-Za-z_$][\w$]*,fitWidth:[A-Za-z_$][\w$]*,side:([A-Za-z_$][\w$]*),slotWidth:[A-Za-z_$][\w$]*\}=\1/gu,
+  )];
+  if (slotMatches.length + compilerSlotMatches.length !== 1) {
     return null;
   }
-  const slotMatch = slotMatches[0];
-  const slotOpenBrace = slotMatch.index + slotMatch[0].length - 1;
+  const slotMatch = slotMatches[0] ?? compilerSlotMatches[0];
+  const compilerSlot = slotMatches.length === 0;
+  const slotOpenBrace = compilerSlot
+    ? currentSource.indexOf("{", slotMatch.index)
+    : slotMatch.index + slotMatch[0].length - 1;
   const slotCloseBrace = findMatchingBrace(currentSource, slotOpenBrace);
   if (slotCloseBrace === -1) {
     return null;
   }
   const slotSource = currentSource.slice(slotMatch.index, slotCloseBrace + 1);
-  const sideAlias = slotMatch[1];
+  const sideAlias = slotMatch[compilerSlot ? 2 : 1];
   const paddingPattern = new RegExp(
     `"pe-2":${escapeRegExp(sideAlias)}===\`start\`&&([A-Za-z_$][\\w$]*)\\|\\|${escapeRegExp(sideAlias)}===\`end\``,
     "u",
@@ -170,7 +182,7 @@ function applyLinuxHeaderSlotSafeAreaPatch(currentSource) {
     return null;
   }
 
-  const menuEnabledAlias = headerMatch[1];
+  const menuEnabledAlias = selectedHeaderMatch[headerMatch == null ? 2 : 1];
   const hasEndEntriesAlias = paddingMatch[1];
   const patchedHeaderSource = headerSource.replace(
     endSlotPattern,
@@ -179,7 +191,9 @@ function applyLinuxHeaderSlotSafeAreaPatch(currentSource) {
   const patchedSlotSource = slotSource
     .replace(
       slotMatch[0],
-      slotMatch[0].replace("}){", `,${prop}}){`),
+      compilerSlot
+        ? slotMatch[0].replace(`}=${slotMatch[1]}`, `,${prop}}=${slotMatch[1]}`)
+        : slotMatch[0].replace("}){", `,${prop}}){`),
     )
     .replace(
       paddingPattern,
@@ -221,6 +235,12 @@ function hasCompleteLinuxWindowControlsSafeAreaPatch(source) {
       "gu",
     ),
   ) ?? [];
+  const compilerSlotSignatureMatches = source.match(
+    new RegExp(
+      `function [A-Za-z_$][\\w$]*\\(([A-Za-z_$][\\w$]*)\\)\\{let [^;{}]{0,300}?\\{entries:[A-Za-z_$][\\w$]*,fitWidth:[A-Za-z_$][\\w$]*,side:[A-Za-z_$][\\w$]*,slotWidth:[A-Za-z_$][\\w$]*,${LINUX_WINDOW_CONTROLS_SAFE_AREA_PROP}\\}=\\1`,
+      "gu",
+    ),
+  ) ?? [];
   const paddingMatches = source.match(
     new RegExp(
       `"pe-2":([A-Za-z_$][\\w$]*)===\`start\`&&[A-Za-z_$][\\w$]*\\|\\|\\1===\`end\`&&!${LINUX_WINDOW_CONTROLS_SAFE_AREA_PROP},"pe-\\(--spacing-token-safe-header-right\\)":\\1===\`end\`&&${LINUX_WINDOW_CONTROLS_SAFE_AREA_PROP}`,
@@ -235,7 +255,7 @@ function hasCompleteLinuxWindowControlsSafeAreaPatch(source) {
   ) ?? [];
   const hasSharedConsumers =
     insetMatches.length > 0 &&
-    slotSignatureMatches.length === 1 &&
+    slotSignatureMatches.length + compilerSlotSignatureMatches.length === 1 &&
     paddingMatches.length === 1;
   if (!hasSharedConsumers) {
     return false;

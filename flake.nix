@@ -94,10 +94,10 @@
 
         codexDmg = pkgs.fetchurl {
           url = "https://persistent.oaistatic.com/codex-app-prod/ChatGPT.dmg";
-          hash = "sha256-+KWnSss4qrSlmsCtf+87tLtPKAp+0l88t+9hRd9eh0c=";
+          hash = "sha256-7P+2/AIXozb8zrh1jwpUzDoGSBFWGKhr3czByxj7SKQ=";
         };
 
-        codexVersion = "26.803.41515";
+        codexVersion = "26.810.52044";
         electronVersion = "42.3.0";
         electronPlatform =
           {
@@ -122,9 +122,9 @@
         };
 
         codexMicroNodeHidArchive = pkgs.fetchurl {
-          name = "node-hid-3.3.0.tgz";
-          url = "https://registry.npmjs.org/node-hid/-/node-hid-3.3.0.tgz";
-          hash = "sha512-j+dFgJLRAE0nufQKXk3IfS6T6YuHhCgMvz4TrG0sgtb6DSCdYpfJ1etcdmeCmPQjUgO+yo32ktVrRliNs/+fmg==";
+          name = "node-hid-3.4.0.tgz";
+          url = "https://registry.npmjs.org/node-hid/-/node-hid-3.4.0.tgz";
+          hash = "sha512-Br7EO3bJARAJBdtcsGzF/Vs5TjfbkaMdglqLQ+Rk9GOGgVqv5DxYUVH5znLerJU+OfBWw8sd552Ujcprz1bG9g==";
         };
 
         browserUseNodeReplRuntime = pkgs.fetchurl {

@@ -50,12 +50,28 @@ function appshotAvailabilityAtomBundleFixture() {
   ].join("");
 }
 
+function currentAppshotAvailabilityBundleFixture() {
+  return [
+    "async function hhr({scope:e,hostId:t,queryClient:n}){let r=e.get(mO);return!ghr(r,r===`windows`?e.get(fA).data?.buildFlavor:null)||!qh(e,`1304276663`)||r===`windows`&&(!qh(e,`2124127696`)||!(await e.query.getOrFetch(phr)).supported)?!1:(await n.ensureQueryData({queryKey:v_n({hostId:t}),queryFn:()=>b_n(t)})).requirements?.allowAppshots!==!1}",
+    "function ghr(e,t){return e===`macOS`||e===`windows`&&t!=null&&nu.isInternal(t)}",
+    "var _hr=ja(Q,(e,{get:t})=>{let n=t(mO);if(!ghr(n,n===`windows`?t(fA).data?.buildFlavor:null)||!t(Yh,`1304276663`)||n===`windows`&&!t(Yh,`2124127696`))return!1;let{data:r}=t(lT,{hostId:e});return r!=null&&r.requirements?.allowAppshots!==!1});",
+  ].join("");
+}
+
 function appshotMainProcessBundleFixture() {
   return [
     "var FO=new Map;",
     "function HO(e,t){let n=FO.get(e);n!=null&&(n.windowManager.sendInlineMessageForView(n.origin,{requestId:e,type:`computer-use-capture-updated`,update:t}),done(e,n))}",
     "\"computer-use-frontmost-window\":async()=>process.platform===`darwin`?Xo():null,",
     "\"computer-use-start-capture\":async({animationDestination:e,bundleIdentifier:t,origin:n,requestId:r})=>{if(process.platform!==`darwin`||this.requestComputerUseCaptureWorker==null||this.subscribeComputerUseCaptureWorkerEvent==null)return null;let i=GO({backgroundColor:e.backgroundColor,cornerRadius:e.cornerRadius,primaryTextColor:e.primaryTextColor,viewportFrame:e.viewportFrame,webContents:n});return i==null?null:VO({animationTarget:i,bundleIdentifier:t,origin:n,requestComputerUseCaptureWorker:this.requestComputerUseCaptureWorker,requestId:r,subscribeComputerUseCaptureWorkerEvent:this.subscribeComputerUseCaptureWorkerEvent,windowManager:this.windowManager})}",
+  ].join("");
+}
+
+function currentAppshotMainProcessBundleFixture() {
+  return [
+    "function send(){this.windowManager.sendInlineMessageForView(origin,{})}",
+    '"computer-use-frontmost-window":async({origin:e,signal:t})=>process.platform===`win32`?Tr().appshotsEnabled?this.windowsCaptureNativeBridge?.getFrontmostWindow(e,t)??null:null:process.platform===`darwin`?_o():null,',
+    '"computer-use-start-capture":async({animationDestination:e,bundleIdentifier:t,origin:n,requestId:r,signal:i})=>{if(process.platform!==`darwin`&&process.platform!==`win32`)return null;return upstream(e,t,n,r,i)}',
   ].join("");
 }
 
@@ -71,11 +87,24 @@ function currentAppshotHotkeyMainBundleFixture() {
   ].join("");
 }
 
+function windowsAwareAppshotHotkeyMainBundleFixture() {
+  return [
+    "var eDe=`DoubleCommand`,tDe=`DoubleAlt`,UN=new Set([`ctrl`,`alt`]),WN=new Set([...UN,`shift`]);",
+    "function JN(){}function ZN(){}function XN(){return null}function M5(){return!1}",
+    "var iDe=class{enabled;windowsCaptureNativeBridge;windowsCaptureNativeBridgeFailed=!1;configuredHotkey;registration=null;constructor(e){this.enabled=!0;let s=e.getStored(`appshotHotkey`);s===void 0?this.configuredHotkey=process.platform===`win32`?tDe:eDe:this.configuredHotkey=s}getState(){return{supported:this.enabled&&(process.platform===`darwin`||process.platform===`win32`&&this.windowsCaptureNativeBridge!=null&&!this.windowsCaptureNativeBridgeFailed),configuredHotkey:this.configuredHotkey,isActive:this.registration!=null}}};",
+    "globalThis.AppshotHotkeys=iDe;",
+  ].join("");
+}
+
 function currentAppshotSettingsBundleFixture() {
   return [
     "var J,Y,X,Se=e((()=>{J=[`appshot-hotkey-state`],Y=o(M,()=>({queryKey:J,queryFn:async()=>{let e=C.appshotHotkeys;return e==null?{supported:!1,configuredHotkey:null,isActive:!1}:e.getState()},staleTime:k.ONE_MINUTE})),X=[{hotkey:`DoubleCommand`,label:`⌘ + ⌘`},{hotkey:`DoubleOption`,label:`⌥ + ⌥`},{hotkey:`DoubleShift`,label:`⇧ + ⇧`}]}));",
     "function Te(){let e=(0,Q.c)(41),o=A(Y),i=null,a=()=>{},d=async()=>{},f=o?.configuredHotkey??null,p;e[6]===f?p=e[7]:(p=X.find(e=>e.hotkey===f)??null,e[6]=f,e[7]=p);let m=p,O;e[20]!==d||e[21]!==f||e[22]!==m?.hotkey?(O=X.map(e=>item({selected:e.hotkey===m?.hotkey,onSelect:()=>d(e.hotkey),children:e.label})),e[20]=d,e[21]=f,e[22]=m?.hotkey,e[23]=O):O=e[23];return O}",
   ].join("");
+}
+
+function windowsAwareAppshotSettingsBundleFixture() {
+  return "function settings(a,r,Y,_){let t=a===`windows`?[{hotkey:`DoubleAlt`,label:r.formatMessage(X.doubleAlt)},{hotkey:`DoubleShift`,label:r.formatMessage(X.doubleShift)}]:Y,i=t.find(e=>e.hotkey===_)??null;return[t,i]}";
 }
 
 function currentAppshotSettingsRuntimeFixture() {
@@ -277,6 +306,17 @@ test("enables AppShots availability atom on Linux", () => {
   assert.match(patched, /requirements\?\.allowAppshots!==!1/);
 });
 
+test("enables current Windows-aware AppShots availability on Linux", () => {
+  const patched = applyPatchTwice(
+    applyLinuxAppshotAvailabilityPatch,
+    currentAppshotAvailabilityBundleFixture(),
+  );
+
+  assert.match(patched, /return e===`macOS`\|\|e===`linux`\|\|e===`windows`/);
+  assert.match(patched, /r!==`linux`&&!qh\(e,`1304276663`\)/);
+  assert.match(patched, /n!==`linux`&&!t\(Yh,`1304276663`\)/);
+});
+
 test("rejects the obsolete raw renderer message sender shape", () => {
   const obsolete = "var F=`codex_desktop:message-for-view`;function nS(e,t){e.send(F,t)}";
   assert.equal(applyLinuxAppshotMainProcessPatch(obsolete), obsolete);
@@ -330,6 +370,19 @@ test("routes AppShots capture through the self-contained Linux feature", () => {
   assert.match(patched, /type:`axText`,text:s/);
   assert.match(patched, /type:`screenshot`,screenshotDataURL:c\.dataURL/);
   assert.match(patched, /type:`completed`,transitionSnapshotDataURL:c\.dataURL/);
+});
+
+test("routes current Windows-aware AppShots handlers through Linux capture", () => {
+  const patched = applyPatchTwice(
+    applyLinuxAppshotMainProcessPatch,
+    currentAppshotMainProcessBundleFixture(),
+  );
+
+  assert.match(patched, /process\.platform===`linux`\?codexLinuxAppshotFrontmostWindow\(\)/);
+  assert.match(
+    patched,
+    /if\(process\.platform===`linux`\)return codexLinuxAppshotStartCapture\(\{origin:n,requestId:r,bundleIdentifier:t,windowManager:this\.windowManager\}\)/,
+  );
 });
 
 test("AppShots capture uses and removes its private temporary directory", async () => {
@@ -479,6 +532,17 @@ test("enables the current AppShots hotkey class and bare modifiers on Linux", ()
   assert.equal(state.linuxWayland, false);
 });
 
+test("enables the current Windows-aware AppShots hotkey class on Linux", () => {
+  const patched = applyPatchTwice(
+    applyLinuxAppshotHotkeyPatch,
+    windowsAwareAppshotHotkeyMainBundleFixture(),
+  );
+
+  assert.match(patched, /process\.platform===`linux`\?null:process\.platform===`win32`\?tDe:eDe/);
+  assert.match(patched, /process\.platform===`darwin`\|\|process\.platform===`linux`\|\|process\.platform===`win32`/);
+  assert.match(patched, /new Set\(\[\.\.\.UN,`shift`,`super`,`meta`,`win`\]\)/);
+});
+
 test("AppShots hotkey patch fails closed when one current class shape drifts", () => {
   const source = currentAppshotHotkeyMainBundleFixture().replace(
     "new Set([...Yk,`shift`])",
@@ -533,6 +597,15 @@ test("shows Linux AppShots accelerator choices in current settings chunk", () =>
   assert.doesNotMatch(patched, /\bX\.map\(/);
   assert.match(patched, /hotkey:`DoubleOption`,label:`Alt \+ Alt`/);
   assert.match(patched, /hotkey:`Ctrl\+Super\+A`,label:`Ctrl \+ Super \+ A`/);
+});
+
+test("shows one native accelerator in the current Windows-aware settings chunk", () => {
+  const patched = applyPatchTwice(
+    applyLinuxAppshotSettingsHotkeyPatch,
+    windowsAwareAppshotSettingsBundleFixture(),
+  );
+
+  assert.match(patched, /a===`linux`\?\[\{hotkey:`Ctrl\+Super\+A`,label:`Ctrl \+ Super \+ A`\}\]/);
 });
 
 test("current AppShots settings helper is declared in strict module scope", () => {

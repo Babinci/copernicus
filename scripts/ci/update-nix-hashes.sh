@@ -9,6 +9,7 @@ VERIFY_LOG="${VERIFY_LOG:-/tmp/codex-nix-build-verify.log}"
 # Upstream Codex Sparkle appcast (x64 runners). Used only for reporting when it
 # lags behind the moving Codex.dmg; the verified DMG payload is the pin source.
 APPCAST_URL="${APPCAST_URL:-https://persistent.oaistatic.com/codex-app-prod/appcast-x64.xml}"
+CODEX_MICRO_NODE_HID_ARTIFACTS="${CODEX_MICRO_NODE_HID_ARTIFACTS:-$REPO_DIR/linux-features/codex-micro/native-artifacts.json}"
 
 PACKAGE_OUTPUTS=(
     ".#codex-desktop"
@@ -150,6 +151,41 @@ raise SystemExit(f"Could not find {key!r} after {anchor!r} in {path}")
 PY
 }
 
+sync_codex_micro_node_hid_flake_pin() {
+    python3 - "$FLAKE_FILE" "$CODEX_MICRO_NODE_HID_ARTIFACTS" <<'PY'
+from pathlib import Path
+import json
+import re
+import sys
+
+flake = Path(sys.argv[1])
+artifact = json.loads(Path(sys.argv[2]).read_text())
+version = artifact.get("version", "")
+integrity = artifact.get("integrity", "")
+if not re.fullmatch(r"[0-9]+(?:\.[0-9]+){2}", version):
+    raise SystemExit(f"Invalid node-hid version: {version!r}")
+if not re.fullmatch(r"sha512-[A-Za-z0-9+/=]+", integrity):
+    raise SystemExit("Invalid node-hid integrity")
+
+text = flake.read_text()
+pattern = re.compile(r"(codexMicroNodeHidArchive\s*=\s*pkgs\.fetchurl\s*\{)(.*?)(\n\s*\};)", re.S)
+match = pattern.search(text)
+if match is None:
+    raise SystemExit("Could not find codexMicroNodeHidArchive in flake.nix")
+body = match.group(2)
+fields = {
+    "name": f"node-hid-{version}.tgz",
+    "url": f"https://registry.npmjs.org/node-hid/-/node-hid-{version}.tgz",
+    "hash": integrity,
+}
+for key, value in fields.items():
+    body, count = re.subn(rf'(\b{key}\s*=\s*")[^"]+(";)', rf'\g<1>{value}\2', body, count=1)
+    if count != 1:
+        raise SystemExit(f"Could not update node-hid {key}")
+flake.write_text(text[:match.start()] + match.group(1) + body + match.group(3) + text[match.end():])
+PY
+}
+
 run_nix_build() {
     local log_path="$1"
     shift
@@ -190,6 +226,7 @@ main() {
     fi
 
     WRITE_PINS=1 APPCAST_URL= "$REPO_DIR/scripts/ci/validate-nix-pins.sh" "$UPSTREAM_DMG_PATH"
+    sync_codex_micro_node_hid_flake_pin
 
     # If the Electron pin moved, refresh its fixed-output hashes so the verify
     # build does not fail on the new download URLs.
@@ -240,6 +277,9 @@ main() {
 }
 
 case "${1:-}" in
+    sync-codex-micro-node-hid)
+        sync_codex_micro_node_hid_flake_pin
+        ;;
     read-flake-hash)
         if [ "$#" -ne 3 ]; then
             echo "usage: $0 read-flake-hash <anchor> <key>" >&2

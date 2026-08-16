@@ -70,6 +70,24 @@ function mainBundleFixture() {
   ].join("");
 }
 
+function currentMainBundleFixture() {
+  return mainBundleFixture()
+    .replace(
+      "function eA(e,t,n){if(Rk(e))return Lk(e)?Mk(e,t,n?.bareModifierTrigger):null;",
+      "function eA(e,t,n){let x=n?.ownership,y=t.onReleased,z=x==null?t:{onPressed:()=>{x.isOwner()&&t.onPressed()},onReleased:y==null?void 0:()=>{x.isOwner()&&y()}};if(Rk(e))return Lk(e)?Mk(e,z,n?.bareModifierTrigger):null;",
+    )
+    .replace("registerHotkeyOrThrow(e){", "registerHotkeyOrThrow(e,x){")
+    .replace(
+      "onReleased:()=>{this.handleHoldHotkeyReleased()}})",
+      "onReleased:()=>{this.handleHoldHotkeyReleased()}},{ownership:x})",
+    )
+    .replace("registerToggleHotkeyOrThrow(e){", "registerToggleHotkeyOrThrow(e,x){")
+    .replace(
+      "{bareModifierTrigger:`release`})",
+      "{bareModifierTrigger:`release`,ownership:x})",
+    );
+}
+
 function fakeHelperChild() {
   const child = new EventEmitter();
   child.stdin = {
@@ -218,6 +236,23 @@ test("main patch handles dollar signs in minified identifiers", () => {
   assert.match(patched, /function e\$A\(e,t,n\)/);
   assert.match(patched, /e\$A\(e,\{onPressed:/);
   assert.match(patched, /L\$k\(e\)\?`Modifier-only shortcuts/);
+});
+
+test("main patch preserves current ownership-aware callbacks", () => {
+  const patched = applyPatchTwice(currentMainBundleFixture());
+
+  assert.match(
+    patched,
+    /codexLinuxGlobalDictationPortalRegistration\(e,z\);if\(Rk\(e\)\)/,
+  );
+  assert.match(
+    patched,
+    /onUnavailable:t=>\{this\.handleLinuxHotkeyUnavailable\(`hold`,t\)\}\},\{ownership:x\}\)/,
+  );
+  assert.match(
+    patched,
+    /bareModifierTrigger:`release`,ownership:x/,
+  );
 });
 
 test("Wayland registration uses a release-aware portal helper", () => {

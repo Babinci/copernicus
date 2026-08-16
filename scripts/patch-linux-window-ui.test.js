@@ -3168,6 +3168,31 @@ function windowControlsSafeAreaFixture(firstInset = 0, secondInset = 0) {
   ].join("");
 }
 
+function compilerWindowControlsSafeAreaFixture() {
+  return [
+    "var Q=Object.freeze({default:Object.freeze({left:0,right:0}),applicationMenu:Object.freeze({left:0,right:0})});",
+    "function header(e){let t=cache(2),{isHeaderEdgeScroll:n,isApplicationMenuBarEnabled:r}=e,A=jsx(slot,{entries:h,fitWidth:a,slotWidth:u,side:`end`});return A}",
+    "function slot(e){let t=cache(14),{entries:n,fitWidth:r,side:i,slotWidth:a}=e,o=n.some(end),s=classes({\"pe-2\":i===`start`&&o||i===`end`});return jsx(s)}",
+  ].join("");
+}
+
+test("connects the safe area through the current compiler-generated slot", () => {
+  const patched = applyPatchTwice(
+    applyLinuxWindowControlsSafeAreaPatch,
+    compilerWindowControlsSafeAreaFixture(),
+  );
+
+  assert.match(patched, /codexLinuxUseWindowControlsSafeArea:!r,side:`end`/);
+  assert.match(
+    patched,
+    /\{entries:n,fitWidth:r,side:i,slotWidth:a,codexLinuxUseWindowControlsSafeArea\}=e/,
+  );
+  assert.match(
+    patched,
+    /"pe-2":i===`start`&&o\|\|i===`end`&&!codexLinuxUseWindowControlsSafeArea/,
+  );
+});
+
 test("uses the Linux window-controls safe area only when the app header shares the titlebar", () => {
   const source = windowControlsSafeAreaFixture();
 

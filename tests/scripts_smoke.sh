@@ -3949,7 +3949,8 @@ make_update_nix_hash_fixture() {
     local fixture="$1"
     local hash_a="sha256-VVQNu/E7Wuyxfsy93Gorknr0t7H7wy9kxMOiBZYOo/o="
 
-    mkdir -p "$fixture/scripts/ci" "$fixture/nix/native-modules" "$fixture/bin"
+    mkdir -p "$fixture/scripts/ci" "$fixture/nix/native-modules" \
+        "$fixture/linux-features/codex-micro" "$fixture/bin"
     cp "$REPO_DIR/scripts/ci/update-nix-hashes.sh" "$fixture/scripts/ci/update-nix-hashes.sh"
     chmod +x "$fixture/scripts/ci/update-nix-hashes.sh"
 
@@ -3961,6 +3962,12 @@ make_update_nix_hash_fixture() {
   codexDmg = pkgs.fetchurl {
     url = "https://persistent.oaistatic.com/codex-app-prod/ChatGPT.dmg";
     hash = "$hash_a";
+  };
+
+  codexMicroNodeHidArchive = pkgs.fetchurl {
+    name = "node-hid-3.3.0.tgz";
+    url = "https://registry.npmjs.org/node-hid/-/node-hid-3.3.0.tgz";
+    hash = "sha512-j+dFgJLRAE0nufQKXk3IfS6T6YuHhCgMvz4TrG0sgtb6DSCdYpfJ1etcdmeCmPQjUgO+yo32ktVrRliNs/+fmg==";
   };
 
   x86_64-linux = {
@@ -3976,6 +3983,9 @@ make_update_nix_hash_fixture() {
   };
 }
 EOF
+    printf '%s\n' \
+        '{"version":"3.3.0","integrity":"sha512-j+dFgJLRAE0nufQKXk3IfS6T6YuHhCgMvz4TrG0sgtb6DSCdYpfJ1etcdmeCmPQjUgO+yo32ktVrRliNs/+fmg=="}' \
+        > "$fixture/linux-features/codex-micro/native-artifacts.json"
     printf '%s\n' '{"dependencies":{"electron":"42.1.0","better-sqlite3":"12.9.0","node-pty":"1.1.0"}}' \
         > "$fixture/nix/native-modules/package.json"
     printf '%s\n' '{"name":"native-modules","lockfileVersion":3,"packages":{}}' \
@@ -4064,7 +4074,8 @@ EOF
     git -C "$fixture" init -q
     git -C "$fixture" config user.name "Test"
     git -C "$fixture" config user.email "test@example.invalid"
-    git -C "$fixture" add flake.nix nix/native-modules/package.json nix/native-modules/package-lock.json
+    git -C "$fixture" add flake.nix nix/native-modules/package.json \
+        nix/native-modules/package-lock.json linux-features/codex-micro/native-artifacts.json
     git -C "$fixture" commit -q -m "fixture"
 }
 
@@ -4098,6 +4109,23 @@ test_update_nix_hashes_skips_unchanged_package_verification() {
     assert_contains "$fixture/output.log" "Nix pins unchanged; skipping package-output verification."
     assert_not_contains "$fixture/calls.log" "nix-store"
     assert_not_contains "$fixture/calls.log" "nix build"
+}
+
+test_update_nix_hashes_syncs_codex_micro_node_hid_pin() {
+    info "Checking Nix hash refresh syncs the Codex Micro node-hid pin"
+    local fixture="$TMP_DIR/nix-hash-refresh-node-hid"
+
+    make_update_nix_hash_fixture "$fixture"
+    printf '%s\n' \
+        '{"version":"3.4.0","integrity":"sha512-Br7EO3bJARAJBdtcsGzF/Vs5TjfbkaMdglqLQ+Rk9GOGgVqv5DxYUVH5znLerJU+OfBWw8sd552Ujcprz1bG9g=="}' \
+        > "$fixture/linux-features/codex-micro/native-artifacts.json"
+
+    REPO_DIR="$fixture" FLAKE_FILE="$fixture/flake.nix" \
+        bash "$fixture/scripts/ci/update-nix-hashes.sh" sync-codex-micro-node-hid
+
+    assert_contains "$fixture/flake.nix" 'name = "node-hid-3.4.0.tgz"'
+    assert_contains "$fixture/flake.nix" 'node-hid/-/node-hid-3.4.0.tgz'
+    assert_contains "$fixture/flake.nix" 'sha512-Br7EO3bJARAJBdtcsGzF/Vs5TjfbkaMdglqLQ+Rk9GOGgVqv5DxYUVH5znLerJU+OfBWw8sd552Ujcprz1bG9g=='
 }
 
 test_update_nix_hashes_verifies_changed_pins() {
@@ -11015,6 +11043,7 @@ main() {
     test_setup_native_wizard_dry_run_cleanup_does_not_delete_confirmed_paths
     test_setup_native_wizard_cleanup_deletes_only_confirmed_paths
     test_update_nix_hashes_skips_unchanged_package_verification
+    test_update_nix_hashes_syncs_codex_micro_node_hid_pin
     test_update_nix_hashes_verifies_changed_pins
     test_update_nix_hashes_verifies_changed_dmg_hash
     test_update_nix_hashes_supports_focused_verification_output
