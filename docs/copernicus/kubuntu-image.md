@@ -3,7 +3,7 @@ type: runbook
 title: Code-generated Kubuntu image
 description: Build and verify a private Kubuntu 24.04.4 installer with a locally built ChatGPT Desktop package and the self-contained Copernicus plugin.
 tags: [copernicus, kubuntu, installer, reproducibility, privacy]
-timestamp: 2026-08-15
+generated: { by: "copernicus/0.9.0", at: 2026-08-15 }
 ---
 
 # Code-generated Kubuntu image
@@ -31,8 +31,8 @@ present in the repository, build the private developer image with:
 sudo ./scripts/build-kubuntu-developer-image.sh
 ```
 
-The wrapper uses `/mnt/d/.copernicus-build-tmp`, selects the newest amd64
-`codex-desktop` package in `dist/`, and creates a timestamped ISO plus SHA-256
+The wrapper uses `/mnt/d/.copernicus-build-tmp`, selects the most recently
+modified amd64 `codex-desktop` package in `dist/`, and creates a timestamped ISO plus SHA-256
 and provenance sidecars under the workspace's `out/` directory. It refuses an
 output outside that workspace, follows no workspace symlink, needs at least 30
 GiB free, and never invokes a partitioning, formatting, mounting, or flashing
@@ -41,6 +41,12 @@ the gitignored `.copernicus/logs/kubuntu-image/` directory, including failed
 builds whose temporary root filesystem is safely removed. The log names each
 heavy phase, so its last phase identifies where a failed or interrupted build
 stopped. Use `--dry-run` to inspect the resolved paths without writing anything.
+
+“Most recently modified” is file selection, not proof that the package contains
+the latest accepted upstream application. Before a laptop install, inspect the
+package's embedded `resources/codex-linux-build-info.json` and compare its DMG
+identity with the intended accepted build. For a freshness-sensitive image,
+use the manual command below with an explicit package path and SHA-256.
 
 The opt-in developer profile includes Docker Engine with containerd, Buildx and
 Compose; Node.js 24.19.0 with npm/npx; uv 0.11.32; Codex CLI 0.147.0; Python 3

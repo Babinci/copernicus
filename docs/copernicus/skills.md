@@ -1,14 +1,14 @@
 ---
 type: guide
 title: Copernicus skills
-description: Why the eleven installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
-tags: [copernicus, skills, grill-me, rick-rubin, planning, fleet, breathe, auto-research, html-report, retrospective, ponytail, caveman, handoff]
-timestamp: 2026-08-15T00:00:00+02:00
+description: Why the twelve installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, grill-me, rick-rubin, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective, ponytail, caveman, handoff]
+generated: { by: "copernicus/0.9.0", at: 2026-08-15T00:00:00+02:00 }
 ---
 
 # Copernicus skills
 
-Installing the single `copernicus` plugin installs eleven skills. Seven form
+Installing the single `copernicus` plugin installs twelve skills. Eight form
 the main problem-solving sequence; four govern review, implementation,
 delivery, and continuation:
 
@@ -24,6 +24,8 @@ $fleet           execute independent bounded work
 $breathe         compress deep work at the next human checkpoint
       ↓
 $auto-research   evaluate, join evidence, and curate learning
+      ↓
+$okf-docs        traverse and maintain large OKF knowledge bundles
       ↓
 $html-report     explain the evaluated work to a human reader
 
@@ -48,6 +50,7 @@ install a daemon, database, provider proxy, or background service.
 | `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Typed outputs, private seat provenance, verified synthesis, and explicit evidence gaps. |
 | `$breathe` | Machine-scale investigation can overwhelm the person responsible for the next checkpoint. | A checkpoint-complete brief for a decision, verified delivery, or understanding, with evidence and dissent expandable on request. |
 | `$auto-research` | Hard problems need comparable experiments and a safe boundary between guesses and memory. | A problem-specific DAG, candidates, evaluation receipts, and proposed OKF knowledge. |
+| `$okf-docs` | Large Markdown knowledge bundles need metadata, provenance, backlink, and dependency traversal beyond text search. | A deterministic OKF v0.2 graph, validation/health findings, budgeted evidence manifests, progressive indexes, or a reviewed v0.1 migration. |
 | `$html-report` | Evaluated work still needs a clear human-facing explanation or decision aid. | One portable HTML brief, update, explanation, decision, review, or lesson. |
 | `$retrospective` | Work history is easy to turn into hindsight stories instead of useful learning. | An evidence timeline, first divergence, keep/change/try, and ranked proposal-only actions. |
 | `$ponytail` | Correct implementations often grow speculative machinery before the real path is traced. | The smallest complete change, one proportional check, and explicit skipped extensions. |
@@ -61,6 +64,7 @@ The complete explanations ship inside the installed plugin:
 - [Auto-Research explained](../../plugins/copernicus/skills/auto-research/references/guide.md)
 - [Rick Rubin subtraction explained](../../plugins/copernicus/skills/rick-rubin/references/guide.md)
 - [Planning explained](../../plugins/copernicus/skills/planning/references/guide.md)
+- [OKF Docs explained](../../plugins/copernicus/skills/okf-docs/references/guide.md)
 - [HTML reports explained](../../plugins/copernicus/skills/html-report/references/guide.md)
 - [Grill Me contract](../../plugins/copernicus/skills/grill-me/SKILL.md)
 - [Retrospective contract](../../plugins/copernicus/skills/retrospective/SKILL.md)
@@ -68,9 +72,9 @@ The complete explanations ship inside the installed plugin:
 - [Caveman contract](../../plugins/copernicus/skills/caveman/SKILL.md)
 - [Handoff contract](../../plugins/copernicus/skills/handoff/SKILL.md)
 
-## Why these eleven
+## Why these twelve
 
-They address eleven different failure modes:
+They address twelve different failure modes:
 
 1. **An unresolved plan** — Grill Me resolves one dependency-ordered decision at a time.
 2. **Too many possibilities** — subtraction reduces the search space.
@@ -84,16 +88,19 @@ They address eleven different failure modes:
 6. **Learning from unverified guesses** — Auto-Research freezes the regime,
    evaluates candidates, joins evidence, and updates memory only at a cycle
    boundary.
-7. **Work that remains opaque after it is done** — HTML Report turns authorized,
+7. **Knowledge too wide for text search** — OKF Docs queries complete YAML,
+   traverses typed structural edges, and selects a reproducible evidence packet
+   without replacing Markdown with a database.
+8. **Work that remains opaque after it is done** — HTML Report turns authorized,
    evaluated material into a standalone reader-first explanation without making a
    dashboard, hosted service, or new source of truth.
-8. **History becoming hindsight fiction** — Retrospective separates observed
+9. **History becoming hindsight fiction** — Retrospective separates observed
    evidence from inference, finds the first divergence, and proposes a check.
-9. **Implementation buried in machinery** — Ponytail traces the real flow, then
+10. **Implementation buried in machinery** — Ponytail traces the real flow, then
    stops at the earliest native or existing solution that fully holds.
-10. **Answers buried in prose** — Caveman compresses wording while retaining all
+11. **Answers buried in prose** — Caveman compresses wording while retaining all
    load-bearing technical and safety detail.
-11. **Context loss between sessions** — Handoff moves only current decision state
+12. **Context loss between sessions** — Handoff moves only current decision state
    and references the durable sources already in the workspace.
 
 No skill is authoritative by itself. Commands, tests, measurements, primary
@@ -108,9 +115,9 @@ codex plugin list
 ```
 
 Start a new Codex task after installation. In the app, open `/plugins`, select
-**Copernicus**, and inspect its eleven skills. Invoke them explicitly as
+**Copernicus**, and inspect its twelve skills. Invoke them explicitly as
 `$grill-me`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`,
-`$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
+`$okf-docs`, `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
 
 ## Global companion resolution
 
@@ -138,7 +145,9 @@ seats and the default terra-first preset. Use $breathe to reduce the verified
 findings to the next decision, verified delivery, or understanding checkpoint
 with expandable evidence handles. Then use $auto-research for one measured cycle: name the regime,
 evaluator, falsifier, evidence gaps, and proposed OKF cards. Do not promote
-memory or perform external actions without my approval. Finally, use
+memory or perform external actions without my approval. Use $okf-docs to
+validate and traverse a large authorized OKF bundle, selecting a bounded,
+hashed evidence manifest before reading widely. Finally, use
 $html-report to produce a standalone decision explanation from the joined
 evidence; separate observed facts, inferences, and unknowns.
 Use $retrospective after validation to identify the first evidence-backed
@@ -157,6 +166,7 @@ The plugin contains everything specific to the method:
 - GPT-only lane policy;
 - the Fleet batch runner and tests;
 - the Planning workpack validator/indexer and tests;
+- the OKF v0.2 traversal, validation, progressive-index, migration tool and tests;
 - Breathe's checkpoint-compression contract, guide, and private enum-only feedback tool;
 - the SAS graph/receipt contracts;
 - the receipt validator and tests;
@@ -173,6 +183,8 @@ The Fleet runner sends only explicitly named prompt files that resolve inside
 the selected work directory. Breathe's optional experience ledger stores only
 controlled feedback categories in private local state. Auto-Research writes only
 to the run directory the user chooses. Rick Rubin is prompt-only.
+OKF Docs reads only the selected bundle root; writes are explicit, dry-run
+first, and bounded to owned index regions or the narrow v0.1 migration.
 Planning writes only to the bundle path the user chooses and never executes
 workpack commands.
 Retrospective is prompt-only and proposal-only unless the user separately

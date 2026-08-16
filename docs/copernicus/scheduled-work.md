@@ -3,7 +3,7 @@ type: runbook
 title: Scheduled Copernicus work
 description: Safely run bounded Copernicus research from ChatGPT Desktop Scheduled tasks or trusted local cron.
 tags: [scheduled, cron, automation, safety]
-timestamp: 2026-08-08T00:00:00+02:00
+generated: { by: "copernicus/0.9.0", at: 2026-08-08T00:00:00+02:00 }
 ---
 
 # Scheduled work

@@ -1,0 +1,4 @@
+# Third-party snapshots are kept byte-for-byte, including upstream whitespace.
+plugins/copernicus/skills/okf-docs/references/Apache-2.0.txt -whitespace
+plugins/copernicus/skills/okf-docs/references/okf-v0.2.md -whitespace
+plugins/copernicus/skills/okf-docs/scripts/_vendor/** -whitespace

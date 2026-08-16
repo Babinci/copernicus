@@ -3,7 +3,7 @@ type: guide
 title: Practitioner HTML reports
 description: A self-contained report workflow for clear status, decisions, explanations, reviews, and lessons without a hosted dashboard.
 tags: [copernicus, html, reports, diagrams, learning, accessibility]
-timestamp: 2026-08-09T00:00:00+02:00
+generated: { by: "copernicus/0.9.0", at: 2026-08-09T00:00:00+02:00 }
 ---
 
 # Practitioner HTML reports

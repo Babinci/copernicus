@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Copernicus architecture
-description: Product boundaries and data flow for the Linux wrapper, durable Planning workpacks, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and OKF memory.
-tags: [copernicus, planning, workpacks, fleet, breathe, sas, okf, retrospective, architecture]
-timestamp: 2026-08-15T21:52:03+02:00
+description: Product boundaries and data flow for the Linux wrapper, durable Planning workpacks, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and traversable OKF memory.
+tags: [copernicus, planning, workpacks, fleet, breathe, sas, okf, okf-docs, retrospective, architecture]
+generated: { by: "copernicus/0.9.0", at: 2026-08-15T21:52:03+02:00 }
 ---
 
 # Copernicus architecture
@@ -29,6 +29,8 @@ flowchart TD
     G --> E["Hash-chained evidence ledger"]
     E --> J["Cycle-boundary join"]
     J --> O["OKF selection · strategy · risk cards"]
+    P --> D["OKF Docs: deterministic traversal"]
+    D --> O
     J --> H["HTML report: derived reader artifact"]
     O --> S
     P --> K["Retrospective: evidence to next improvement"]
@@ -115,6 +117,14 @@ OKF is durable semantic memory, not the run queue. Each concept is a Markdown
 file with YAML frontmatter; relative links are knowledge edges; `index.md`
 provides progressive navigation; `log.md` records material curation changes.
 Copernicus begins with selection, strategy, and risk cards only.
+
+OKF Docs is the deterministic navigation and maintenance layer over any
+authorized Google OKF v0.2 bundle. It parses complete safe YAML, preserves
+typed structural edges, supports metadata and backlink queries, and selects
+budgeted evidence manifests for wide investigations. Its index and v0.1
+migration writes are dry-run first and marker- or field-bounded. It never
+executes declared resources, promotes model consensus to verification, moves
+files, semantically merges cards, or replaces Markdown with a database.
 
 ### Practitioner HTML reports
 

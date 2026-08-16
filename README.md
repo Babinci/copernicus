@@ -11,7 +11,7 @@
 Copernicus is an unofficial, local-build Linux wrapper for
 [OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
-pipeline with eleven deliberately small workflows:
+pipeline with twelve deliberately small workflows:
 
 - **Grill Me** resolves a plan through one recommended question at a time.
 - **Planning** turns substantial or resumable changes into validated, test-first
@@ -21,6 +21,8 @@ pipeline with eleven deliberately small workflows:
   decision-complete human brief with expandable evidence.
 - **Auto-Research** invents a problem-specific agent DAG, evaluates candidates,
   writes hash-chained local receipts, and learns through OKF only at cycle boundaries.
+- **OKF Docs** traverses, validates, queries, indexes, and safely migrates large
+  Google OKF v0.2 Markdown knowledge bundles.
 - **Rick Rubin** reduces brainstorms and systems to the few ideas that earn their weight.
 - **HTML Report** turns evaluated work into a portable human-facing brief,
   explanation, decision aid, review, or lesson.
@@ -64,11 +66,11 @@ codex plugin add copernicus@copernicus
 ```
 
 Then ask Codex to use `$grill-me`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`,
-`$auto-research`, `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, or
-`$handoff`. Model access and reasoning controls remain account- and
+`$auto-research`, `$okf-docs`, `$html-report`, `$retrospective`, `$ponytail`,
+`$caveman`, or `$handoff`. Model access and reasoning controls remain account- and
 workspace-dependent; Copernicus does not unlock models or increase plan limits.
 
-One plugin installation provides all eleven bundled skills. Open
+One plugin installation provides all twelve bundled skills. Open
 `/plugins`, choose **Copernicus**, and start a new task after installation. See
 [Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
 outputs, examples, privacy boundary, and limitations of each skill.
@@ -83,6 +85,7 @@ python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
 python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
 python3 plugins/copernicus/skills/html-report/scripts/test_report.py
 python3 plugins/copernicus/skills/planning/scripts/test_workpacks.py
+python3 plugins/copernicus/skills/okf-docs/scripts/test_okf.py
 ```
 
 See the [Copernicus guide](docs/copernicus/index.md) for skill explanations,

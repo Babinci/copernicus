@@ -1,0 +1,4 @@
+interface:
+  display_name: "OKF Docs"
+  short_description: "Traverse and maintain Google OKF bundles"
+  default_prompt: "Use $okf-docs to investigate this OKF bundle through its indexes, YAML metadata, links, provenance, trust, and freshness."

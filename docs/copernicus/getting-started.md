@@ -1,9 +1,9 @@
 ---
 type: runbook
 title: Getting started with Copernicus
-description: Install the marketplace plugin, validate its GPT-only tools, and run a first planning, deep brief, retrospective, or SAS/OKF research cycle.
-tags: [install, plugin, planning, fleet, breathe, auto-research, html-report, retrospective]
-timestamp: 2026-08-15T21:52:03+02:00
+description: Install the marketplace plugin, validate its GPT-only tools, and run a first planning, deep brief, OKF documentation, retrospective, or SAS research cycle.
+tags: [install, plugin, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective]
+generated: { by: "copernicus/0.9.0", at: 2026-08-15T21:52:03+02:00 }
 ---
 
 # Getting started
@@ -19,8 +19,8 @@ codex plugin add copernicus@copernicus
 ```
 
 Restart the app if the skills do not appear. The plugin adds `$grill-me`,
-`$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`, `$html-report`,
-`$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
+`$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`, `$okf-docs`,
+`$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
 
 Confirm installation with:
 
@@ -28,7 +28,7 @@ Confirm installation with:
 codex plugin list
 ```
 
-In the app, open `/plugins`, select **Copernicus**, and inspect the eleven bundled
+In the app, open `/plugins`, select **Copernicus**, and inspect the twelve bundled
 skills. Start a new task so Codex loads their current instructions. One plugin
 installation supplies all skills; no separate provider, database, daemon, or
 credential setup is required.
@@ -44,11 +44,13 @@ python3 plugins/copernicus/skills/breathe/scripts/test_experience.py
 python3 plugins/copernicus/skills/auto-research/scripts/test_receipts.py
 python3 plugins/copernicus/skills/html-report/scripts/test_report.py
 python3 plugins/copernicus/skills/planning/scripts/test_workpacks.py
+python3 plugins/copernicus/skills/okf-docs/scripts/test_okf.py
 python3 plugins/copernicus/skills/fleet/scripts/fleet.py list
 python3 plugins/copernicus/skills/breathe/scripts/experience.py summary
 python3 plugins/copernicus/skills/auto-research/scripts/receipts.py --help
 python3 plugins/copernicus/skills/html-report/scripts/report.py --help
 python3 plugins/copernicus/skills/planning/scripts/workpacks.py --help
+python3 plugins/copernicus/skills/okf-docs/scripts/okf.py --help
 ```
 
 All Fleet model IDs and presets are declared in one validated `fleet.yaml`.

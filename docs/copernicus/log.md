@@ -1,5 +1,17 @@
 # Copernicus documentation log
 
+## 2026-08-16
+
+- Added OKF Docs: a self-contained Google OKF v0.2 skill with complete safe-YAML
+  queries, typed graph and backlink traversal, budgeted evidence manifests,
+  validation and health reports, marker-owned progressive indexes, and a narrow
+  dry-run-first v0.1 migration.
+- Migrated Copernicus's own documentation bundle from OKF v0.1 timestamps to
+  v0.2 generation provenance without rewriting document bodies.
+- Clarified that the Kubuntu wrapper's most-recently-modified package selection
+  is not an upstream freshness guarantee; embedded build info and explicit
+  package hashes remain authoritative.
+
 ## 2026-08-15
 
 - Added Copernicus Planning with native, durable-workpack, discovery, and review

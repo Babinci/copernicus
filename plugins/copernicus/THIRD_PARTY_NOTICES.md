@@ -27,6 +27,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+The Copernicus `okf-docs` skill includes an unmodified snapshot of the Google
+Open Knowledge Format v0.2 specification from
+[`GoogleCloudPlatform/knowledge-catalog`](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/fe3268a70e8ca5110a43a8f1dfdf6d1a458cf79f/okf/SPEC.md).
+It is licensed under Apache-2.0; the license ships as
+`skills/okf-docs/references/Apache-2.0.txt`.
+
+The same skill vendors PyYAML 6.0.3 from
+[`PyYAML/pyyaml`](https://github.com/yaml/pyyaml/tree/6.0.3) under the MIT
+License. Its license ships as
+`skills/okf-docs/scripts/_vendor/PyYAML-LICENSE.txt`.
+
 The Copernicus `ponytail` skill adapts the main Ponytail workflow and `caveman`
 adapts its benchmark workflow from
 [`DietrichGebert/ponytail` v4.9.0](https://github.com/DietrichGebert/ponytail/tree/v4.9.0/skills/ponytail)

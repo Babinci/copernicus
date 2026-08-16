@@ -18,6 +18,7 @@ class PluginTest(unittest.TestCase):
         manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 3)
+        self.assertEqual(len(list((ROOT / "skills").glob("*/SKILL.md"))), 12)
 
     def test_companions_are_self_contained_opt_in_fallbacks(self) -> None:
         for name in COMPANIONS:
@@ -93,10 +94,42 @@ class PluginTest(unittest.TestCase):
         self.assertIn("implementation-ready", script)
         self.assertIn("$planning", metadata)
 
+    def test_okf_docs_is_v02_traversal_first_and_self_contained(self) -> None:
+        skill = (ROOT / "skills/okf-docs/SKILL.md").read_text()
+        guide = (ROOT / "skills/okf-docs/references/guide.md").read_text()
+        spec = (ROOT / "skills/okf-docs/references/okf-v0.2.md").read_text()
+        script = (ROOT / "skills/okf-docs/scripts/okf.py").read_text()
+        metadata = (ROOT / "skills/okf-docs/agents/openai.yaml").read_text()
+        vendor = ROOT / "skills/okf-docs/scripts/_vendor"
+        for command in (
+            "scan",
+            "validate",
+            "query",
+            "neighbors",
+            "path",
+            "impact",
+            "context",
+            "health",
+            "index",
+            "migrate",
+        ):
+            self.assertIn(f"`{command}`", skill)
+        self.assertIn("OKF v0.2", skill)
+        self.assertIn("progressive disclosure", guide)
+        self.assertIn("Version 0.2", spec)
+        self.assertIn("StrictSafeLoader", script)
+        self.assertIn("MARKER_START", script)
+        self.assertTrue((vendor / "yaml/__init__.py").is_file())
+        self.assertTrue((vendor / "PyYAML-LICENSE.txt").is_file())
+        self.assertTrue((ROOT / "skills/okf-docs/references/Apache-2.0.txt").is_file())
+        self.assertIn("$okf-docs", metadata)
+
     def test_third_party_notices_ship_with_the_plugin(self) -> None:
         notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
         self.assertIn("mattpocock/skills", notices)
         self.assertIn("DietrichGebert/ponytail", notices)
+        self.assertIn("GoogleCloudPlatform/knowledge-catalog", notices)
+        self.assertIn("PyYAML 6.0.3", notices)
         self.assertIn("Copyright (c) 2026 Matt Pocock", notices)
         self.assertIn("Copyright (c) 2026 DietrichGebert", notices)
         self.assertEqual(notices.count("MIT License"), 2)
