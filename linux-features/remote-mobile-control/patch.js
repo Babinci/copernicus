@@ -533,15 +533,24 @@ function applyLinuxRemoteControlSshInstallReleasePatch(source) {
       `=(${id})\\((${id})\\.hostId\\),(${id})=\\6\\.displayName`,
     "u",
   );
-  const currentMutationRegex = new RegExp(
+  const legacyMutationRegex = new RegExp(
     `(${id})=(${id})=>\\{(${id})\\.mutate\\(\\{hostId:\\2\\},` +
       `\\{onSuccess:\\(\\{state:(${id}),error:(${id})\\}\\)=>\\{(${id})\\(\\2,\\4,\\5\\)\\}\\}\\)\\}`,
+    "u",
+  );
+  const compilerMutationRegex = new RegExp(
+    `(${id})=(${id})=>\\{(${id})\\.mutate\\(\\{hostId:\\2\\},` +
+      `\\{onSuccess:(${id})=>\\{let\\{state:(${id}),error:(${id})\\}=\\4;` +
+      `(${id})\\(\\2,\\5,\\6\\)\\}\\}\\)\\}`,
     "u",
   );
   const currentActionBuilderMatch = source.match(currentActionBuilderRegex);
   const currentActionCallMatch = source.match(currentActionCallRegex);
   const currentLocalVersionMatch = source.match(currentLocalVersionRegex);
-  const currentMutationMatch = source.match(currentMutationRegex);
+  const legacyMutationMatch = source.match(legacyMutationRegex);
+  const compilerMutationMatch = source.match(compilerMutationRegex);
+  const mutationRegex = legacyMutationMatch == null ? compilerMutationRegex : legacyMutationRegex;
+  const currentMutationMatch = legacyMutationMatch ?? compilerMutationMatch;
   if (
     currentActionBuilderMatch == null ||
     currentActionCallMatch == null ||
@@ -612,15 +621,12 @@ function applyLinuxRemoteControlSshInstallReleasePatch(source) {
     `codexLinuxRemoteControlValidRelease(codexLinuxRemoteControlSshInstallLocalVersion)??` +
     `codexLinuxRemoteControlSshInstallDefaultRelease,${localConnectionVar}.displayName)`;
 
-  const [
-    ,
-    mutationHandlerVar,
-    mutationHostVar,
-    mutationVar,
-    mutationStateVar,
-    mutationErrorVar,
-    syncStateFn,
-  ] = currentMutationMatch;
+  const mutationHandlerVar = currentMutationMatch[1];
+  const mutationHostVar = currentMutationMatch[2];
+  const mutationVar = currentMutationMatch[3];
+  const mutationStateVar = currentMutationMatch[legacyMutationMatch == null ? 5 : 4];
+  const mutationErrorVar = currentMutationMatch[legacyMutationMatch == null ? 6 : 5];
+  const syncStateFn = currentMutationMatch[legacyMutationMatch == null ? 7 : 6];
   const mutationReplacement =
     `${mutationHandlerVar}=(${mutationHostVar},codexLinuxRemoteControlSshInstallTargetRelease)=>{` +
     `let codexLinuxRemoteControlSshInstallRequest={hostId:${mutationHostVar}},` +
@@ -641,7 +647,7 @@ function applyLinuxRemoteControlSshInstallReleasePatch(source) {
     .replace(currentLocalVersionRegex, localVersionReplacement)
     .replace(currentActionBuilderRegex, actionBuilderReplacement)
     .replace(currentActionCallRegex, actionCallReplacement)
-    .replace(currentMutationRegex, mutationReplacement);
+    .replace(mutationRegex, mutationReplacement);
 }
 
 function applyLinuxRemoteControlSettingsUxPatch(source) {
@@ -683,10 +689,28 @@ function applyLinuxRemoteConnectionsRefreshPatch(source) {
     /\(0,([A-Za-z_$][\w$]*)\.useEffect\)\(\(\)=>\{let ([A-Za-z_$][\w$]*)=null,([A-Za-z_$][\w$]*)=!1,([A-Za-z_$][\w$]*)=async\(\)=>\{if\(![A-Za-z_$][\w$]*\)\{[A-Za-z_$][\w$]*=!0,[A-Za-z_$][\w$]*=new AbortController;try\{await ([A-Za-z_$][\w$]*)\([A-Za-z_$][\w$]*\.signal\)\}finally\{[A-Za-z_$][\w$]*=null,[A-Za-z_$][\w$]*=!1\}\}\},([A-Za-z_$][\w$]*)=window\.setInterval\(\(\)=>\{[A-Za-z_$][\w$]*\(\)\},([A-Za-z_$][\w$]*)\);return\(\)=>\{[A-Za-z_$][\w$]*\?\.abort\(\),window\.clearInterval\([A-Za-z_$][\w$]*\)\}\},\[\]\);/;
   const match = patched.match(effectPattern);
   if (match == null) {
-    if (patched.includes("refresh-remote-connections") && patched.includes("setInterval")) {
-      console.warn("WARN: Could not find remote-connections auto-refresh effect - skipping resume refresh patch");
+    const id = "[A-Za-z_$][\\w$]*";
+    const compilerEffectPattern = new RegExp(
+      `(${id})=\\(\\)=>\\{let (${id})=null,(${id})=!1,(${id})=async\\(\\)=>\\{` +
+        `\\3\\|\\|\\(\\3=!0,\\2=new AbortController,await\\(async\\(\\)=>\\{await (${id})\\(\\2\\.signal\\)\\}\\)\\(\\)\\.finally\\(\\(\\)=>\\{\\2=null,\\3=!1\\}\\)\\)\\},` +
+        `(${id})=window\\.setInterval\\(\\(\\)=>\\{\\4\\(\\)\\},(${id})\\);` +
+        `return\\(\\)=>\\{\\2\\?\\.abort\\(\\),window\\.clearInterval\\(\\6\\)\\}\\}`,
+      "u",
+    );
+    const compilerMatch = patched.match(compilerEffectPattern);
+    if (compilerMatch == null) {
+      if (patched.includes("refresh-remote-connections") && patched.includes("setInterval")) {
+        console.warn("WARN: Could not find remote-connections auto-refresh effect - skipping resume refresh patch");
+      }
+      return patched;
     }
-    return patched;
+
+    const [needle, effectVar, abortVar, pendingVar, refreshVar, refreshEventVar, intervalVar, intervalConstantVar] =
+      compilerMatch;
+    return patched.replace(
+      needle,
+      `${effectVar}=${linuxRemoteConnectionsRefreshEffect({ abortVar, pendingVar, refreshVar, refreshEventVar, intervalVar, intervalConstantVar })}`,
+    );
   }
 
   const [
@@ -699,8 +723,14 @@ function applyLinuxRemoteConnectionsRefreshPatch(source) {
     intervalVar,
     intervalConstantVar,
   ] = match;
-  const replacement =
-    `(0,${reactVar}.useEffect)(()=>{let ${abortVar}=null,${pendingVar}=!1,${refreshVar}=async()=>{if(!${pendingVar}){${pendingVar}=!0,${abortVar}=new AbortController;try{await ${refreshEventVar}(${abortVar}.signal)}finally{${abortVar}=null,${pendingVar}=!1}}},` +
+  const replacement = `(0,${reactVar}.useEffect)(${linuxRemoteConnectionsRefreshEffect({ abortVar, pendingVar, refreshVar, refreshEventVar, intervalVar, intervalConstantVar })},[]);`;
+
+  return patched.replace(needle, replacement);
+}
+
+function linuxRemoteConnectionsRefreshEffect({ abortVar, pendingVar, refreshVar, refreshEventVar, intervalVar, intervalConstantVar }) {
+  return (
+    `()=>{let ${abortVar}=null,${pendingVar}=!1,${refreshVar}=async()=>{if(!${pendingVar}){${pendingVar}=!0,${abortVar}=new AbortController;try{await ${refreshEventVar}(${abortVar}.signal)}finally{${abortVar}=null,${pendingVar}=!1}}},` +
     `codexLinuxRemoteConnectionsRefreshTimer=null,codexLinuxRemoteConnectionsRefreshLast=0,${REMOTE_CONNECTIONS_REFRESH_MARKER}=()=>{if(document.visibilityState===\`hidden\`)return;let e=Date.now(),t=()=>{codexLinuxRemoteConnectionsRefreshLast=Date.now(),codexLinuxRemoteConnectionsRefreshTimer=null,${refreshVar}()};if(e-codexLinuxRemoteConnectionsRefreshLast<1e3){codexLinuxRemoteConnectionsRefreshTimer!=null&&window.clearTimeout(codexLinuxRemoteConnectionsRefreshTimer),codexLinuxRemoteConnectionsRefreshTimer=window.setTimeout(t,1e3-(e-codexLinuxRemoteConnectionsRefreshLast));return}t()},` +
     `${intervalVar}=window.setInterval(()=>{${refreshVar}()},${intervalConstantVar});` +
     `document.addEventListener(\`visibilitychange\`,${REMOTE_CONNECTIONS_REFRESH_MARKER}),` +
@@ -712,9 +742,8 @@ function applyLinuxRemoteConnectionsRefreshPatch(source) {
     `document.removeEventListener(\`visibilitychange\`,${REMOTE_CONNECTIONS_REFRESH_MARKER}),` +
     `window.removeEventListener(\`focus\`,${REMOTE_CONNECTIONS_REFRESH_MARKER}),` +
     `window.removeEventListener(\`online\`,${REMOTE_CONNECTIONS_REFRESH_MARKER}),` +
-    `window.removeEventListener(\`resume\`,${REMOTE_CONNECTIONS_REFRESH_MARKER})}},[]);`;
-
-  return patched.replace(needle, replacement);
+    `window.removeEventListener(\`resume\`,${REMOTE_CONNECTIONS_REFRESH_MARKER})}}`
+  );
 }
 
 function applyLinuxRemoteMobileChromeBridgePatch(source) {
@@ -890,7 +919,7 @@ function applyLinuxRemoteMobileCompletedItemRecoveryPatch(source) {
   }
 
   const completedItemDropPattern =
-    /([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\)&&\(([A-Za-z_$][\w$]*)\.firstTurnWorkItemStartedAtMs=\3\.firstTurnWorkItemStartedAtMs\?\?Date\.now\(\)\),!\(\2\.type!==`subAgentActivity`&&!([A-Za-z_$][\w$]*)\(\3,\2\.id,\2\.type\)\)&&\(\2\.type,([A-Za-z_$][\w$]*)\(\3,([A-Za-z_$][\w$]*)\)\)/u;
+    /([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\)&&\(([A-Za-z_$][\w$]*)\.firstTurnWorkItemStartedAtMs=\3\.firstTurnWorkItemStartedAtMs\?\?Date\.now\(\)\),!\(\2\.type!==`subAgentActivity`(?:&&\(\2\.type!==`sleep`\|\|([A-Za-z_$][\w$]*)\.mode!==`durable`\))?&&!([A-Za-z_$][\w$]*)\(\3,\2\.id,\2\.type\)\)&&\(\2\.type,([A-Za-z_$][\w$]*)\(\3,([A-Za-z_$][\w$]*)\)\)/u;
 
   if (completedItemDropPattern.test(source)) {
     return source.replace(
@@ -900,11 +929,17 @@ function applyLinuxRemoteMobileCompletedItemRecoveryPatch(source) {
         workItemPredicate,
         completedItemVar,
         turnVar,
+        conversationVar,
         findItemFn,
         upsertItemFn,
         viewItemVar,
-      ) =>
-        `${workItemPredicate}(${completedItemVar})&&(${turnVar}.firstTurnWorkItemStartedAtMs=${turnVar}.firstTurnWorkItemStartedAtMs??Date.now());let codexLinuxCompletedItemExists=${turnVar}.items.some(e=>e.id===${viewItemVar}.id);if(${completedItemVar}.type!==\`subAgentActivity\`&&codexLinuxCompletedItemExists&&!${findItemFn}(${turnVar},${completedItemVar}.id,${completedItemVar}.type))return;${upsertItemFn}(${turnVar},${viewItemVar})`,
+      ) => {
+        const durableSleepGate =
+          conversationVar == null
+            ? ""
+            : `&&(${completedItemVar}.type!==\`sleep\`||${conversationVar}.mode!==\`durable\`)`;
+        return `${workItemPredicate}(${completedItemVar})&&(${turnVar}.firstTurnWorkItemStartedAtMs=${turnVar}.firstTurnWorkItemStartedAtMs??Date.now());let codexLinuxCompletedItemExists=${turnVar}.items.some(e=>e.id===${viewItemVar}.id);if(${completedItemVar}.type!==\`subAgentActivity\`${durableSleepGate}&&codexLinuxCompletedItemExists&&!${findItemFn}(${turnVar},${completedItemVar}.id,${completedItemVar}.type))return;${upsertItemFn}(${turnVar},${viewItemVar})`;
+      },
     );
   }
 
