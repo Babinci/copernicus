@@ -1,7 +1,7 @@
 {
   "id": "shared-app-server-socket",
   "title": "Shared App-Server Socket",
-  "description": "Opt-in protocol-transparent Unix socket shared by Codex Desktop and one or more ordinary app-server clients.",
+  "description": "Opt-in protocol-transparent attachment to the official managed Codex app-server daemon.",
   "defaultEnabled": false,
   "entrypoints": {
     "patchDescriptors": "./patch.js"
