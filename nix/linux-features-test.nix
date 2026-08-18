@@ -13,6 +13,7 @@ let
   testFeatureIds = [
     "persistent-status-panel"
     "appshots"
+    "browser-media-permissions"
     "codex-micro"
     "codex-wrapper-updater"
     "directory-only-working-tree-watch"
@@ -28,6 +29,7 @@ let
   ];
   normalizedTestFeatureIds = [
     "appshots"
+    "browser-media-permissions"
     "codex-micro"
     "codex-wrapper-updater"
     "directory-only-working-tree-watch"
@@ -44,6 +46,7 @@ let
   watchdogFeatureIds = (builtins.fromJSON (builtins.readFile ../scripts/ci/watchdog-linux-features.json)).enabled;
   normalizedWatchdogFeatureIds = [
     "appshots"
+    "browser-media-permissions"
     "codex-micro"
     "codex-wrapper-updater"
     "directory-only-working-tree-watch"

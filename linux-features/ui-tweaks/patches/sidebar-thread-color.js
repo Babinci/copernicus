@@ -13,26 +13,23 @@ const THREAD_COLORS = Object.freeze([
   { id: "purple", label: "Purple", value: "#a855f7" },
 ]);
 
-const COLOR_SELECTOR_MARKER = "Mo(Kas,B);let ne=";
-const COLOR_SELECTOR_REPLACEMENT =
-  "let codexLinuxThreadLabelColor=Mo(Kas,B),ne=";
 const NULL_COLOR_MARKER = "labelColor:null,modelProvider:";
-const NULL_COLOR_REPLACEMENT = "labelColor:codexLinuxThreadLabelColor,modelProvider:";
+const NULL_COLOR_REPLACEMENT = "labelColor:Ce,modelProvider:";
 const ROW_ATTRIBUTES_MARKER =
-  "S=g===void 0?null:g,C=No(Q),[w,T]=(0,enu.useState)(!1),E=Zu()";
+  "dataAttributes:Rp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})";
 const ROW_ATTRIBUTES_REPLACEMENT =
-  `S=g===void 0?null:g,C=No(Q);x!=null&&(_.dataAttributes={..._.dataAttributes,` +
-  `${JSON.stringify(COLOR_ATTRIBUTE)}:x});let[w,T]=(0,enu.useState)(!1),E=Zu()`;
+  `dataAttributes:{...Rp.sidebarThreadRow({active:c,hostId:m,id:u,kind:\`local\`,pinned:r,selected:i,title:k}),` +
+  `${JSON.stringify(COLOR_ATTRIBUTE)}:Ce}`;
 const MENU_MARKER =
-  "{id:`rename-thread`,message:sK.renameThread,onSelect:Ke},...O==null||O===`local`?[]:" +
+  "{id:`rename-thread`,message:YY.renameThread,onSelect:et},...j==null||j===`local`?[]:" +
   "[{id:`change-connection-color`";
 const MENU_REPLACEMENT =
-  "{id:`rename-thread`,message:sK.renameThread,onSelect:Ke}," +
-  "...((v||_.isGrouped===!0)&&(O==null||O===`local`)?[{id:`change-thread-color`," +
+  "{id:`rename-thread`,message:YY.renameThread,onSelect:et}," +
+  "...((j==null||j===`local`)?[{id:`change-thread-color`," +
   "message:$u({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
   "description:`Menu item that changes a local chat color`})," +
-  "submenu:codexLinuxSidebarThreadColorMenu(C,n)}]:[])," +
-  "...O==null||O===`local`?[]:[{id:`change-connection-color`";
+  "submenu:codexLinuxSidebarThreadColorMenu(T,n)}]:[])," +
+  "...j==null||j===`local`?[]:[{id:`change-connection-color`";
 
 function warn(message) {
   console.warn(`WARN: ${message} - skipping ui-tweaks sidebar thread color patch`);
@@ -86,13 +83,13 @@ function sidebarThreadColorRuntimeSource() {
     `async function codexLinuxSetSidebarThreadColor(scope,threadId,color){`,
     `let selected=color==null?null:codexLinuxSidebarThreadColors.find(item=>item.value===color)?.value;`,
     `if(color!=null&&selected==null)return;`,
-    `let raw=Cp(scope.get,Il.SIDEBAR_THREAD_METADATA),metadata=raw&&typeof raw===\"object\"&&!Array.isArray(raw)?{...raw}:{},`,
+    `let raw=cm(scope.get,ru.SIDEBAR_THREAD_METADATA),metadata=raw&&typeof raw===\"object\"&&!Array.isArray(raw)?{...raw}:{},`,
     `rawEntry=metadata[threadId],entry=rawEntry&&typeof rawEntry===\"object\"&&!Array.isArray(rawEntry)?{...rawEntry}:{};`,
     `if(selected==null){if(!Object.prototype.hasOwnProperty.call(entry,\"labelColor\"))return;delete entry.labelColor}`,
     `else{if(entry.labelColor===selected)return;entry.labelColor=selected}`,
     `Object.keys(entry).length>0?metadata[threadId]=entry:delete metadata[threadId];`,
-    `try{await Sp(scope,Il.SIDEBAR_THREAD_METADATA,Object.keys(metadata).length>0?metadata:void 0,{throwOnFailure:!0})}`,
-    `catch(error){scope.get(Th).danger(\"Could not update chat color\")}}`,
+    `try{await sm(scope,ru.SIDEBAR_THREAD_METADATA,Object.keys(metadata).length>0?metadata:void 0,{throwOnFailure:!0})}`,
+    `catch(error){console.warn(\"Could not update chat color\",error)}}`,
     `function codexLinuxSidebarThreadColorMenu(scope,threadId){return[`,
     `...codexLinuxSidebarThreadColors.map(item=>({id:\`change-thread-color-\${item.id}\`,`,
     `message:$u({id:\`codexLinux.sidebarThreadColor.\${item.id}\`,defaultMessage:item.label,`,
@@ -121,7 +118,6 @@ function applySidebarThreadColorPatch(source, context = {}) {
     if (source.includes(RUNTIME_MARKER)) return refreshSidebarThreadColorCss(source);
 
     const replacements = [
-      [COLOR_SELECTOR_MARKER, COLOR_SELECTOR_REPLACEMENT],
       [NULL_COLOR_MARKER, NULL_COLOR_REPLACEMENT],
       [ROW_ATTRIBUTES_MARKER, ROW_ATTRIBUTES_REPLACEMENT],
       [MENU_MARKER, MENU_REPLACEMENT],

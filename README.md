@@ -303,6 +303,7 @@ workarounds.
 | API key service tier | Opt-in | `api-key-service-tier` | [Docs](linux-features/api-key-service-tier/README.md) |
 | Linux AppShots | Opt-in | `appshots` | [Docs](linux-features/appshots/README.md) |
 | Authenticated proxy | Opt-in | `authenticated-proxy` | [Docs](linux-features/authenticated-proxy/README.md) |
+| Browser media permissions | Opt-in | `browser-media-permissions` | [Docs](linux-features/browser-media-permissions/README.md) |
 | Wrapper updater button | Opt-in | `codex-wrapper-updater` | [Docs](linux-features/codex-wrapper-updater/README.md) |
 | Codex Micro (USB-C / Bluetooth) | Opt-in | `codex-micro` | [Docs](linux-features/codex-micro/README.md) |
 | Conversation mode | Opt-in | `conversation-mode` | [Docs](linux-features/conversation-mode/README.md) |

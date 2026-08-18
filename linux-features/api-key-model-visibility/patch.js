@@ -9,25 +9,23 @@ function warn(message, patchName) {
 
 function applyApiKeyModelVisibilityPatch(source) {
   const modelVisibilityPattern = new RegExp(
-    `(function ${JS_IDENT}\\(\\{authMethod:(${JS_IDENT}),availableModels:${JS_IDENT},` +
-      `defaultModel:${JS_IDENT},enabledReasoningEfforts:${JS_IDENT},` +
-      `includeUltraReasoningEffort:${JS_IDENT},models:${JS_IDENT},` +
-      `useHiddenModels:(${JS_IDENT})\\}\\)\\{let[\\s\\S]{0,600}?[,;]${JS_IDENT}=)` +
-      `\\3&&\\2!==\\\`amazonBedrock\\\`(?=[,;])`,
+    `(function ${JS_IDENT}\\(\\{additionalAvailableModels:${JS_IDENT},authMethod:(${JS_IDENT}),` +
+      `availableModels:${JS_IDENT},isCustomModelProvider:(${JS_IDENT}),model:${JS_IDENT},` +
+      `useHiddenModels:(${JS_IDENT})\\}\\)\\{return[\\s\\S]{0,240}?)` +
+      `\\4&&!\\3&&\\2!==\\\`amazonBedrock\\\`(?=\\?)`,
     "g",
   );
   const patchedVisibilityPattern = new RegExp(
-    `function ${JS_IDENT}\\(\\{authMethod:(${JS_IDENT}),availableModels:${JS_IDENT},` +
-      `defaultModel:${JS_IDENT},enabledReasoningEfforts:${JS_IDENT},` +
-      `includeUltraReasoningEffort:${JS_IDENT},models:${JS_IDENT},` +
-      `useHiddenModels:(${JS_IDENT})\\}\\)\\{let[\\s\\S]{0,600}?[,;]${JS_IDENT}=` +
-      `\\2&&\\1!==\\\`amazonBedrock\\\`&&\\1!==\\\`apikey\\\`/\\*${PATCH_MARKER}\\*/(?=[,;])`,
+    `function ${JS_IDENT}\\(\\{additionalAvailableModels:${JS_IDENT},authMethod:(${JS_IDENT}),` +
+      `availableModels:${JS_IDENT},isCustomModelProvider:(${JS_IDENT}),model:${JS_IDENT},` +
+      `useHiddenModels:(${JS_IDENT})\\}\\)\\{return[\\s\\S]{0,240}?` +
+      `\\3&&!\\2&&\\1!==\\\`amazonBedrock\\\`&&\\1!==\\\`apikey\\\`/\\*${PATCH_MARKER}\\*/(?=\\?)`,
   );
 
   const patched = source.replace(
     modelVisibilityPattern,
-    (_match, prefix, authMethodVar, useHiddenModelsVar) =>
-      `${prefix}${useHiddenModelsVar}&&${authMethodVar}!==\`amazonBedrock\`&&` +
+    (_match, prefix, authMethodVar, customModelProviderVar, useHiddenModelsVar) =>
+      `${prefix}${useHiddenModelsVar}&&!${customModelProviderVar}&&${authMethodVar}!==\`amazonBedrock\`&&` +
       `${authMethodVar}!==\`apikey\`/*${PATCH_MARKER}*/`,
   );
 
@@ -55,7 +53,7 @@ const descriptors = [
     phase: "webview-asset",
     order: 20550,
     ciPolicy: "optional",
-    pattern: /^app-initial~app-main~.*\.js$/,
+    pattern: /^app-initial-[^.]+\.js$/,
     missingDescription: "app main webview bundle",
     skipDescription: "API key model visibility patch",
     apply: applyApiKeyModelVisibilityPatch,

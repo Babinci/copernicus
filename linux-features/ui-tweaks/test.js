@@ -50,6 +50,11 @@ const {
   sidebarThreadColorCss,
   sidebarThreadColorRuntimeSource,
 } = require("./patches/sidebar-thread-color.js");
+const {
+  RUNTIME_MARKER: FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER,
+  applyFileTreeFolderActionsPatch,
+  runtimeSource: fileTreeFolderActionsRuntimeSource,
+} = require("./patches/file-tree-folder-actions.js");
 
 function projectBundleFixture() {
   return [
@@ -68,13 +73,10 @@ function modelPickerStateBundleFixture() {
 
 function sidebarThreadColorBundleFixture() {
   return [
-    "function Ztu(e){let t=cache(),{isPinned:o,labelColor:l,threadSummary:g,..._}=e,",
-    "v=o!==void 0&&o,x=l===void 0?null:l,S=g===void 0?null:g,C=No(Q),",
-    "[w,T]=(0,enu.useState)(!1),E=Zu();",
-    "let $e=()=>[{id:`rename-thread`,message:sK.renameThread,onSelect:Ke},",
-    "...O==null||O===`local`?[]:[{id:`change-connection-color`}]];return _}",
-    "function localRow(e){let B=e.conversationId;Mo(Kas,B);let ne=e.extra;",
-    "return Ztu({labelColor:null,modelProvider:e.modelProvider})}",
+    "function localRow(){let Ce=Po(qDn,se),ct=()=>[{id:`rename-thread`,message:YY.renameThread,onSelect:et},",
+    "...j==null||j===`local`?[]:[{id:`change-connection-color`}]];",
+    "return x3c({labelColor:null,modelProvider:n?.modelProvider,",
+    "dataAttributes:Rp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})})}",
   ].join("");
 }
 
@@ -85,6 +87,15 @@ function enabledThreadColorContext() {
       settings: { tweaks: { sidebar: { threadColor: { enabled: true } } } },
     },
   };
+}
+
+function fileTreeBundleFixture() {
+  return [
+    "function Sno(){let U={current:null},z=new Map,N={},F={},o=`local`,A={},M=`linux`;",
+    "let De;De=()=>{let e=hoo({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return doo({...Moo({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},onCopyPath:xR,targetPath:e})};",
+    "let Oe;Oe=()=>Noo({scope:A,cwd:n,hostId:o,targetPath:hoo({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})});",
+    "let ke;ke=e=>{U.current=_oo(e.nativeEvent)};return[De,Oe,ke]}",
+  ].join("");
 }
 
 function modelPickerMenuBundleFixture() {
@@ -193,6 +204,7 @@ test("ui-tweaks is discoverable and disabled until listed in features.json", () 
       [
         ["feature:ui-tweaks:sidebar-project-name-style", "webview-asset", "optional"],
         ["feature:ui-tweaks:sidebar-thread-color", "webview-asset", "optional"],
+        ["feature:ui-tweaks:file-tree-folder-actions", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-default-advanced-view", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-inline-model-list", "webview-asset", "optional"],
         [
@@ -228,6 +240,29 @@ test("model picker descriptors target the current state and menu bundles", () =>
     "app-initial~app-main~page-CMpPiY3-.js",
     MODEL_PICKER_STATE_ASSET_PATTERN,
   );
+});
+
+test("workspace file tree exposes existing path actions for folders", () => {
+  const context = {
+    feature: { settings: { tweaks: { fileTree: { folderActions: { enabled: true } } } } },
+  };
+  const patched = applyFileTreeFolderActionsPatch(fileTreeBundleFixture(), context);
+  assert.match(patched, new RegExp(FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER));
+  assert.match(patched, /U\.current\?\.type!==`file`\?void 0/);
+  assert.equal(applyFileTreeFolderActionsPatch(patched, context), patched);
+
+  class FakeElement {
+    constructor(type, path) { this.attributes = { "data-item-type": type, "data-item-path": path }; }
+    getAttribute(name) { return this.attributes[name] ?? null; }
+  }
+  const runtime = Function(
+    "Element",
+    "B6e",
+    `${fileTreeFolderActionsRuntimeSource()};return {target:codexLinuxFileTreeContextTarget,path:codexLinuxFileTreeContextPath};`,
+  )(FakeElement, (cwd, path) => `${cwd}/${path}`);
+  const folder = runtime.target({ composedPath: () => [new FakeElement("folder", "docs")] });
+  assert.deepEqual(folder, { path: "docs", type: "folder" });
+  assert.equal(runtime.path(new Map(), folder, "/tmp/project", false), "/tmp/project/docs");
 });
 
 test("model picker opens advanced view and renders model choices inline", () => {
@@ -423,16 +458,13 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
   assert.match(patched, new RegExp(THREAD_COLOR_STYLE_ID));
   assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
-  assert.match(patched, /codexLinuxThreadLabelColor=Mo\(Kas,B\)/);
-  assert.match(patched, /labelColor:codexLinuxThreadLabelColor/);
+  assert.match(patched, /labelColor:Ce/);
   assert.match(patched, /change-thread-color/);
-  assert.match(
-    patched,
-    /\.\.\.\(\(v\|\|_\.isGrouped===!0\)&&\(O==null\|\|O===`local`\)\?\[/,
-  );
+  assert.match(patched, /\.\.\.\(\(j==null\|\|j===`local`\)\?\[/);
+  assert.doesNotMatch(patched, /v\|\|_\.isGrouped/);
   assert.match(patched, /defaultMessage:`Change chat color…`/);
   assert.doesNotMatch(patched, /Change pin color/);
-  assert.match(patched, /Il\.SIDEBAR_THREAD_METADATA/);
+  assert.match(patched, /ru\.SIDEBAR_THREAD_METADATA/);
   assert.doesNotMatch(patched, /labelColor:null/);
   assert.equal(applySidebarThreadColorPatch(patched, context), patched);
 });
@@ -467,17 +499,16 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
     "thread-two": { labelColor: "#22c55e" },
   };
   let writes = 0;
-  const toasts = [];
-  const toastKey = Symbol("toast");
-  const scope = { get: (key) => (key === toastKey ? { danger: (message) => toasts.push(message) } : null) };
+  const warnings = [];
+  const scope = { get: () => null };
   let failWrite = false;
   const runtime = Function(
-    "Cp",
-    "Il",
-    "Sp",
-    "Th",
+    "cm",
+    "ru",
+    "sm",
     "$u",
     "document",
+    "console",
     `${sidebarThreadColorRuntimeSource()};return {` +
       `setColor:codexLinuxSetSidebarThreadColor,menu:codexLinuxSidebarThreadColorMenu};`,
   )(
@@ -488,9 +519,9 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
       if (failWrite) throw new Error("write failed");
       persisted = value;
     },
-    toastKey,
     (message) => message,
     undefined,
+    { warn: (message) => warnings.push(message) },
   );
 
   assert.deepEqual(runtime.menu(scope, "thread-one").map((item) => item.message.defaultMessage), [
@@ -516,7 +547,7 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
 
   failWrite = true;
   await runtime.setColor(scope, "thread-two", "#a855f7");
-  assert.deepEqual(toasts, ["Could not update chat color"]);
+  assert.deepEqual(warnings, ["Could not update chat color"]);
   assert.deepEqual(persisted["thread-two"], { labelColor: "#22c55e" });
 });
 

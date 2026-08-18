@@ -1,5 +1,12 @@
 # Copernicus documentation log
 
+## 2026-08-18
+
+- Added opt-in, exact-origin Browser Use microphone and camera permissions for
+  Linux while keeping display capture and system-audio recording denied.
+- Extended existing file-tree path actions to folders and made local chat colors
+  available in Pinned, Projects, and Recents.
+
 ## 2026-08-16
 
 - Added OKF Docs: a self-contained Google OKF v0.2 skill with complete safe-YAML
