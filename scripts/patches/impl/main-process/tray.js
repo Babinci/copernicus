@@ -71,11 +71,11 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
   }
 
   const conditionalTrayConstructorPattern =
-    /([A-Za-z_$][\w$]*)=typeof codexLinuxRegisterTray===`function`\?codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+?)\)\):new \2\.Tray\(\3\)/;
+    /([A-Za-z_$][\w$]*)=typeof codexLinuxRegisterTray===`function`\?codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+)\)\):new \2\.Tray\(\3\)/;
   const retainedTrayConstructorPattern =
-    /([A-Za-z_$][\w$]*)=codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+?)\)\)/;
+    /([A-Za-z_$][\w$]*)=codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+)\)\)/;
   const trayConstructorPattern =
-    /([A-Za-z_$][\w$]*)=new ([A-Za-z_$][\w$]*)\.Tray\(([^;)]+)\)/;
+    /([A-Za-z_$][\w$]*)=new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+)\)/;
   const constructorMatch =
     patchedSource.match(conditionalTrayConstructorPattern) ??
     patchedSource.match(retainedTrayConstructorPattern) ??

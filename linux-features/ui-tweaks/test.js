@@ -43,6 +43,8 @@ const {
 } = require("./patches/reasoning-effort-labels.js");
 const {
   COLOR_ATTRIBUTE: THREAD_COLOR_ATTRIBUTE,
+  INTERACTIVE_MARKER: THREAD_COLOR_INTERACTIVE_MARKER,
+  POPOVER_MARKER: THREAD_COLOR_POPOVER_MARKER,
   RUNTIME_MARKER: THREAD_COLOR_RUNTIME_MARKER,
   STYLE_ID: THREAD_COLOR_STYLE_ID,
   THREAD_COLORS,
@@ -73,6 +75,9 @@ function modelPickerStateBundleFixture() {
 
 function sidebarThreadColorBundleFixture() {
   return [
+    'function b0c(){return{"aria-label":e.ariaLabel,onClick:t=>{t.stopPropagation(),e.onClick()},onPointerDown:x0c}}',
+    "function G4c(e){let t=(0,J4c.c)(8),{archive:n,pinAction:r}=e,i=Dd();if(n==null&&r==null)return null;let a;t[0]===r?a=t[1]:(a=r==null?[]:[{id:`thread-pin-action`,ariaLabel:r.ariaLabel,icon:r.isPinned?(0,c5.jsx)(E0c,{className:`translate-x-px`}):(0,c5.jsx)(S$,{className:`translate-x-px`}),onClick:r.onClick}],t[0]=r,t[1]=a);let o;t[2]!==n||t[3]!==i?(o=n==null?[]:[{id:`thread-primary-action`,ariaLabel:i.formatMessage(YY.archiveThread),icon:(0,c5.jsx)(b$,{}),onClick:n}],t[2]=n,t[3]=i,t[4]=o):o=t[4];let s;return t[5]!==a||t[6]!==o?(s=(0,c5.jsx)(b0c,{actions:[...a,...o],className:SQc}),t[5]=a,t[6]=o,t[7]=s):s=t[7],s}",
+    "function actions(){let ht;t[111]!==n||t[112]!==Xe||t[113]!==We||t[114]!==k||t[115]!==b||t[116]!==L||t[117]!==T||t[118]!==mt?(ht=e=>{let{archive:t}=e;return(0,c5.jsx)(G4c,{archive:t!=null&&(We||L)?Xe:t,pinAction:mt?{ariaLabel:k.formatMessage(b?o5:a5),isPinned:b,onClick:()=>{qY(T,n,!b)}}:void 0})},t[111]=n,t[112]=Xe,t[113]=We,t[114]=k,t[115]=b,t[116]=L,t[117]=T,t[118]=mt,t[119]=ht):ht=t[119];let gt=ht;let yt=Pe??he,bt=+!!mt,xt=ge.renderActions??gt;return[yt,bt,xt]}",
     "function localRow(){let Ce=Po(qDn,se),ct=()=>[{id:`rename-thread`,message:YY.renameThread,onSelect:et},",
     "...j==null||j===`local`?[]:[{id:`change-connection-color`}]];",
     "return x3c({labelColor:null,modelProvider:n?.modelProvider,",
@@ -456,6 +461,8 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   const patched = applySidebarThreadColorPatch(source, context);
 
   assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
+  assert.match(patched, new RegExp(THREAD_COLOR_INTERACTIVE_MARKER));
+  assert.match(patched, new RegExp(THREAD_COLOR_POPOVER_MARKER));
   assert.match(patched, new RegExp(THREAD_COLOR_STYLE_ID));
   assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
   assert.match(patched, /labelColor:Ce/);
@@ -463,6 +470,12 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, /\.\.\.\(\(j==null\|\|j===`local`\)\?\[/);
   assert.doesNotMatch(patched, /v\|\|_\.isGrouped/);
   assert.match(patched, /defaultMessage:`Change chat color…`/);
+  assert.match(patched, /id:`thread-color-action`/);
+  assert.match(patched, /defaultMessage:`Change chat color`/);
+  assert.match(patched, /document\.createElement\("button"\)/);
+  assert.doesNotMatch(patched, /showContextMenu/);
+  assert.match(patched, /!w-\[80px\]/);
+  assert.doesNotMatch(patched, /\$u\(\{id:`codexLinux\.sidebarThreadColor/);
   assert.doesNotMatch(patched, /Change pin color/);
   assert.match(patched, /ru\.SIDEBAR_THREAD_METADATA/);
   assert.doesNotMatch(patched, /labelColor:null/);
@@ -474,6 +487,8 @@ test("sidebar thread color runtime is dependency-free valid JavaScript", () => {
   assert.doesNotThrow(() => Function(runtime)());
   assert.match(runtime, /background-color:#ef444424!important/);
   assert.match(runtime, /:hover\{background-color:#ef444438!important/);
+  assert.match(runtime, /document\.createElement\("button"\)/);
+  assert.doesNotMatch(runtime, /showContextMenu/);
   assert.doesNotMatch(runtime, /::before/);
   for (const { label, value } of THREAD_COLORS) {
     assert.match(runtime, new RegExp(label));
@@ -493,6 +508,31 @@ test("sidebar thread color patch upgrades an existing marker runtime to the full
   assert.equal(applySidebarThreadColorPatch(legacy, context), current);
 });
 
+test("sidebar thread color patch repairs the legacy message-helper collision", () => {
+  const context = enabledThreadColorContext();
+  const current = applySidebarThreadColorPatch(sidebarThreadColorBundleFixture(), context);
+  const legacy = current
+    .replace(
+      "message:{id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`,description:`Menu item that changes a local chat color`},",
+      "message:$u({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`,description:`Menu item that changes a local chat color`}),",
+    )
+    .replace(
+      "ariaLabel:k.formatMessage({id:`codexLinux.sidebarThreadColor.button`,defaultMessage:`Change chat color`,description:`Button that changes a local chat color`}),",
+      "ariaLabel:k.formatMessage($u({id:`codexLinux.sidebarThreadColor.button`,defaultMessage:`Change chat color`,description:`Button that changes a local chat color`})),",
+    )
+    .replace(
+      "message:{id:`codexLinux.sidebarThreadColor.${item.id}`,defaultMessage:item.label,description:`Color choice for a local chat`},",
+      "message:$u({id:`codexLinux.sidebarThreadColor.${item.id}`,defaultMessage:item.label,description:`Color choice for a local chat`}),",
+    )
+    .replace(
+      "message:{id:`codexLinux.sidebarThreadColor.clear`,defaultMessage:`No color`,description:`Remove the color from a local chat`},",
+      "message:$u({id:`codexLinux.sidebarThreadColor.clear`,defaultMessage:`No color`,description:`Remove the color from a local chat`}),",
+    );
+
+  assert.notEqual(legacy, current);
+  assert.equal(applySidebarThreadColorPatch(legacy, context), current);
+});
+
 test("sidebar thread color runtime merges, clears, validates, and reports failures", async () => {
   let persisted = {
     "thread-one": { labelColor: "#ef4444", futureField: true },
@@ -506,7 +546,6 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
     "cm",
     "ru",
     "sm",
-    "$u",
     "document",
     "console",
     `${sidebarThreadColorRuntimeSource()};return {` +
@@ -519,7 +558,6 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
       if (failWrite) throw new Error("write failed");
       persisted = value;
     },
-    (message) => message,
     undefined,
     { warn: (message) => warnings.push(message) },
   );
