@@ -68,16 +68,18 @@ function modelPickerStateBundleFixture() {
 
 function sidebarThreadColorBundleFixture() {
   return [
-    "qDn=ja(Q,(e,{get:t})=>e==null?null:cm(t,ru.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
-    "function save(e){return sm(e,ru.THREAD_PROJECT_ASSIGNMENTS,value,{throwOnFailure:!0})}",
+    "Pan=ro(Q,(e,{get:t})=>e==null?null:im(t,tu.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
+    "function save(e){return rm(e,tu.THREAD_PROJECT_ASSIGNMENTS,value,{throwOnFailure:!0})}",
     "function toast(e,t){e.get(ov).danger(e.get(qb).formatMessage(t))}",
-    "function K4c(e){let {labelColor:u,threadSummary:v,...y}=e,C=u===void 0?null:u,w=v===void 0?null:v,",
-    "T=Fo(Q),E=(0,Y4c.useContext)(U4c),[D,O]=(0,Y4c.useState)(!1);return y}",
-    "function p6c(e){let n=e,se=n.kind===`local`?n.conversationId:null,ce=n.kind===`local`?n.summary??null:null,",
-    "le=Po(NA,se),ue=Po(MA,se),de;t[97]!==!0||t[98]!==w?.hostId?(ct=()=>[",
-    "{id:`rename-thread`,message:YY.renameThread,onSelect:et},...j==null||j===`local`?[]:",
-    "[{id:`change-connection-color`,message:kd({id:`codex.remoteHostColorPicker.menuItem`})}],",
-    "t[97]=!0,t[98]=w?.hostId):ct=t[99];return K4c({labelColor:null,modelProvider:n.modelProvider})}",
+    "function pxl(e){let {labelColor:u,threadSummary:v,...y}=e,C=u===void 0?null:u,w=v===void 0?null:v,",
+    "T=Ss(Q),E=Y($W)===`work`;let items=[",
+    "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`,",
+    "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`}),onSelect:Je},",
+    "...M==null||M===`local`?[]:[{id:`change-connection-color`,",
+    "message:wd({id:`codex.remoteHostColorPicker.menuItem`})}]];return y}",
+    "function WSl(){let ce=n.conversationId,Te=bs(Pan,ce),it;",
+    "t[134]!==Te||t[135]!==null?(it=()=>pxl({labelColor:null,modelProvider:n.modelProvider}),",
+    "t[134]=Te,t[135]=null,t[157]=it):it=t[157];return it}",
   ].join("");
 }
 
@@ -426,18 +428,14 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
   assert.match(patched, new RegExp(THREAD_COLOR_STYLE_ID));
   assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
-  assert.match(patched, /codexLinuxThreadLabelColor=Po\(qDn,se\)/);
-  assert.match(patched, /labelColor:codexLinuxThreadLabelColor/);
+  assert.match(patched, /labelColor:Te/);
   assert.match(patched, /change-thread-color/);
-  assert.match(
-    patched,
-    /\.\.\.\(\(b\|\|I\)&&\(j==null\|\|j===`local`\)\?\[/,
-  );
-  assert.match(patched, /t\[97\]!==I\|\|t\[98\]!==w\?\.hostId/);
-  assert.match(patched, /t\[97\]=I,t\[98\]=w\?\.hostId/);
+  assert.match(patched, /\.\.\.M==null\|\|M===`local`\?\[\{id:`change-thread-color`/);
+  assert.match(patched, /t\[134\]!==Te\|\|t\[135\]!==Te/);
+  assert.match(patched, /t\[134\]=Te,t\[135\]=Te/);
   assert.match(patched, /defaultMessage:`Change chat color…`/);
   assert.doesNotMatch(patched, /Change pin color/);
-  assert.match(patched, /ru\.SIDEBAR_THREAD_METADATA/);
+  assert.match(patched, /tu\.SIDEBAR_THREAD_METADATA/);
   assert.doesNotMatch(patched, /labelColor:null/);
   assert.equal(applySidebarThreadColorPatch(patched, context), patched);
 });
@@ -477,13 +475,19 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
   const scope = { get: (key) => (key === toastKey ? { danger: (message) => toasts.push(message) } : null) };
   let failWrite = false;
   const runtime = Function(
-    "cm",
-    "ru",
-    "sm",
-    "kd",
+    "im",
+    "tu",
+    "rm",
+    "wd",
     "ov",
     "document",
-    `${sidebarThreadColorRuntimeSource()};return {` +
+    `${sidebarThreadColorRuntimeSource({
+      errorToastAtom: "ov",
+      formatMessage: "wd",
+      globalStateKeys: "tu",
+      readGlobalState: "im",
+      writeGlobalState: "rm",
+    })};return {` +
       `setColor:codexLinuxSetSidebarThreadColor,menu:codexLinuxSidebarThreadColorMenu};`,
   )(
     () => persisted,

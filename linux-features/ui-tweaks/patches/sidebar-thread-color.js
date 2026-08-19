@@ -15,29 +15,28 @@ const THREAD_COLORS = Object.freeze([
 
 const COLOR_SELECTOR_DEFINITION_PATTERN =
   /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),\(e,\{get:t\}\)=>e==null\?null:([A-Za-z_$][\w$]*)\(t,([A-Za-z_$][\w$]*)\.SIDEBAR_THREAD_METADATA\)\?\.\[e\]\?\.labelColor\?\?null\)/gu;
-const LOCAL_COLOR_SELECTOR_MARKER =
-  "se=n.kind===`local`?n.conversationId:null,ce=n.kind===`local`?n.summary??null:null,le=Po(NA,se),ue=Po(MA,se),de;";
 const NULL_COLOR_MARKER = "labelColor:null,modelProvider:";
-const NULL_COLOR_REPLACEMENT = "labelColor:codexLinuxThreadLabelColor,modelProvider:";
-const ROW_ATTRIBUTES_MARKER =
-  "C=u===void 0?null:u,w=v===void 0?null:v,T=Fo(Q),E=(0,Y4c.useContext)(U4c),[D,O]=(0,Y4c.useState)(!1)";
+const NULL_COLOR_REPLACEMENT = "labelColor:Te,modelProvider:";
+const COLOR_CACHE_DEPENDENCY_MARKER = "t[134]!==Te||t[135]!==null";
+const COLOR_CACHE_DEPENDENCY_REPLACEMENT = "t[134]!==Te||t[135]!==Te";
+const COLOR_CACHE_VALUE_MARKER = "t[134]=Te,t[135]=null";
+const COLOR_CACHE_VALUE_REPLACEMENT = "t[134]=Te,t[135]=Te";
+const ROW_ATTRIBUTES_MARKER = "C=u===void 0?null:u,w=v===void 0?null:v,T=Ss(Q),E=Y($W)===`work`";
 const ROW_ATTRIBUTES_REPLACEMENT =
-  `C=u===void 0?null:u,w=v===void 0?null:v,T=Fo(Q);C!=null&&(y.dataAttributes={...y.dataAttributes,` +
-  `${JSON.stringify(COLOR_ATTRIBUTE)}:C});let E=(0,Y4c.useContext)(U4c),[D,O]=(0,Y4c.useState)(!1)`;
+  `C=u===void 0?null:u;C!=null&&(y.dataAttributes={...y.dataAttributes,` +
+  `${JSON.stringify(COLOR_ATTRIBUTE)}:C});let w=v===void 0?null:v,T=Ss(Q),E=Y($W)===\`work\``;
 const MENU_MARKER =
-  "{id:`rename-thread`,message:YY.renameThread,onSelect:et},...j==null||j===`local`?[]:" +
-  "[{id:`change-connection-color`";
+  "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`," +
+  "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`})," +
+  "onSelect:Je},...M==null||M===`local`?[]:[{id:`change-connection-color`";
 const MENU_REPLACEMENT =
-  "{id:`rename-thread`,message:YY.renameThread,onSelect:et}," +
-  "...((b||I)&&(j==null||j===`local`)?[{id:`change-thread-color`," +
-  "message:kd({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
+  "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`," +
+  "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`}),onSelect:Je}," +
+  "...M==null||M===`local`?[{id:`change-thread-color`," +
+  "message:wd({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
   "description:`Menu item that changes a local chat color`})," +
-  "submenu:codexLinuxSidebarThreadColorMenu(T,n)}]:[])," +
-  "...j==null||j===`local`?[]:[{id:`change-connection-color`";
-const MENU_CACHE_DEPENDENCY_MARKER = "t[97]!==!0||t[98]!==w?.hostId?";
-const MENU_CACHE_DEPENDENCY_REPLACEMENT = "t[97]!==I||t[98]!==w?.hostId?";
-const MENU_CACHE_VALUE_MARKER = "t[97]=!0,t[98]=w?.hostId";
-const MENU_CACHE_VALUE_REPLACEMENT = "t[97]=I,t[98]=w?.hostId";
+  "submenu:codexLinuxSidebarThreadColorMenu(T,n)}]:[]," +
+  "...M==null||M===`local`?[]:[{id:`change-connection-color`";
 
 function warn(message) {
   console.warn(`WARN: ${message} - skipping ui-tweaks sidebar thread color patch`);
@@ -176,18 +175,11 @@ function applySidebarThreadColorPatch(source, context = {}) {
     }
 
     const replacements = [
-      [
-        LOCAL_COLOR_SELECTOR_MARKER,
-        LOCAL_COLOR_SELECTOR_MARKER.replace(
-          ",de;",
-          `,codexLinuxThreadLabelColor=Po(${aliases.selector},se),de;`,
-        ),
-      ],
       [NULL_COLOR_MARKER, NULL_COLOR_REPLACEMENT],
+      [COLOR_CACHE_DEPENDENCY_MARKER, COLOR_CACHE_DEPENDENCY_REPLACEMENT],
+      [COLOR_CACHE_VALUE_MARKER, COLOR_CACHE_VALUE_REPLACEMENT],
       [ROW_ATTRIBUTES_MARKER, ROW_ATTRIBUTES_REPLACEMENT],
       [MENU_MARKER, MENU_REPLACEMENT],
-      [MENU_CACHE_DEPENDENCY_MARKER, MENU_CACHE_DEPENDENCY_REPLACEMENT],
-      [MENU_CACHE_VALUE_MARKER, MENU_CACHE_VALUE_REPLACEMENT],
     ];
     const invalid = replacements.find(([marker]) => countOccurrences(source, marker) !== 1);
     if (invalid != null) {

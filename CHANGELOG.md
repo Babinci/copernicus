@@ -35,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
-- Sidebar chat colors now apply to pinned chats and local Project chats while
+- Sidebar chat colors now apply to all local chats while
   preserving the opt-in, fail-soft UI tweak boundary.
 - Remote mobile control now relies on the current upstream account-enrollment
   compatibility and Connections tab resolver instead of patching duplicate
