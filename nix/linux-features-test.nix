@@ -169,6 +169,7 @@ let
     enableComputerUseUi = true;
     linuxFeatureIds = [
       "remote-mobile-control"
+      "browser-media-permissions"
       "frameless-titlebar"
       "codex-micro"
       "codex-wrapper-updater"
