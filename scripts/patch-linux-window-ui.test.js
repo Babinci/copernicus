@@ -3005,6 +3005,17 @@ test("supports explicit IPC quit patching when minified aliases drift", () => {
   );
 });
 
+test("preserves the current quit-app relaunch preparation", () => {
+  const source =
+    "if(s.type===`quit-app`){s.relaunch===!0&&(e.quitState?.allowQuitTemporarily(),l.app.relaunch()),l.app.quit();return}";
+  const patched = applyPatchTwice(applyLinuxExplicitIpcQuitPatch, source);
+
+  assert.match(
+    patched,
+    /if\(s\.type===`quit-app`\)\{typeof codexLinuxPrepareForExplicitQuit===`function`\?codexLinuxPrepareForExplicitQuit\(\):typeof codexLinuxMarkQuitInProgress===`function`&&codexLinuxMarkQuitInProgress\(\),s\.relaunch===!0&&\(e\.quitState\?\.allowQuitTemporarily\(\),l\.app\.relaunch\(\)\),l\.app\.quit\(\);return\}/,
+  );
+});
+
 test("patches remaining explicit quit handlers when another copy is already patched", () => {
   const quitMarkerExpression =
     "typeof codexLinuxPrepareForExplicitQuit===`function`?codexLinuxPrepareForExplicitQuit():typeof codexLinuxMarkQuitInProgress===`function`&&codexLinuxMarkQuitInProgress(),";
@@ -7998,6 +8009,18 @@ test("auto-installs the current Chrome plugin gate shape", () => {
   assert.match(patched, /name:o\.s,syncInstallStateWithChromeExtension:!0,isAvailable:\(\{buildFlavor:e,env:t,features:r\}\)=>Ar\(e,t\)&&r\.externalBrowserUseAllowed/);
   assert.equal((patched.match(/installWhenMissing:!0,name:o\.c/g) || []).length, 1);
   assert.equal((patched.match(/installWhenMissing:!0,name:o\.s/g) || []).length, 0);
+});
+
+test("auto-installs the current spread Chrome plugin gate shape", () => {
+  const source =
+    "var xc=[{...n.Ds.chromeDev,syncInstallStateWithChromeExtension:!0,isAvailable:({buildFlavor:e,env:t,features:n})=>s.s(e,t)&&n.externalBrowserUseAllowed},{...n.Ds.chrome,syncInstallStateWithChromeExtension:!0,isAvailable:({buildFlavor:e,features:t})=>t.externalBrowserUseAllowed&&s.l(e)}];";
+  const patched = applyPatchTwice(applyLinuxChromePluginAutoInstallPatch, source);
+
+  assert.match(
+    patched,
+    /\{\.\.\.n\.Ds\.chrome,installWhenMissing:!0,syncInstallStateWithChromeExtension:!0,isAvailable:\(\{buildFlavor:e,features:t\}\)=>process\.platform===`linux`\|\|\(t\.externalBrowserUseAllowed&&s\.l\(e\)\)\}/,
+  );
+  assert.doesNotMatch(patched, /\.\.\.n\.Ds\.chromeDev,installWhenMissing/);
 });
 
 test("materializes trusted Linux bundled plugins through a private staging root", async () => {
