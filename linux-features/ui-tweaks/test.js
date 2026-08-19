@@ -100,9 +100,9 @@ function enabledThreadColorContext() {
 function fileTreeBundleFixture() {
   return [
     "function Sno(){let U={current:null},z=new Map,N={},F={},o=`local`,A={},M=`linux`;",
-    "let De;De=()=>{let e=hoo({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return doo({...Moo({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},onCopyPath:xR,targetPath:e})};",
-    "let Oe;Oe=()=>Noo({scope:A,cwd:n,hostId:o,targetPath:hoo({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})});",
-    "let ke;ke=e=>{U.current=_oo(e.nativeEvent)};return[De,Oe,ke]}",
+    "let De;De=()=>{let e=Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},onCopyPath:xR,targetPath:e})};",
+    "let Oe;Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})});",
+    "let ke;ke=e=>{U.current=Qso(e.nativeEvent)};return[De,Oe,ke]}",
   ].join("");
 }
 
@@ -265,7 +265,7 @@ test("workspace file tree exposes existing path actions for folders", () => {
   }
   const runtime = Function(
     "Element",
-    "B6e",
+    "Sp",
     `${fileTreeFolderActionsRuntimeSource()};return {target:codexLinuxFileTreeContextTarget,path:codexLinuxFileTreeContextPath};`,
   )(FakeElement, (cwd, path) => `${cwd}/${path}`);
   const folder = runtime.target({ composedPath: () => [new FakeElement("folder", "docs")] });

@@ -4,14 +4,14 @@ const FILE_TREE_ASSET_PATTERN = /^app-initial-[^.]+\.js$/;
 const RUNTIME_MARKER = "codexLinuxFileTreeContextTarget";
 
 const GET_ITEMS_MARKER =
-  "De=()=>{let e=hoo({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return doo({...Moo({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},";
+  "De=()=>{let e=Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},";
 const GET_ITEMS_REPLACEMENT =
-  "De=()=>{let e=codexLinuxFileTreeContextPath(z,U.current,n,M===`windows`);return doo({...Moo({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null||U.current?.type!==`file`?void 0:e=>{N.mutateAsync({hostId:o,path:e})},";
+  "De=()=>{let e=codexLinuxFileTreeContextPath(z,U.current,n,M===`windows`);return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null||U.current?.type!==`file`?void 0:e=>{N.mutateAsync({hostId:o,path:e})},";
 const PREFETCH_MARKER =
-  "Oe=()=>Noo({scope:A,cwd:n,hostId:o,targetPath:hoo({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})})";
+  "Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})})";
 const PREFETCH_REPLACEMENT =
-  "Oe=()=>Noo({scope:A,cwd:n,hostId:o,targetPath:codexLinuxFileTreeContextPath(z,U.current,n,M===`windows`)})";
-const TARGET_MARKER = "ke=e=>{U.current=_oo(e.nativeEvent)}";
+  "Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:codexLinuxFileTreeContextPath(z,U.current,n,M===`windows`)})";
+const TARGET_MARKER = "ke=e=>{U.current=Qso(e.nativeEvent)}";
 const TARGET_REPLACEMENT =
   "ke=e=>{U.current=codexLinuxFileTreeContextTarget(e.nativeEvent)}";
 
@@ -37,7 +37,7 @@ function runtimeSource() {
     "}return null}",
     "function codexLinuxFileTreeContextPath(pathMap,target,cwd,isWindows){",
     "if(target==null)return null;let path=pathMap.get(target.path);",
-    "return path??(target.type===`folder`?B6e(cwd??``,target.path,isWindows):target.path)}",
+    "return path??(target.type===`folder`?Sp(cwd??``,target.path,isWindows):target.path)}",
   ].join("");
 }
 
