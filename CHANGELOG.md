@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- An opt-in `browser-oauth-popups` Linux feature restores popup-based OAuth in
+  the built-in browser while preserving the upstream restricted-navigation
+  handler and hardened webview preferences.
 - Copernicus marketplace plugin with GPT-only Sol, Terra, and Luna Fleet lanes,
   a bounded `codex exec` batch runner, a general Solution Autoresearch System,
   hash-chained evidence receipts, OKF cycle-boundary memory, and the Rick Rubin
@@ -46,6 +49,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- The opt-in sidebar chat colors and shared app-server socket now target the
+  latest upstream Desktop bundle shapes.
 - Installed Copernicus skills now resolve bundled scripts and references from
   their own skill directories instead of assuming the project working directory.
 
