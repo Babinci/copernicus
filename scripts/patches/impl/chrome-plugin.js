@@ -196,9 +196,26 @@ function applyLinuxChromePluginAutoInstallPatch(currentSource) {
     },
   );
 
-  if (sawChromeGate) {
-    return patched;
-  }
+  if (sawChromeGate) return patched;
+
+  const spreadGateRegex =
+    /\{(\.\.\.[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\.chrome,)(installWhenMissing:!0,)?(syncInstallStateWithChromeExtension:!0,isAvailable:\(\{buildFlavor:([A-Za-z_$][\w$]*),features:([A-Za-z_$][\w$]*)\}\)=>)((?:process\.platform===`linux`\|\|\()?\5\.externalBrowserUseAllowed&&[A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\4\)\)?)\}/g;
+  let sawSpreadChromeGate = false;
+  const spreadPatched = currentSource.replace(
+    spreadGateRegex,
+    (gateSource, descriptor, installWhenMissing, prefix, _buildFlavor, _features, expression) => {
+      sawSpreadChromeGate = true;
+      if (installWhenMissing != null && expression.startsWith("process.platform===`linux`||(")) {
+        return gateSource;
+      }
+      return `{${descriptor}${installWhenMissing ?? "installWhenMissing:!0,"}${prefix}${
+        expression.startsWith("process.platform===`linux`||(")
+          ? expression
+          : `process.platform===\`linux\`||(${expression})`
+      }}`;
+    },
+  );
+  if (sawSpreadChromeGate) return spreadPatched;
 
   if (currentSource.includes("externalBrowserUseAllowed")) {
     throw new Error("Required Linux Chrome plugin auto-install patch failed: could not enable bundled Chrome auto-install");

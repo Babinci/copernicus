@@ -1,0 +1,9 @@
+{
+  "id": "browser-oauth-popups",
+  "title": "Built-in Browser OAuth Popups",
+  "description": "Opt-in popup delivery for OAuth flows in the built-in browser, governed by its existing restricted-navigation handler.",
+  "defaultEnabled": false,
+  "entrypoints": {
+    "patchDescriptors": "./patch.js"
+  }
+}

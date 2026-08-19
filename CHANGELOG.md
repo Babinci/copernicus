@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- An opt-in `browser-oauth-popups` Linux feature restores popup-based OAuth in
+  the built-in browser while preserving the upstream restricted-navigation
+  handler and hardened webview preferences.
 - Copernicus marketplace plugin with GPT-only Sol, Terra, and Luna Fleet lanes,
   a bounded `codex exec` batch runner, a general Solution Autoresearch System,
   hash-chained evidence receipts, OKF cycle-boundary memory, and the Rick Rubin
@@ -32,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
-- Sidebar chat colors now apply to pinned chats and local Project chats while
+- Sidebar chat colors now apply to all local chats while
   preserving the opt-in, fail-soft UI tweak boundary.
 - Remote mobile control now relies on the current upstream account-enrollment
   compatibility and Connections tab resolver instead of patching duplicate
@@ -46,6 +49,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- The opt-in sidebar chat colors and shared app-server socket now target the
+  latest upstream Desktop bundle shapes.
 - Installed Copernicus skills now resolve bundled scripts and references from
   their own skill directories instead of assuming the project working directory.
 

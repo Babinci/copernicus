@@ -68,13 +68,18 @@ function modelPickerStateBundleFixture() {
 
 function sidebarThreadColorBundleFixture() {
   return [
-    "function Ztu(e){let t=cache(),{isPinned:o,labelColor:l,threadSummary:g,..._}=e,",
-    "v=o!==void 0&&o,x=l===void 0?null:l,S=g===void 0?null:g,C=No(Q),",
-    "[w,T]=(0,enu.useState)(!1),E=Zu();",
-    "let $e=()=>[{id:`rename-thread`,message:sK.renameThread,onSelect:Ke},",
-    "...O==null||O===`local`?[]:[{id:`change-connection-color`}]];return _}",
-    "function localRow(e){let B=e.conversationId;Mo(Kas,B);let ne=e.extra;",
-    "return Ztu({labelColor:null,modelProvider:e.modelProvider})}",
+    "Pan=ro(Q,(e,{get:t})=>e==null?null:im(t,tu.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
+    "function save(e){return rm(e,tu.THREAD_PROJECT_ASSIGNMENTS,value,{throwOnFailure:!0})}",
+    "function toast(e,t){e.get(ov).danger(e.get(qb).formatMessage(t))}",
+    "function pxl(e){let {labelColor:u,threadSummary:v,...y}=e,C=u===void 0?null:u,w=v===void 0?null:v,",
+    "T=Ss(Q),E=Y($W)===`work`;let items=[",
+    "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`,",
+    "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`}),onSelect:Je},",
+    "...M==null||M===`local`?[]:[{id:`change-connection-color`,",
+    "message:wd({id:`codex.remoteHostColorPicker.menuItem`})}]];return y}",
+    "function WSl(){let ce=n.conversationId,Te=bs(Pan,ce),it;",
+    "t[134]!==Te||t[135]!==null?(it=()=>pxl({labelColor:null,modelProvider:n.modelProvider}),",
+    "t[134]=Te,t[135]=null,t[157]=it):it=t[157];return it}",
   ].join("");
 }
 
@@ -423,16 +428,14 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
   assert.match(patched, new RegExp(THREAD_COLOR_STYLE_ID));
   assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
-  assert.match(patched, /codexLinuxThreadLabelColor=Mo\(Kas,B\)/);
-  assert.match(patched, /labelColor:codexLinuxThreadLabelColor/);
+  assert.match(patched, /labelColor:Te/);
   assert.match(patched, /change-thread-color/);
-  assert.match(
-    patched,
-    /\.\.\.\(\(v\|\|_\.isGrouped===!0\)&&\(O==null\|\|O===`local`\)\?\[/,
-  );
+  assert.match(patched, /\.\.\.M==null\|\|M===`local`\?\[\{id:`change-thread-color`/);
+  assert.match(patched, /t\[134\]!==Te\|\|t\[135\]!==Te/);
+  assert.match(patched, /t\[134\]=Te,t\[135\]=Te/);
   assert.match(patched, /defaultMessage:`Change chat color…`/);
   assert.doesNotMatch(patched, /Change pin color/);
-  assert.match(patched, /Il\.SIDEBAR_THREAD_METADATA/);
+  assert.match(patched, /tu\.SIDEBAR_THREAD_METADATA/);
   assert.doesNotMatch(patched, /labelColor:null/);
   assert.equal(applySidebarThreadColorPatch(patched, context), patched);
 });
@@ -472,13 +475,19 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
   const scope = { get: (key) => (key === toastKey ? { danger: (message) => toasts.push(message) } : null) };
   let failWrite = false;
   const runtime = Function(
-    "Cp",
-    "Il",
-    "Sp",
-    "Th",
-    "$u",
+    "im",
+    "tu",
+    "rm",
+    "wd",
+    "ov",
     "document",
-    `${sidebarThreadColorRuntimeSource()};return {` +
+    `${sidebarThreadColorRuntimeSource({
+      errorToastAtom: "ov",
+      formatMessage: "wd",
+      globalStateKeys: "tu",
+      readGlobalState: "im",
+      writeGlobalState: "rm",
+    })};return {` +
       `setColor:codexLinuxSetSidebarThreadColor,menu:codexLinuxSidebarThreadColorMenu};`,
   )(
     () => persisted,
@@ -488,8 +497,8 @@ test("sidebar thread color runtime merges, clears, validates, and reports failur
       if (failWrite) throw new Error("write failed");
       persisted = value;
     },
-    toastKey,
     (message) => message,
+    toastKey,
     undefined,
   );
 
