@@ -90,12 +90,12 @@ function avatarApplyInputShapePatch() {
 
 function patchAvatarOverlayWindowOptions(source) {
   const windowOptionsPatch =
-    "appearance:`avatarOverlay`,alwaysOnTop:process.platform===`linux`,skipTaskbar:process.platform===`linux`,focusable:process.platform===`linux`?!0:!1";
+    "appearance:`avatarOverlay`,alwaysOnTop:process.platform===`linux`,skipTaskbar:process.platform===`linux`,supportsWindowTiling:!1,focusable:process.platform===`linux`?!0:!1";
   if (source.includes(windowOptionsPatch)) {
     return source;
   }
   return source.replace(
-    "appearance:`avatarOverlay`,focusable:!1",
+    "appearance:`avatarOverlay`,supportsWindowTiling:!1,focusable:!1",
     windowOptionsPatch,
   );
 }
@@ -122,9 +122,9 @@ function applyLinuxAvatarOverlayMousePassthroughPatch(currentSource) {
     `codexLinuxIsAvatarShapeBackend(){if(process.platform!==\`linux\`)return!1;let e=\`\`;try{e=${electronVar}.app.commandLine.getSwitchValue(\`ozone-platform\`)}catch{}return e===\`x11\`||e===\`\`&&!process.env.WAYLAND_DISPLAY}`;
 
   const interactivityNeedle =
-    "applyPointerInteractivityPolicy(){let e=this.window;if(e==null||e.isDestroyed()){this.mousePassthroughEnabled=!1;return}if(this.applyInputShape(e))return;let t=!this.pointerInteractive;if(this.mousePassthroughEnabled!==t){if(this.mousePassthroughEnabled=t,t){e.setIgnoreMouseEvents(!0,{forward:!0});return}e.setIgnoreMouseEvents(!1),this.refreshCursorAtCurrentMousePosition(e)}}";
+    "applyPointerInteractivityPolicy(){let e=this.window;if(e==null||e.isDestroyed()){this.mousePassthroughMode=`disabled`;return}let t=this.applyInputShape(e);if(!e.isVisible()){this.mousePassthroughMode!==`without-forwarding`&&(e.setIgnoreMouseEvents(!0,{forward:!1}),this.mousePassthroughMode=`without-forwarding`);return}if(t)return;let n=this.pointerInteractive?`disabled`:`forwarding`;if(this.mousePassthroughMode!==n){if(this.mousePassthroughMode=n,n===`forwarding`){e.setIgnoreMouseEvents(!0,{forward:!0});return}e.setIgnoreMouseEvents(!1),this.refreshCursorAtCurrentMousePosition(e)}}";
   const interactivityMethodPatch =
-    "applyPointerInteractivityPolicy(){let e=this.window;if(e==null||e.isDestroyed()){this.mousePassthroughEnabled=!1,this.codexLinuxStopAvatarPassthroughRecovery();return}if(this.applyInputShape(e))return;if(this.codexLinuxIsAvatarShapeBackend()&&typeof e.setShape==`function`){this.codexLinuxStartAvatarPassthroughRecovery(),this.mousePassthroughEnabled&&(this.mousePassthroughEnabled=!1,e.setIgnoreMouseEvents(!1));if(this.codexLinuxApplyAvatarInputShape(e))return}process.platform===`linux`&&(this.codexLinuxStartAvatarPassthroughRecovery(),this.codexLinuxSyncAvatarPointerInteractivity(e));let t=!this.pointerInteractive;this.dragState!=null&&(t=!1);if(this.mousePassthroughEnabled!==t){if(this.mousePassthroughEnabled=t,t){e.setIgnoreMouseEvents(!0,{forward:!0});return}e.setIgnoreMouseEvents(!1),this.refreshCursorAtCurrentMousePosition(e)}}";
+    "applyPointerInteractivityPolicy(){let e=this.window;if(e==null||e.isDestroyed()){this.mousePassthroughMode=`disabled`,this.codexLinuxStopAvatarPassthroughRecovery();return}let t=this.applyInputShape(e);if(!e.isVisible()){this.mousePassthroughMode!==`without-forwarding`&&(e.setIgnoreMouseEvents(!0,{forward:!1}),this.mousePassthroughMode=`without-forwarding`);return}if(t)return;if(this.codexLinuxIsAvatarShapeBackend()&&typeof e.setShape==`function`){this.codexLinuxStartAvatarPassthroughRecovery(),this.mousePassthroughMode!==`disabled`&&(e.setIgnoreMouseEvents(!1),this.mousePassthroughMode=`disabled`);if(this.codexLinuxApplyAvatarInputShape(e))return}process.platform===`linux`&&(this.codexLinuxStartAvatarPassthroughRecovery(),this.codexLinuxSyncAvatarPointerInteractivity(e));let n=this.pointerInteractive?`disabled`:`forwarding`;this.dragState!=null&&(n=`disabled`);if(this.mousePassthroughMode!==n){if(this.mousePassthroughMode=n,n===`forwarding`){e.setIgnoreMouseEvents(!0,{forward:!0});return}e.setIgnoreMouseEvents(!1),this.refreshCursorAtCurrentMousePosition(e)}}";
   const stopRecoveryMethod =
     "codexLinuxStopAvatarPassthroughRecovery(){this.codexLinuxAvatarPassthroughRecoveryTimer!=null&&(clearInterval(this.codexLinuxAvatarPassthroughRecoveryTimer),this.codexLinuxAvatarPassthroughRecoveryTimer=null)}";
   const startRecoveryMethod =
