@@ -4270,6 +4270,21 @@ PLIST
     [ "$(tail -n 1 "$output_log")" = "41.3.0" ] || fail "Expected fallback Electron version 41.3.0, got: $(cat "$output_log")"
 }
 
+test_installer_honors_valid_electron_security_override() {
+    info "Checking explicit Electron security override"
+    local workspace="$TMP_DIR/electron-version-override"
+    local app_dir="$workspace/Codex.app"
+    local output_log="$workspace/output.log"
+
+    mkdir -p "$app_dir"
+    CODEX_INSTALLER_SOURCE_ONLY=1 CODEX_ELECTRON_VERSION=42.9.3 bash -c \
+        'source "$1"; detect_electron_version "$2"; printf "%s\n" "$ELECTRON_VERSION"' \
+        _ "$REPO_DIR/install.sh" "$app_dir" >"$output_log" 2>&1
+
+    assert_contains "$output_log" "Using requested Electron version: 42.9.3"
+    [ "$(tail -n 1 "$output_log")" = "42.9.3" ] || fail "Expected Electron override 42.9.3, got: $(cat "$output_log")"
+}
+
 test_port_validation_rejects_oversized_numeric_values() {
     info "Checking oversized numeric webview port validation"
     local workspace="$TMP_DIR/port-validation"
@@ -11070,6 +11085,7 @@ main() {
     test_ci_local_mounts_shared_git_metadata_for_linked_worktrees
     test_installer_detects_electron_version_from_plist
     test_installer_keeps_electron_fallback_for_bad_metadata
+    test_installer_honors_valid_electron_security_override
     test_port_validation_rejects_oversized_numeric_values
     test_launcher_uses_private_default_tmpdir
     test_managed_node_runtime_source_install
