@@ -4270,6 +4270,21 @@ PLIST
     [ "$(tail -n 1 "$output_log")" = "41.3.0" ] || fail "Expected fallback Electron version 41.3.0, got: $(cat "$output_log")"
 }
 
+test_installer_honors_valid_electron_security_override() {
+    info "Checking explicit Electron security override"
+    local workspace="$TMP_DIR/electron-version-override"
+    local app_dir="$workspace/Codex.app"
+    local output_log="$workspace/output.log"
+
+    mkdir -p "$app_dir"
+    CODEX_INSTALLER_SOURCE_ONLY=1 CODEX_ELECTRON_VERSION=42.9.3 bash -c \
+        'source "$1"; detect_electron_version "$2"; printf "%s\n" "$ELECTRON_VERSION"' \
+        _ "$REPO_DIR/install.sh" "$app_dir" >"$output_log" 2>&1
+
+    assert_contains "$output_log" "Using requested Electron version: 42.9.3"
+    [ "$(tail -n 1 "$output_log")" = "42.9.3" ] || fail "Expected Electron override 42.9.3, got: $(cat "$output_log")"
+}
+
 test_port_validation_rejects_oversized_numeric_values() {
     info "Checking oversized numeric webview port validation"
     local workspace="$TMP_DIR/port-validation"
@@ -4636,6 +4651,7 @@ test_native_module_rebuild_uses_local_electron_rebuild_toolchain() {
     local output_log="$workspace/output.log"
 
     mkdir -p "$app_dir/node_modules/better-sqlite3" "$app_dir/node_modules/node-pty" "$fake_bin"
+    printf '%s\n' '{"dependencies":{"@parcel/watcher":"2.5.6"}}' > "$app_dir/package.json"
     printf '%s\n' '{"version":"12.9.0"}' > "$app_dir/node_modules/better-sqlite3/package.json"
     printf '%s\n' '{"version":"1.1.0"}' > "$app_dir/node_modules/node-pty/package.json"
 
@@ -4696,6 +4712,15 @@ case "$args" in
         printf '%s\n' '{"version":"1.1.0"}' > node_modules/node-pty/package.json
         ;;
 esac
+
+case "$args" in
+    *" @parcel/watcher@2.5.6 "*)
+        mkdir -p node_modules/@parcel/watcher node_modules/@parcel/watcher-linux-x64-glibc
+        printf '%s\n' '{"version":"2.5.6"}' > node_modules/@parcel/watcher/package.json
+        printf '%s\n' '{"version":"2.5.6"}' > node_modules/@parcel/watcher-linux-x64-glibc/package.json
+        : > node_modules/@parcel/watcher-linux-x64-glibc/watcher.node
+        ;;
+esac
 SCRIPT
     chmod +x "$fake_bin/npm"
 
@@ -4740,6 +4765,8 @@ SCRIPT
     assert_contains "$output_log" "Native modules built successfully"
     assert_file_exists "$app_dir/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
     assert_file_exists "$app_dir/node_modules/node-pty/build/Release/pty.node"
+    assert_file_exists "$app_dir/node_modules/@parcel/watcher/package.json"
+    assert_file_exists "$app_dir/node_modules/@parcel/watcher-linux-x64-glibc/watcher.node"
 }
 
 test_native_module_rebuild_accepts_prebuilt_source() {
@@ -4753,13 +4780,18 @@ test_native_module_rebuild_accepts_prebuilt_source() {
         "$app_dir/node_modules/better-sqlite3" \
         "$app_dir/node_modules/node-pty" \
         "$source_dir/better-sqlite3/build/Release" \
-        "$source_dir/node-pty/build/Release"
+        "$source_dir/node-pty/build/Release" \
+        "$source_dir/@parcel/watcher" \
+        "$source_dir/@parcel/watcher-linux-x64-glibc"
+    printf '%s\n' '{"dependencies":{"@parcel/watcher":"2.5.6"}}' > "$app_dir/package.json"
     printf '%s\n' '{"version":"12.9.0"}' > "$app_dir/node_modules/better-sqlite3/package.json"
     printf '%s\n' '{"version":"1.1.0"}' > "$app_dir/node_modules/node-pty/package.json"
     printf '%s\n' stale > "$app_dir/node_modules/better-sqlite3/old.txt"
 
     printf '%s\n' '{"version":"12.9.0"}' > "$source_dir/better-sqlite3/package.json"
     printf '%s\n' '{"version":"1.1.0"}' > "$source_dir/node-pty/package.json"
+    printf '%s\n' '{"version":"2.5.6"}' > "$source_dir/@parcel/watcher/package.json"
+    : > "$source_dir/@parcel/watcher-linux-x64-glibc/watcher.node"
     : > "$source_dir/better-sqlite3/build/Release/better_sqlite3.node"
     : > "$source_dir/better-sqlite3/build/Release/junk.o"
     : > "$source_dir/node-pty/build/Release/pty.node"
@@ -4781,6 +4813,8 @@ test_native_module_rebuild_accepts_prebuilt_source() {
     assert_contains "$output_log" "Using prebuilt native modules from $source_dir"
     assert_file_exists "$app_dir/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
     assert_file_exists "$app_dir/node_modules/node-pty/build/Release/pty.node"
+    assert_file_exists "$app_dir/node_modules/@parcel/watcher/package.json"
+    assert_file_exists "$app_dir/node_modules/@parcel/watcher-linux-x64-glibc/watcher.node"
     [ ! -f "$app_dir/node_modules/better-sqlite3/old.txt" ] || fail "Expected stale better-sqlite3 module to be replaced"
     [ ! -f "$app_dir/node_modules/better-sqlite3/build/Release/junk.o" ] || fail "Expected better-sqlite3 build junk to be pruned"
     [ ! -f "$app_dir/node_modules/node-pty/build/Release/junk.o" ] || fail "Expected node-pty build junk to be pruned"
@@ -11051,6 +11085,7 @@ main() {
     test_ci_local_mounts_shared_git_metadata_for_linked_worktrees
     test_installer_detects_electron_version_from_plist
     test_installer_keeps_electron_fallback_for_bad_metadata
+    test_installer_honors_valid_electron_security_override
     test_port_validation_rejects_oversized_numeric_values
     test_launcher_uses_private_default_tmpdir
     test_managed_node_runtime_source_install

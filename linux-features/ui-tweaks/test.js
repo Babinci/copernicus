@@ -50,6 +50,11 @@ const {
   sidebarThreadColorCss,
   sidebarThreadColorRuntimeSource,
 } = require("./patches/sidebar-thread-color.js");
+const {
+  RUNTIME_MARKER: FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER,
+  applyFileTreeFolderActionsPatch,
+  runtimeSource: fileTreeFolderActionsRuntimeSource,
+} = require("./patches/file-tree-folder-actions.js");
 
 function projectBundleFixture() {
   return [
@@ -71,15 +76,14 @@ function sidebarThreadColorBundleFixture() {
     "Pan=ro(Q,(e,{get:t})=>e==null?null:im(t,tu.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
     "function save(e){return rm(e,tu.THREAD_PROJECT_ASSIGNMENTS,value,{throwOnFailure:!0})}",
     "function toast(e,t){e.get(ov).danger(e.get(qb).formatMessage(t))}",
-    "function pxl(e){let {labelColor:u,threadSummary:v,...y}=e,C=u===void 0?null:u,w=v===void 0?null:v,",
-    "T=Ss(Q),E=Y($W)===`work`;let items=[",
-    "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`,",
-    "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`}),onSelect:Je},",
+    "function pxl(){let items=[{id:`rename-thread`,onSelect:Xe},",
     "...M==null||M===`local`?[]:[{id:`change-connection-color`,",
-    "message:wd({id:`codex.remoteHostColorPicker.menuItem`})}]];return y}",
+    "message:wd({id:`codex.remoteHostColorPicker.menuItem`})}]];",
+    "return jsx(Row,{labelColor:null,modelProvider:n.modelProvider,",
+    "dataAttributes:Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})})}",
     "function WSl(){let ce=n.conversationId,Te=bs(Pan,ce),it;",
-    "t[134]!==Te||t[135]!==null?(it=()=>pxl({labelColor:null,modelProvider:n.modelProvider}),",
-    "t[134]=Te,t[135]=null,t[157]=it):it=t[157];return it}",
+    "t[135]!==Te||t[136]!==null?(it=()=>pxl(),",
+    "t[135]=Te,t[136]=null,t[158]=it):it=t[158];return it}",
   ].join("");
 }
 
@@ -90,6 +94,15 @@ function enabledThreadColorContext() {
       settings: { tweaks: { sidebar: { threadColor: { enabled: true } } } },
     },
   };
+}
+
+function fileTreeBundleFixture() {
+  return [
+    "function Sno(){let U={current:null},z=new Map,N={},F={},o=`local`,A={},M=`linux`;",
+    "let De;De=()=>{let e=Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},onCopyPath:xR,targetPath:e})};",
+    "let Oe;Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})});",
+    "let ke;ke=e=>{U.current=Qso(e.nativeEvent)};return[De,Oe,ke]}",
+  ].join("");
 }
 
 function modelPickerMenuBundleFixture() {
@@ -198,6 +211,7 @@ test("ui-tweaks is discoverable and disabled until listed in features.json", () 
       [
         ["feature:ui-tweaks:sidebar-project-name-style", "webview-asset", "optional"],
         ["feature:ui-tweaks:sidebar-thread-color", "webview-asset", "optional"],
+        ["feature:ui-tweaks:file-tree-folder-actions", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-default-advanced-view", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-inline-model-list", "webview-asset", "optional"],
         [
@@ -233,6 +247,29 @@ test("model picker descriptors target the current state and menu bundles", () =>
     "app-initial~app-main~page-CMpPiY3-.js",
     MODEL_PICKER_STATE_ASSET_PATTERN,
   );
+});
+
+test("workspace file tree exposes existing path actions for folders", () => {
+  const context = {
+    feature: { settings: { tweaks: { fileTree: { folderActions: { enabled: true } } } } },
+  };
+  const patched = applyFileTreeFolderActionsPatch(fileTreeBundleFixture(), context);
+  assert.match(patched, new RegExp(FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER));
+  assert.match(patched, /U\.current\?\.type!==`file`\?void 0/);
+  assert.equal(applyFileTreeFolderActionsPatch(patched, context), patched);
+
+  class FakeElement {
+    constructor(type, path) { this.attributes = { "data-item-type": type, "data-item-path": path }; }
+    getAttribute(name) { return this.attributes[name] ?? null; }
+  }
+  const runtime = Function(
+    "Element",
+    "Sp",
+    `${fileTreeFolderActionsRuntimeSource()};return {target:codexLinuxFileTreeContextTarget,path:codexLinuxFileTreeContextPath};`,
+  )(FakeElement, (cwd, path) => `${cwd}/${path}`);
+  const folder = runtime.target({ composedPath: () => [new FakeElement("folder", "docs")] });
+  assert.deepEqual(folder, { path: "docs", type: "folder" });
+  assert.equal(runtime.path(new Map(), folder, "/tmp/project", false), "/tmp/project/docs");
 });
 
 test("model picker opens advanced view and renders model choices inline", () => {
@@ -431,8 +468,9 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, /labelColor:Te/);
   assert.match(patched, /change-thread-color/);
   assert.match(patched, /\.\.\.M==null\|\|M===`local`\?\[\{id:`change-thread-color`/);
-  assert.match(patched, /t\[134\]!==Te\|\|t\[135\]!==Te/);
-  assert.match(patched, /t\[134\]=Te,t\[135\]=Te/);
+  assert.match(patched, /t\[135\]!==Te\|\|t\[136\]!==Te/);
+  assert.match(patched, /t\[135\]=Te,t\[136\]=Te/);
+  assert.match(patched, /dataAttributes:\{\.\.\.Dp\.sidebarThreadRow/);
   assert.match(patched, /defaultMessage:`Change chat color…`/);
   assert.doesNotMatch(patched, /Change pin color/);
   assert.match(patched, /tu\.SIDEBAR_THREAD_METADATA/);

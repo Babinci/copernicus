@@ -431,6 +431,15 @@ detect_electron_version() {
     local detected_version=""
     local plist_file="$app_dir/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources/Info.plist"
 
+    if [ -n "${CODEX_ELECTRON_VERSION:-}" ]; then
+        if detected_version=$(sanitize_electron_version "$CODEX_ELECTRON_VERSION"); then
+            ELECTRON_VERSION="$detected_version"
+            info "Using requested Electron version: $ELECTRON_VERSION"
+            return 0
+        fi
+        die "Invalid CODEX_ELECTRON_VERSION: $CODEX_ELECTRON_VERSION"
+    fi
+
     if [ -f "$plist_file" ]; then
         detected=$(python3 - "$plist_file" <<'PY' 2>/dev/null || true
 import plistlib

@@ -2,6 +2,7 @@
 
 const sidebarProjectName = require("./patches/sidebar-project-name.js");
 const sidebarThreadColor = require("./patches/sidebar-thread-color.js");
+const fileTreeFolderActions = require("./patches/file-tree-folder-actions.js");
 const modelPickerModelList = require("./patches/model-picker-model-list.js");
 const reasoningEffortLabels = require("./patches/reasoning-effort-labels.js");
 const dockIcon = require("./patches/dock-icon.js");
@@ -17,6 +18,7 @@ module.exports = {
   descriptors: patchesFrom(
     sidebarProjectName,
     sidebarThreadColor,
+    fileTreeFolderActions,
     modelPickerModelList,
     reasoningEffortLabels,
     dockIcon,

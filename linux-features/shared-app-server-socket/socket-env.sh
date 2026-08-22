@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-runtime_root="${XDG_RUNTIME_DIR:-${CODEX_LINUX_APP_STATE_DIR:?}}"
-runtime_dir="$runtime_root/${CODEX_LINUX_APP_ID:-codex-desktop}/app-server-bridge"
-socket_path="${CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET:-$runtime_dir/app-server.sock}"
+codex_home="${CODEX_HOME:-$HOME/.codex}"
+socket_path="${CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET:-$codex_home/app-server-control/app-server-control.sock}"
 printf 'env CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET=%s\n' "$socket_path"

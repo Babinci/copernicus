@@ -2,6 +2,7 @@
 let
   supportedFeatureIds = [
     "appshots"
+    "browser-media-permissions"
     "codex-micro"
     "codex-wrapper-updater"
     "directory-only-working-tree-watch"

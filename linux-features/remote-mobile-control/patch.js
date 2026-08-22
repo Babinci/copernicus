@@ -11,9 +11,9 @@ function requireName(source, moduleName) {
 
 const DEVICE_KEY_CLIENT_MARKER = "codexLinuxRemoteControlDeviceKeyClient";
 const DEVICE_KEY_GUARD =
-  "if(process.platform!==`darwin`)throw Error(`Remote control device keys are only available on macOS`);";
+  "if(process.platform!==`darwin`&&process.platform!==`win32`)throw Error(`Remote control device keys are only available on macOS and Windows`);";
 const DEVICE_KEY_GUARD_REPLACEMENT =
-  "if(process.platform===`linux`)return codexLinuxRemoteControlDeviceKeyClient();if(process.platform!==`darwin`)throw Error(`Remote control device keys are only available on macOS`);";
+  "if(process.platform===`linux`)return codexLinuxRemoteControlDeviceKeyClient();if(process.platform!==`darwin`&&process.platform!==`win32`)throw Error(`Remote control device keys are only available on macOS and Windows`);";
 const DEVICE_KEY_REQUIRE_NEEDLE =
   /(?:var|let|const)\s+[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.createRequire\)\(__filename\),[A-Za-z_$][\w$]*=`remote-control-device-key\.node`/u;
 const REMOTE_CONTROL_SETTINGS_VISIBILITY_NEEDLE =
@@ -835,6 +835,44 @@ function buildLateUnknownConversationHydrationReplacement(
 }
 
 function applyLinuxRemoteMobileConversationHydrationPatch(source) {
+  const nativeHydrationMethod =
+    "async hydrateActiveThread(e){await this.hydrateThreads([e],{addToRecentConversations:!0,notifyAnyCallbacks:!0})}";
+  if (source.includes("async hydrateActiveThread(e){")) {
+    if (source.includes(`/*${REMOTE_MOBILE_UNKNOWN_TURN_MARKER}*/`)) return source;
+
+    const nativeReplacements = [
+      [
+        nativeHydrationMethod,
+        `async hydrateActiveThread(e){/*${REMOTE_MOBILE_UNKNOWN_TURN_MARKER}*/await this.hydrateThreads([e],{addToRecentConversations:!0,includeTurns:!0,notifyAnyCallbacks:!0})}`,
+      ],
+      [
+        "if(!t.threadStore.conversations.get(a)){e.logger.error(`Received turn/started for unknown conversation`,{safe:{conversationId:a},sensitive:{}});break}",
+        "if(!t.threadStore.conversations.get(a)){t.threadStore.hydrateActiveThread(n),e.logger.error(`Received turn/started for unknown conversation`,{safe:{conversationId:a},sensitive:{}});break}",
+      ],
+      [
+        "if(!t.threadStore.conversations.get(a)){LIn(e.getHostId(),n,r.id),t.unread.discardTurn(a,r.id),e.logger.error(`Received turn/completed for unknown conversation`,{safe:{conversationId:a},sensitive:{}});break}",
+        "if(!t.threadStore.conversations.get(a)){t.threadStore.hydrateActiveThread(n),LIn(e.getHostId(),n,r.id),t.unread.discardTurn(a,r.id),e.logger.error(`Received turn/completed for unknown conversation`,{safe:{conversationId:a},sensitive:{}});break}",
+      ],
+      [
+        "if(!t.threadStore.conversations.get(s)){e.logger.error(`Received item/started for unknown conversation`,{safe:{conversationId:s},sensitive:{}});break}",
+        "if(!t.threadStore.conversations.get(s)){t.threadStore.hydrateActiveThread(r),e.logger.error(`Received item/started for unknown conversation`,{safe:{conversationId:s},sensitive:{}});break}",
+      ],
+      [
+        "if(n.type===`commandExecution`&&t.itemStreamState.clearItemTerminalInputBuffer(s,n.id),!t.threadStore.conversations.get(s)){e.logger.error(`Received item/completed for unknown conversation`,{safe:{conversationId:s},sensitive:{}});break}",
+        "if(n.type===`commandExecution`&&t.itemStreamState.clearItemTerminalInputBuffer(s,n.id),!t.threadStore.conversations.get(s)){t.threadStore.hydrateActiveThread(r),e.logger.error(`Received item/completed for unknown conversation`,{safe:{conversationId:s},sensitive:{}});break}",
+      ],
+    ];
+    if (nativeReplacements.some(([needle]) => source.split(needle).length !== 2)) {
+      console.warn(
+        "WARN: Could not find current native conversation hydration contract - skipping remote mobile hydration patch",
+      );
+      return source;
+    }
+    let patched = source;
+    for (const [needle, replacement] of nativeReplacements) patched = patched.replace(needle, replacement);
+    return patched;
+  }
+
   let patched = source;
 
   if (!patched.includes(REMOTE_MOBILE_THREAD_RUNTIME_MARKER)) {
@@ -919,7 +957,7 @@ function applyLinuxRemoteMobileCompletedItemRecoveryPatch(source) {
   }
 
   const completedItemDropPattern =
-    /([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\)&&\(([A-Za-z_$][\w$]*)\.firstTurnWorkItemStartedAtMs=\3\.firstTurnWorkItemStartedAtMs\?\?Date\.now\(\)\),!\(\2\.type!==`subAgentActivity`(?:&&\(\2\.type!==`sleep`\|\|([A-Za-z_$][\w$]*)\.mode!==`durable`\))?&&!([A-Za-z_$][\w$]*)\(\3,\2\.id,\2\.type\)\)&&\(\2\.type,([A-Za-z_$][\w$]*)\(\3,([A-Za-z_$][\w$]*)\)\)/u;
+    /([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\)&&\(([A-Za-z_$][\w$]*)\.firstTurnWorkItemStartedAtMs=\3\.firstTurnWorkItemStartedAtMs\?\?Date\.now\(\)\),!\(\2\.type!==`subAgentActivity`(?:&&\(\2\.type!==`sleep`\|\|([A-Za-z_$][\w$]*)\.mode!==`durable`\))?&&!([A-Za-z_$][\w$]*)\(\3,\2\.id,\2\.type(?:,([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*))?\)\)&&\(\2\.type,([A-Za-z_$][\w$]*)\(\3,([A-Za-z_$][\w$]*)\)\)/u;
 
   if (completedItemDropPattern.test(source)) {
     return source.replace(
@@ -931,6 +969,7 @@ function applyLinuxRemoteMobileCompletedItemRecoveryPatch(source) {
         turnVar,
         conversationVar,
         findItemFn,
+        loggerVar,
         upsertItemFn,
         viewItemVar,
       ) => {
@@ -938,7 +977,8 @@ function applyLinuxRemoteMobileCompletedItemRecoveryPatch(source) {
           conversationVar == null
             ? ""
             : `&&(${completedItemVar}.type!==\`sleep\`||${conversationVar}.mode!==\`durable\`)`;
-        return `${workItemPredicate}(${completedItemVar})&&(${turnVar}.firstTurnWorkItemStartedAtMs=${turnVar}.firstTurnWorkItemStartedAtMs??Date.now());let codexLinuxCompletedItemExists=${turnVar}.items.some(e=>e.id===${viewItemVar}.id);if(${completedItemVar}.type!==\`subAgentActivity\`${durableSleepGate}&&codexLinuxCompletedItemExists&&!${findItemFn}(${turnVar},${completedItemVar}.id,${completedItemVar}.type))return;${upsertItemFn}(${turnVar},${viewItemVar})`;
+        const loggerArg = loggerVar == null ? "" : `,${loggerVar}`;
+        return `${workItemPredicate}(${completedItemVar})&&(${turnVar}.firstTurnWorkItemStartedAtMs=${turnVar}.firstTurnWorkItemStartedAtMs??Date.now());let codexLinuxCompletedItemExists=${turnVar}.items.some(e=>e.id===${viewItemVar}.id);if(${completedItemVar}.type!==\`subAgentActivity\`${durableSleepGate}&&codexLinuxCompletedItemExists&&!${findItemFn}(${turnVar},${completedItemVar}.id,${completedItemVar}.type${loggerArg}))return;${upsertItemFn}(${turnVar},${viewItemVar})`;
       },
     );
   }

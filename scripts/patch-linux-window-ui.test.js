@@ -2676,6 +2676,20 @@ test("retains the current native Linux tray when quit-state helpers already exis
   assert.doesNotMatch(patched, /typeof codexLinuxRegisterTray===`function`/);
 });
 
+test("retains nested native tray constructor arguments without breaking syntax", () => {
+  const source = trayBundleFixture().replace(
+    "new c.Tray(t.defaultIcon)",
+    "new c.Tray(t.defaultIcon,process.platform===`win32`?RAe(t):void 0)",
+  );
+  const patched = applyPatchTwice(applyLinuxTrayPatch, source, null);
+
+  const constructor = patched.match(
+    /r=codexLinuxRegisterTray\(new c\.Tray\(t\.defaultIcon,process\.platform===`win32`\?RAe\(t\):void 0\)\)/,
+  )?.[0];
+  assert.ok(constructor);
+  assert.doesNotThrow(() => new vm.Script(`let r,t,c,RAe,codexLinuxRegisterTray;${constructor};`));
+});
+
 test("bypasses the upstream before-quit confirmation after a Linux explicit quit", () => {
   const source = `${currentMainBundlePrefix}${beforeQuitConfirmationBundleFixture()}`;
   const patched = applyPatchTwice(
