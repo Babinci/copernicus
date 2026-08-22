@@ -17,23 +17,21 @@ const COLOR_SELECTOR_DEFINITION_PATTERN =
   /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),\(e,\{get:t\}\)=>e==null\?null:([A-Za-z_$][\w$]*)\(t,([A-Za-z_$][\w$]*)\.SIDEBAR_THREAD_METADATA\)\?\.\[e\]\?\.labelColor\?\?null\)/gu;
 const NULL_COLOR_MARKER = "labelColor:null,modelProvider:";
 const NULL_COLOR_REPLACEMENT = "labelColor:Te,modelProvider:";
-const COLOR_CACHE_DEPENDENCY_MARKER = "t[134]!==Te||t[135]!==null";
-const COLOR_CACHE_DEPENDENCY_REPLACEMENT = "t[134]!==Te||t[135]!==Te";
-const COLOR_CACHE_VALUE_MARKER = "t[134]=Te,t[135]=null";
-const COLOR_CACHE_VALUE_REPLACEMENT = "t[134]=Te,t[135]=Te";
-const ROW_ATTRIBUTES_MARKER = "C=u===void 0?null:u,w=v===void 0?null:v,T=Ss(Q),E=Y($W)===`work`";
+const COLOR_CACHE_DEPENDENCY_MARKER = "t[135]!==Te||t[136]!==null";
+const COLOR_CACHE_DEPENDENCY_REPLACEMENT = "t[135]!==Te||t[136]!==Te";
+const COLOR_CACHE_VALUE_MARKER = "t[135]=Te,t[136]=null";
+const COLOR_CACHE_VALUE_REPLACEMENT = "t[135]=Te,t[136]=Te";
+const ROW_ATTRIBUTES_MARKER =
+  "dataAttributes:Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})";
 const ROW_ATTRIBUTES_REPLACEMENT =
-  `C=u===void 0?null:u;C!=null&&(y.dataAttributes={...y.dataAttributes,` +
-  `${JSON.stringify(COLOR_ATTRIBUTE)}:C});let w=v===void 0?null:v,T=Ss(Q),E=Y($W)===\`work\``;
+  `dataAttributes:{...Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:\`local\`,pinned:r,selected:i,title:k}),` +
+  `${JSON.stringify(COLOR_ATTRIBUTE)}:Te}`;
 const MENU_MARKER =
-  "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`," +
-  "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`})," +
-  "onSelect:Je},...M==null||M===`local`?[]:[{id:`change-connection-color`";
+  "{id:`rename-thread`,onSelect:Xe},...M==null||M===`local`?[]:[{id:`change-connection-color`";
 const MENU_REPLACEMENT =
-  "{id:`rename-thread`,icon:m5.rename,message:wd({id:`sidebarElectron.renameThreadShort`," +
-  "defaultMessage:`Rename`,description:`Sidebar chat action that renames the chat`}),onSelect:Je}," +
+  "{id:`rename-thread`,onSelect:Xe}," +
   "...M==null||M===`local`?[{id:`change-thread-color`," +
-  "message:wd({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
+  "message:yd({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
   "description:`Menu item that changes a local chat color`})," +
   "submenu:codexLinuxSidebarThreadColorMenu(T,n)}]:[]," +
   "...M==null||M===`local`?[]:[{id:`change-connection-color`";
