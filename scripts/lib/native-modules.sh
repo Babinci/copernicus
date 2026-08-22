@@ -126,6 +126,28 @@ prune_native_module_build_artifacts() {
     find "$module_dir" -type f -name "*.target.mk" -delete 2>/dev/null || true
 }
 
+install_file_watcher_from_source() {
+    local app_extracted="$1"
+    local source_modules="$2"
+    local expected_version="$3"
+    local actual_version
+    local dependency
+
+    actual_version=$(node -p "require('$source_modules/@parcel/watcher/package.json').version" 2>/dev/null || echo "")
+    [ "$actual_version" = "$expected_version" ] || \
+        error "@parcel/watcher version mismatch: expected $expected_version, got ${actual_version:-unknown}"
+    [ -n "$(find "$source_modules/@parcel" -type f -name "watcher.node" -print -quit)" ] || \
+        error "Linux @parcel/watcher binary not found in $source_modules/@parcel"
+
+    rm -rf "$app_extracted/node_modules/@parcel"
+    cp -r "$source_modules/@parcel" "$app_extracted/node_modules/"
+    for dependency in detect-libc is-glob is-extglob node-addon-api picomatch; do
+        [ -d "$source_modules/$dependency" ] || continue
+        [ -e "$app_extracted/node_modules/$dependency" ] || \
+            cp -r "$source_modules/$dependency" "$app_extracted/node_modules/"
+    done
+}
+
 apply_v8_nullptr_t_workaround_if_needed() {
     local build_dir="$1"
     local probe_source="$build_dir/.v8-nullptr-probe.cc"
@@ -196,21 +218,23 @@ build_native_modules() {
     fi
 
     # Read versions from extracted app
-    local bs3_ver bs3_build_ver npty_ver
+    local bs3_ver bs3_build_ver npty_ver watcher_ver
     bs3_ver=$(node -p "require('$app_extracted/node_modules/better-sqlite3/package.json').version" 2>/dev/null || echo "")
     npty_ver=$(node -p "require('$app_extracted/node_modules/node-pty/package.json').version" 2>/dev/null || echo "")
+    watcher_ver=$(node -p "require('$app_extracted/package.json').dependencies['@parcel/watcher']" 2>/dev/null || echo "")
 
     [ -n "$bs3_ver" ] || error "Could not detect better-sqlite3 version"
     [ -n "$npty_ver" ] || error "Could not detect node-pty version"
+    [ -n "$watcher_ver" ] || error "Could not detect @parcel/watcher version"
 
-    info "Native modules: better-sqlite3@$bs3_ver, node-pty@$npty_ver"
+    info "Native modules: better-sqlite3@$bs3_ver, node-pty@$npty_ver, @parcel/watcher@$watcher_ver"
     bs3_build_ver="$(better_sqlite3_build_version "$bs3_ver")"
     if [ "$bs3_build_ver" != "$bs3_ver" ]; then
         warn "Using better-sqlite3@$bs3_build_ver for Electron v$ELECTRON_VERSION compatibility (DMG has $bs3_ver)"
     fi
 
     if [ -n "${CODEX_NATIVE_MODULES_SOURCE:-}" ]; then
-        install_native_modules_from_source "$app_extracted" "$CODEX_NATIVE_MODULES_SOURCE" "$bs3_build_ver" "$npty_ver"
+        install_native_modules_from_source "$app_extracted" "$CODEX_NATIVE_MODULES_SOURCE" "$bs3_build_ver" "$npty_ver" "$watcher_ver"
         return 0
     fi
 
@@ -228,7 +252,7 @@ build_native_modules() {
         "$ELECTRON_REBUILD_NODE_ABI_PACKAGE" \
         --save-dev \
         --ignore-scripts >&2
-    npm install "better-sqlite3@$bs3_build_ver" "node-pty@$npty_ver" --ignore-scripts >&2
+    npm install "better-sqlite3@$bs3_build_ver" "node-pty@$npty_ver" "@parcel/watcher@$watcher_ver" --ignore-scripts >&2
     patch_better_sqlite3_for_v8_external_pointer_api "$build_dir/node_modules/better-sqlite3"
 
     info "Compiling for Electron v$ELECTRON_VERSION (this takes ~1 min)..."
@@ -248,6 +272,7 @@ build_native_modules() {
     rm -rf "$app_extracted/node_modules/node-pty"
     cp -r "$build_dir/node_modules/better-sqlite3" "$app_extracted/node_modules/"
     cp -r "$build_dir/node_modules/node-pty" "$app_extracted/node_modules/"
+    install_file_watcher_from_source "$app_extracted" "$build_dir/node_modules" "$watcher_ver"
     prune_native_module_build_artifacts "$app_extracted/node_modules/better-sqlite3"
     prune_native_module_build_artifacts "$app_extracted/node_modules/node-pty"
 }
@@ -257,6 +282,7 @@ install_native_modules_from_source() {
     local source_dir="$2"
     local expected_better_sqlite3_version="$3"
     local expected_node_pty_version="$4"
+    local expected_watcher_version="$5"
     local source_better_sqlite3="$source_dir/better-sqlite3"
     local source_node_pty="$source_dir/node-pty"
     local actual_better_sqlite3_version
@@ -278,6 +304,7 @@ install_native_modules_from_source() {
     rm -rf "$app_extracted/node_modules/node-pty"
     cp -r "$source_better_sqlite3" "$app_extracted/node_modules/"
     cp -r "$source_node_pty" "$app_extracted/node_modules/"
+    install_file_watcher_from_source "$app_extracted" "$source_dir" "$expected_watcher_version"
     chmod -R u+w "$app_extracted/node_modules/better-sqlite3" "$app_extracted/node_modules/node-pty"
     prune_native_module_build_artifacts "$app_extracted/node_modules/better-sqlite3"
     prune_native_module_build_artifacts "$app_extracted/node_modules/node-pty"
