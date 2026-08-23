@@ -22,6 +22,11 @@ other clients or active tasks. The launcher defaults to the Codex-managed
 socket under `CODEX_HOME`; `CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET` may override
 that path when the CLI daemon is configured differently.
 
+When another supervised local process owns the authority, set
+`CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY=1`. Desktop then waits for the Unix
+socket and only creates proxy clients; it never starts, stops, or unlinks that
+authority.
+
 The socket is a user-private local control endpoint. Do not expose it directly
 over TCP or share it with another user.
 
