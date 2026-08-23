@@ -26,6 +26,11 @@ Keep the socket in a directory accessible only to the owning user. It is a local
 control endpoint and must not be exposed directly over TCP or forwarded as a
 network service.
 
+When another supervised local process owns the authority, set
+`CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY=1`. Desktop then requires the Unix
+socket to be live and only creates proxy clients; it never spawns, stops, or
+unlinks that authority.
+
 Authority startup is serialized by an owner-only lock next to the socket. The
 lock records the owning Linux process identity, so a later Desktop launch can
 reclaim it only when that exact process no longer exists. An existing socket is
