@@ -219,6 +219,7 @@ test("patch selects the bridge only for the local host and is idempotent", () =>
   assert.notEqual(patched, source);
   assert.equal(applySharedAppServerSocketPatch(patched), patched);
   assert.match(patched, /CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET/);
+  assert.match(patched, /CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY/);
   assert.match(patched, /hostConfig\.kind===`local`/);
   assert.match(patched, /app-server`,\s*`proxy`,\s*`--sock`/);
   assert.match(patched, /app-server`,\s*`--listen`,\s*`unix:\/\//);
@@ -312,6 +313,59 @@ test("injected transport rejects an existing socket without unlinking it", async
   } finally {
     if (originalCli == null) delete process.env.CODEX_CLI_PATH;
     else process.env.CODEX_CLI_PATH = originalCli;
+    await closeServer(server);
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("attach-only transport waits for its supervised authority socket", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-attach-wait-"));
+  const socketPath = path.join(tempDir, "app-server.sock");
+  let server;
+  let spawnCalls = 0;
+  const { Transport } = loadInjectedTransport({ spawnImpl() { spawnCalls += 1; return fakeChild(); }, timeoutCapMs: 10 });
+  const originalAttachOnly = process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY;
+  process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY = "1";
+  try {
+    setTimeout(async () => { server = await listenUnix(socketPath); }, 25);
+    await new Transport(socketPath).ensureAuthority();
+    assert.equal(spawnCalls, 0);
+  } finally {
+    if (originalAttachOnly == null) delete process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY;
+    else process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY = originalAttachOnly;
+    await closeServer(server);
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("attach-only transport reuses a live socket without spawning or unlinking it", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-attach-only-"));
+  const socketPath = path.join(tempDir, "app-server.sock");
+  let server = await listenUnix(socketPath);
+  let spawnCalls = 0;
+  const { Transport } = loadInjectedTransport({
+    spawnImpl() {
+      spawnCalls += 1;
+      return fakeChild();
+    },
+    timeoutCapMs: 5,
+  });
+  const transport = new Transport(socketPath);
+  const originalAttachOnly = process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY;
+  process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY = "1";
+  try {
+    await transport.ensureAuthority();
+    assert.equal(spawnCalls, 0);
+    transport.dispose();
+    assert.equal(fs.lstatSync(socketPath).isSocket(), true);
+    assert.equal(fs.existsSync(`${socketPath}.lock`), false);
+    await closeServer(server);
+    server = null;
+    await assert.rejects(new Transport(socketPath).ensureAuthority(), /attach-only socket is unavailable/);
+    assert.equal(spawnCalls, 0);
+  } finally {
+    if (originalAttachOnly == null) delete process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY;
+    else process.env.CODEX_LINUX_APP_SERVER_BRIDGE_ATTACH_ONLY = originalAttachOnly;
     await closeServer(server);
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
