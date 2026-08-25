@@ -478,6 +478,17 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.equal(applySidebarThreadColorPatch(patched, context), patched);
 });
 
+test("sidebar thread colors tolerate upstream minifier alias changes", () => {
+  const source = sidebarThreadColorBundleFixture().replace(
+    "dataAttributes:Dp.sidebarThreadRow",
+    "dataAttributes:Ep.sidebarThreadRow",
+  );
+  const patched = applySidebarThreadColorPatch(source, enabledThreadColorContext());
+
+  assert.match(patched, /dataAttributes:\{\.\.\.Ep\.sidebarThreadRow/);
+  assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
+});
+
 test("sidebar thread color runtime is dependency-free valid JavaScript", () => {
   const runtime = sidebarThreadColorRuntimeSource();
   assert.doesNotThrow(() => Function(runtime)());

@@ -21,11 +21,8 @@ const COLOR_CACHE_DEPENDENCY_MARKER = "t[135]!==Te||t[136]!==null";
 const COLOR_CACHE_DEPENDENCY_REPLACEMENT = "t[135]!==Te||t[136]!==Te";
 const COLOR_CACHE_VALUE_MARKER = "t[135]=Te,t[136]=null";
 const COLOR_CACHE_VALUE_REPLACEMENT = "t[135]=Te,t[136]=Te";
-const ROW_ATTRIBUTES_MARKER =
-  "dataAttributes:Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})";
-const ROW_ATTRIBUTES_REPLACEMENT =
-  `dataAttributes:{...Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:\`local\`,pinned:r,selected:i,title:k}),` +
-  `${JSON.stringify(COLOR_ATTRIBUTE)}:Te}`;
+const ROW_ATTRIBUTES_PATTERN =
+  /dataAttributes:([A-Za-z_$][\w$]*)\.sidebarThreadRow\(\{active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k\}\)/gu;
 const MENU_MARKER =
   "{id:`rename-thread`,onSelect:Xe},...M==null||M===`local`?[]:[{id:`change-connection-color`";
 const MENU_REPLACEMENT =
@@ -172,17 +169,17 @@ function applySidebarThreadColorPatch(source, context = {}) {
       return source;
     }
 
+    const rowMatches = [...source.matchAll(ROW_ATTRIBUTES_PATTERN)];
     const replacements = [
       [NULL_COLOR_MARKER, NULL_COLOR_REPLACEMENT],
       [COLOR_CACHE_DEPENDENCY_MARKER, COLOR_CACHE_DEPENDENCY_REPLACEMENT],
       [COLOR_CACHE_VALUE_MARKER, COLOR_CACHE_VALUE_REPLACEMENT],
-      [ROW_ATTRIBUTES_MARKER, ROW_ATTRIBUTES_REPLACEMENT],
       [MENU_MARKER, MENU_REPLACEMENT],
     ];
     const invalid = replacements.find(([marker]) => countOccurrences(source, marker) !== 1);
-    if (invalid != null) {
+    if (invalid != null || rowMatches.length !== 1) {
       if (context.warnOnMissingMarkers === true) {
-        warn(`Expected exactly one current sidebar marker: ${invalid[0]}`);
+        warn(`Expected exactly one current sidebar marker: ${invalid?.[0] ?? "sidebarThreadRow"}`);
       }
       return source;
     }
@@ -191,6 +188,11 @@ function applySidebarThreadColorPatch(source, context = {}) {
     for (const [marker, replacement] of replacements) {
       patched = patched.replace(marker, replacement);
     }
+    const attributes = rowMatches[0][1];
+    patched = patched.replace(
+      ROW_ATTRIBUTES_PATTERN,
+      `dataAttributes:{...${attributes}.sidebarThreadRow({active:c,hostId:m,id:u,kind:\`local\`,pinned:r,selected:i,title:k}),${JSON.stringify(COLOR_ATTRIBUTE)}:Te}`,
+    );
     return `${patched}\n${sidebarThreadColorRuntimeSource(aliases)}`;
   } catch (error) {
     warn(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
