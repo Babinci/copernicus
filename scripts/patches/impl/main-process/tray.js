@@ -33,7 +33,7 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     const [, enabledVar, windowVar, eventVar] = match;
     patchedSource = patchedSource.replace(
       closeHandlerPattern,
-      `${enabledVar}&&${windowVar}.on(\`close\`,${eventVar}=>{process.platform===\`linux\`&&(globalThis.codexLinuxPrimaryWindowCloseRequested=!0,${windowVar}.once(\`show\`,()=>{globalThis.codexLinuxPrimaryWindowCloseRequested=!1}));`,
+      `${enabledVar}&&${windowVar}.on(\`close\`,${eventVar}=>{process.platform===\`linux\`&&(globalThis.codexLinuxPrimaryWindowCloseRequested=!0);`,
     );
   }
 

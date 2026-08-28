@@ -2576,7 +2576,7 @@ test("destroys the registered Linux tray before the app exits", () => {
   assert.match(patched, /codexLinuxMarkQuitInProgress=\(\)=>\{codexLinuxQuitInProgress=!0,codexLinuxDestroyTray\(\)\}/);
   assert.match(patched, /c\.app\.on\(`before-quit`,\(\)=>codexLinuxDestroyTray\(\)\)/);
   assert.match(patched, /r=codexLinuxRegisterTray\(new c\.Tray\(t\.defaultIcon\)\)/);
-  assert.match(patched, /globalThis\.codexLinuxPrimaryWindowCloseRequested=!0,k\.once\(`show`,\(\)=>\{globalThis\.codexLinuxPrimaryWindowCloseRequested=!1\}\)/);
+  assert.match(patched, /globalThis\.codexLinuxPrimaryWindowCloseRequested=!0/);
   assert.doesNotMatch(patched, /codexLinuxTrayQuitDelayMs/);
 
   const helperStart = patched.indexOf("let codexLinuxTray=null");
@@ -2589,16 +2589,12 @@ test("destroys the registered Linux tray before the app exits", () => {
   assert.equal(runDestroy({ platform: "linux" }), 1);
 });
 
-test("tracks a primary close request until that window is shown again", () => {
+test("keeps a primary close request set until the process restarts", () => {
   let closeHandler;
-  let showHandler;
   const window = {
     hide() {},
     on(event, handler) {
       if (event === "close") closeHandler = handler;
-    },
-    once(event, handler) {
-      if (event === "show") showHandler = handler;
     },
   };
   const context = {
@@ -2618,8 +2614,6 @@ test("tracks a primary close request until that window is shown again", () => {
   vm.runInNewContext(patched, context);
   closeHandler({ preventDefault() {} });
   assert.equal(context.codexLinuxPrimaryWindowCloseRequested, true);
-  showHandler();
-  assert.equal(context.codexLinuxPrimaryWindowCloseRequested, false);
 });
 
 test("accepts stock Electron tray readiness and falls back to the Linux app icon", async () => {
