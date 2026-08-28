@@ -5855,8 +5855,10 @@ test("adds Linux launch actions through current setSecondInstanceArgsHandler bun
   assert.match(launchPatched, /e\.includes\(`--prompt-chat`\)/);
   assert.match(launchPatched, /e\.includes\(`--quick-chat`\)/);
   assert.match(launchPatched, /e\.includes\(`--new-chat`\)/);
-  assert.match(launchPatched, /Array\.isArray\(e\)&&e\.length===0\?\(await ue\(`\/`,\{navigateExistingWindow:!1,forceFresh:!0\}\),!0\)/);
-  assert.match(launchPatched, /t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?/);
+  assert.match(launchPatched, /codexLinuxPrimaryWindowNeedsColdRestart=\(\)=>\{let e=M\.getPrimaryWindow\(B\);return e!=null&&!e\.isDestroyed\(\)&&!e\.isVisible\(\)&&!e\.isMinimized\(\)\}/);
+  assert.match(launchPatched, /Array\.isArray\(e\)&&e\.length===0\?\(codexLinuxPrimaryWindowNeedsColdRestart\(\)\?`restart`:/);
+  assert.match(launchPatched, /if\(e===`restart`\)\{t\.end\?\.\(`restart\\n`\);return\}/);
+  assert.match(launchPatched, /return r!=null&&\([\s\S]{0,300}?ae\(r\)\),r\}/);
   assert.match(launchPatched, /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);l\(e=>/);
   assert.doesNotMatch(launchPatched, /l\(e=>\{z\.deepLinks\.queueProcessArgs\(e\)\|\|oe\(\)\}\)/);
   assert.match(
@@ -5917,7 +5919,7 @@ test("adds Linux launch actions after current window API drift", () => {
   const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
 
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\);t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?await M\.createFreshWindow\(e\);/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await M\.createFreshWindow\(e\);/);
   assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await M\.createFreshWindow\(`/);
 });
 
@@ -5934,7 +5936,7 @@ test("adds Linux launch actions when current upstream wraps fresh window creatio
   const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
 
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\);t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?await ee\(e\);/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
   assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await ee\(`\/`\);/);
 });
 
@@ -5946,7 +5948,7 @@ test("adds Linux launch actions after current entry-telemetry drift", () => {
 
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
   assert.match(patched, /codexLinuxStartLaunchActionSocket=\(\)=>/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\);t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?await ee\(e\);/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
   assert.match(patched, /z\.navigateToRoute\(r,e\),ae\(r\)/);
 });
 

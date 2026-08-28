@@ -274,6 +274,14 @@ resident_policy_regressed() {
     [ "$(count_test_main_processes)" -ne 1 ]
 }
 
+resident_was_restarted() {
+    local marker_pid
+
+    marker_pid="$(read_live_app_pid 2>/dev/null || true)"
+    [ -n "$marker_pid" ] && [ "$marker_pid" != "$FIRST_ELECTRON_PID" ] \
+        && [ "$(count_test_main_processes)" -eq 1 ]
+}
+
 mkdir -p \
     "$APP_DIR/.codex-linux/cold-start.d" \
     "$APP_DIR/.codex-linux/env.d" \
@@ -372,13 +380,13 @@ wait_for "first Electron marker" pid_file_is_live
 wait_for "first launcher lock release" launcher_lock_is_available
 FIRST_ELECTRON_PID="$(read_live_app_pid)"
 
-python3 - "$SOCKET_PATH" "$HANDOFF_RESULT" <<'PY' &
+python3 - "$SOCKET_PATH" "$HANDOFF_RESULT" "${CODEX_TEST_RESTART_HIDDEN:-0}" <<'PY' &
 import json
 import os
 import socket
 import sys
 
-socket_path, result_path = sys.argv[1:]
+socket_path, result_path, restart_hidden = sys.argv[1:]
 os.makedirs(os.path.dirname(socket_path), exist_ok=True)
 try:
     os.unlink(socket_path)
@@ -395,11 +403,31 @@ with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
         payload = client.recv(65536)
         request = json.loads(payload.decode("utf-8").strip())
         with open(result_path, "w", encoding="utf-8") as result:
-            json.dump({"argv": request.get("argv", []), "status": "acknowledged"}, result)
-        client.sendall(b"ok\n")
+            json.dump({"argv": request.get("argv", []), "status": "restart-requested" if restart_hidden == "1" else "acknowledged"}, result)
+        client.sendall(b"restart\n" if restart_hidden == "1" else b"ok\n")
 PY
 SOCKET_PID=$!
 wait_for "controlled handoff socket" test -S "$SOCKET_PATH"
+
+if [ "${CODEX_TEST_RESTART_HIDDEN:-0}" = "1" ]; then
+    "${COMMON_ENV[@]}" "$APP_DIR/start.sh" > "$SECOND_LOG" 2>&1 &
+    SECOND_LAUNCHER_PID=$!
+    wait_for "hidden-window restart request" handoff_was_recorded
+    wait_for "replacement Electron process" resident_was_restarted
+    HANDOFF_STATUS="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$HANDOFF_RESULT")"
+    FINAL_ELECTRON_PID="$(read_live_app_pid)"
+    [ "$HANDOFF_STATUS" = "restart-requested" ] \
+        || fail "hidden-window handoff did not request a cold restart"
+    kill -0 "$FIRST_ELECTRON_PID" 2>/dev/null \
+        && fail "hidden resident Electron survived the requested cold restart"
+    [ -s "$STATE_DIR/webview.pid" ] \
+        || fail "replacement app did not publish a webview runtime marker"
+    [ "$(count_test_main_processes)" -eq 1 ] \
+        || fail "hidden-window recovery did not leave exactly one Electron process"
+    record_result "hidden-window-restarted"
+    printf '%s\n' "launcher hidden-window restart behavior test passed"
+    exit 0
+fi
 
 if [ "${CODEX_TEST_FORCE_RESIDENT_REPLACEMENT:-0}" = "1" ]; then
     "${COMMON_ENV[@]}" "$APP_DIR/start.sh" --new-chat > "$SECOND_LOG" 2>&1 &
