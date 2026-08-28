@@ -74,11 +74,10 @@ function modelPickerStateBundleFixture() {
 function sidebarThreadColorBundleFixture() {
   return [
     "Pan=ro(Q,(e,{get:t})=>e==null?null:im(t,tu.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
-    "function save(e){return rm(e,tu.THREAD_PROJECT_ASSIGNMENTS,value,{throwOnFailure:!0})}",
+    "async function rm(e,t,n,r){return fetch(`set-global-state`,{params:{key:t,value:n}})}",
     "function toast(e,t){e.get(ov).danger(e.get(qb).formatMessage(t))}",
-    "function pxl(){let items=[{id:`rename-thread`,onSelect:Xe},",
-    "...M==null||M===`local`?[]:[{id:`change-connection-color`,",
-    "message:wd({id:`codex.remoteHostColorPicker.menuItem`})}]];",
+    "function GLc({scope:e,target:t,actions:n,onRename:r,onArchive:i,executeRouteAction:a,surface:o,isUnread:s,isWorktreeThread:c,canOpenSideChat:l,canPin:u,getConversationMarkdown:d}){let{conversationId:f,hostId:p,cwd:m}=t,x=1;let D=uLc({pin:null,rename:{id:`rename-thread`,onSelect:r},readState:null,archive:{id:`archive-thread`,onSelect:i}}),O=o!==`sidebar`?[]:[{id:`open-side-chat`,message:wd({id:`threadHeader.openSideChat`})}];return[D,O]}",
+    "function pxl(){",
     "return jsx(Row,{labelColor:null,modelProvider:n.modelProvider,",
     "dataAttributes:Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})})}",
     "function WSl(){let ce=n.conversationId,Te=bs(Pan,ce),it;",
@@ -467,7 +466,7 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
   assert.match(patched, /labelColor:Te/);
   assert.match(patched, /change-thread-color/);
-  assert.match(patched, /\.\.\.M==null\|\|M===`local`\?\[\{id:`change-thread-color`/);
+  assert.match(patched, /o===`sidebar`&&D\.push\(\{id:`change-thread-color`/);
   assert.match(patched, /t\[135\]!==Te\|\|t\[136\]!==Te/);
   assert.match(patched, /t\[135\]=Te,t\[136\]=Te/);
   assert.match(patched, /dataAttributes:\{\.\.\.Dp\.sidebarThreadRow/);

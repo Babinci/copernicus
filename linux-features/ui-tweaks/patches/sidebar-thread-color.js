@@ -23,15 +23,8 @@ const COLOR_CACHE_VALUE_MARKER = "t[135]=Te,t[136]=null";
 const COLOR_CACHE_VALUE_REPLACEMENT = "t[135]=Te,t[136]=Te";
 const ROW_ATTRIBUTES_PATTERN =
   /dataAttributes:([A-Za-z_$][\w$]*)\.sidebarThreadRow\(\{active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k\}\)/gu;
-const MENU_MARKER =
-  "{id:`rename-thread`,onSelect:Xe},...M==null||M===`local`?[]:[{id:`change-connection-color`";
-const MENU_REPLACEMENT =
-  "{id:`rename-thread`,onSelect:Xe}," +
-  "...M==null||M===`local`?[{id:`change-thread-color`," +
-  "message:yd({id:`codexLinux.sidebarThreadColor.menuItem`,defaultMessage:`Change chat color…`," +
-  "description:`Menu item that changes a local chat color`})," +
-  "submenu:codexLinuxSidebarThreadColorMenu(T,n)}]:[]," +
-  "...M==null||M===`local`?[]:[{id:`change-connection-color`";
+const MENU_PATTERN =
+  /(function [A-Za-z_$][\w$]*\(\{scope:([A-Za-z_$][\w$]*),target:([A-Za-z_$][\w$]*),[^)]*?surface:([A-Za-z_$][\w$]*),[^)]*\}\)\{let\{conversationId:([A-Za-z_$][\w$]*)[^}]*\}=\3,[\s\S]{0,1500}?let ([A-Za-z_$][\w$]*)=[A-Za-z_$][\w$]*\(\{pin:[\s\S]{0,800}?archive:[\s\S]{0,250}?\}\)),([A-Za-z_$][\w$]*)=\4!==`sidebar`/u;
 
 function warn(message) {
   console.warn(`WARN: ${message} - skipping ui-tweaks sidebar thread color patch`);
@@ -121,14 +114,12 @@ function currentBundleAliases(source) {
   const readGlobalState = selectorMatches[0][4];
   const globalStateKeys = selectorMatches[0][5];
 
-  const writerPattern = new RegExp(
-    `([A-Za-z_$][\\w$]*)\\(e,${globalStateKeys}\\.THREAD_PROJECT_ASSIGNMENTS,[\\s\\S]{0,600}?throwOnFailure:!0`,
-    "gu",
-  );
+  const writerPattern =
+    /async function ([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\)\{[\s\S]{0,900}?`set-global-state`,\{params:\{key:\3,value:\4\}\}/gu;
   const writers = new Set([...source.matchAll(writerPattern)].map((match) => match[1]));
   const formatMatches = [
     ...source.matchAll(
-      /message:([A-Za-z_$][\w$]*)\(\{id:`codex\.remoteHostColorPicker\.menuItem`/gu,
+      /message:([A-Za-z_$][\w$]*)\(\{id:`threadHeader\.openSideChat`/gu,
     ),
   ];
   const toastMatches = [
@@ -170,16 +161,16 @@ function applySidebarThreadColorPatch(source, context = {}) {
     }
 
     const rowMatches = [...source.matchAll(ROW_ATTRIBUTES_PATTERN)];
+    const menuMatches = [...source.matchAll(new RegExp(MENU_PATTERN.source, "gu"))];
     const replacements = [
       [NULL_COLOR_MARKER, NULL_COLOR_REPLACEMENT],
       [COLOR_CACHE_DEPENDENCY_MARKER, COLOR_CACHE_DEPENDENCY_REPLACEMENT],
       [COLOR_CACHE_VALUE_MARKER, COLOR_CACHE_VALUE_REPLACEMENT],
-      [MENU_MARKER, MENU_REPLACEMENT],
     ];
     const invalid = replacements.find(([marker]) => countOccurrences(source, marker) !== 1);
-    if (invalid != null || rowMatches.length !== 1) {
+    if (invalid != null || rowMatches.length !== 1 || menuMatches.length !== 1) {
       if (context.warnOnMissingMarkers === true) {
-        warn(`Expected exactly one current sidebar marker: ${invalid?.[0] ?? "sidebarThreadRow"}`);
+        warn(`Expected exactly one current sidebar marker: ${invalid?.[0] ?? (rowMatches.length !== 1 ? "sidebarThreadRow" : "thread menu")}`);
       }
       return source;
     }
@@ -188,6 +179,11 @@ function applySidebarThreadColorPatch(source, context = {}) {
     for (const [marker, replacement] of replacements) {
       patched = patched.replace(marker, replacement);
     }
+    patched = patched.replace(
+      MENU_PATTERN,
+      (_match, menuPrefix, scope, _target, surface, threadId, menuItems, followingItems) =>
+        `${menuPrefix},${surface}===\`sidebar\`&&${menuItems}.push({id:\`change-thread-color\`,message:${aliases.formatMessage}({id:\`codexLinux.sidebarThreadColor.menuItem\`,defaultMessage:\`Change chat color…\`,description:\`Menu item that changes a local chat color\`}),submenu:codexLinuxSidebarThreadColorMenu(${scope},${threadId})}),${followingItems}=${surface}!==\`sidebar\``,
+    );
     const attributes = rowMatches[0][1];
     patched = patched.replace(
       ROW_ATTRIBUTES_PATTERN,

@@ -360,43 +360,24 @@ function applyLinuxOwlFeatureBindingFallbackPatch(currentSource) {
   if (!currentSource.includes("electron_common_owl_features")) {
     return currentSource;
   }
-
-  const alreadyPatchedRegex =
-    /function [A-Za-z_$][\w$]*\(\)\{let ([A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \1!=`function`\)return \{isOwlFeatureEnabled:\(\)=>!1\};try\{return [A-Za-z_$][\w$]*\.parse\(\1\.call\(process,`electron_common_owl_features`\)\)\}catch\(([A-Za-z_$][\w$]*)\)\{if\(String\(\2\?\.message\?\?\2\)\.includes\(`No such binding was linked`\)\)return \{isOwlFeatureEnabled:\(\)=>!1\};throw \2\}\}/u;
-  if (alreadyPatchedRegex.test(currentSource)) {
+  if (currentSource.includes("/*codexLinuxOwlFeatureBindingFallback*/")) {
     return currentSource;
   }
 
   const loaderRegex =
-    /function ([A-Za-z_$][\w$]*)\(\)\{let ([A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \2!=`function`\)throw Error\(`Owl feature binding is unavailable`\);return ([A-Za-z_$][\w$]*)\.parse\(\2\.call\(process,`electron_common_owl_features`\)\)\}/u;
+    /let ([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\.parse\(([A-Za-z_$][\w$]*)\.parse\(process\._linkedBinding\)\.call\(process,([A-Za-z_$][\w$]*)\)\);/u;
   const match = currentSource.match(loaderRegex);
   if (match == null) {
-    // 26.623+ rewrote the loader to natively return null when the binding is
-    // unavailable (`process._linkedBinding` missing) and to swallow the
-    // "No such binding was linked" error — exactly the Linux fallback this
-    // patch injected. When that native-safe shape is present there is nothing
-    // to patch, so stand down silently instead of failing the required patch.
-    const upstreamReturnsNullOnMissingBinding =
-      /let ([A-Za-z_$][\w$]*)=process\._linkedBinding;if\(typeof \1!=`function`\)return null;/u.test(
-        currentSource,
-      );
-    if (
-      upstreamReturnsNullOnMissingBinding &&
-      currentSource.includes("No such binding was linked:")
-    ) {
-      return currentSource;
-    }
     console.warn(
       "WARN: Could not find Owl feature binding loader - skipping Linux Owl feature fallback patch",
     );
     return currentSource;
   }
 
-  const [, fnName, linkedBindingVar, schemaVar] = match;
-  const fallback = "{isOwlFeatureEnabled:()=>!1}";
+  const [, bindingVar, schemaVar, functionSchemaVar, bindingNameVar] = match;
   return currentSource.replace(
     loaderRegex,
-    `function ${fnName}(){let ${linkedBindingVar}=process._linkedBinding;if(typeof ${linkedBindingVar}!=\`function\`)return ${fallback};try{return ${schemaVar}.parse(${linkedBindingVar}.call(process,\`electron_common_owl_features\`))}catch(t){if(String(t?.message??t).includes(\`No such binding was linked\`))return ${fallback};throw t}}`,
+    `let ${bindingVar};try{/*codexLinuxOwlFeatureBindingFallback*/${bindingVar}=${schemaVar}.parse(${functionSchemaVar}.parse(process._linkedBinding).call(process,${bindingNameVar}))}catch(t){if(process.platform===\`linux\`&&(typeof process._linkedBinding!=\`function\`||String(t?.message??t).includes(\`No such binding was linked\`)))return!1;throw t}`,
   );
 }
 

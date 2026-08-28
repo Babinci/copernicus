@@ -288,13 +288,16 @@ function applyLinuxNativeTitlebarPatch(currentSource, context = {}) {
     const linuxBackgroundMatch = currentSource.match(
       /===`linux`&&!([A-Za-z_$][\w$]*)\([A-Za-z_$][\w$]*\)\?\{backgroundColor:([A-Za-z_$][\w$]*)\?([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*),backgroundMaterial:null\}/,
     );
-    if (overlayHelperMatch == null || linuxBackgroundMatch == null) {
+    const opaqueBackgroundMatch = currentSource.match(
+      /function [A-Za-z_$][\w$]*\(\{platform:([A-Za-z_$][\w$]*),appearance:[A-Za-z_$][\w$]*,opaqueWindowSurfaceEnabled:([A-Za-z_$][\w$]*),prefersDarkColors:([A-Za-z_$][\w$]*)\}\)\{return \2\?\{backgroundColor:\3\?([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*),backgroundMaterial:\1===`win32`\?`none`:null\}/,
+    );
+    if (overlayHelperMatch == null || (linuxBackgroundMatch == null && opaqueBackgroundMatch == null)) {
       console.warn("WARN: Could not derive titleBarOverlay aliases — skipping Linux native titlebar patch");
       return currentSource;
     }
 
     const [, currentElectronAlias, lightSymbolAlias, darkSymbolAlias] = overlayHelperMatch;
-    const lightBackgroundAlias = linuxBackgroundMatch[4];
+    const lightBackgroundAlias = linuxBackgroundMatch?.[4] ?? opaqueBackgroundMatch[5];
     electronAlias = currentElectronAlias;
     patchedSource = patchedSource.replace(
       primaryTitlebarRegex,
@@ -945,9 +948,9 @@ function applyLinuxResizeRepaintPatch(currentSource) {
 
 function applyLinuxOpaqueBackgroundPatch(currentSource) {
   const shouldAlwaysOpaqueSurfaceRegex =
-    /shouldAlwaysUseOpaqueWindowSurface\(([A-Za-z_$][\w$]*)\)\{return\s*([A-Za-z_$][\w$]*)\(\{appearance:\1,opaqueWindowsEnabled:this\.isOpaqueWindowsEnabled\(\),platform:process\.platform\}\)\|\|!([A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\))&&!([A-Za-z_$][\w$]*)\(\1\)\}/u;
+    /shouldAlwaysUseOpaqueWindowSurface\(([A-Za-z_$][\w$]*)\)\{return\s*([A-Za-z_$][\w$]*)\(\{appearance:\1,opaqueWindowsEnabled:this\.isOpaqueWindowsEnabled\(\),platform:process\.platform\}\)\|\|!([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?\(\))&&!([A-Za-z_$][\w$]*)\(\1\)\}/u;
   const patchedShouldAlwaysOpaqueSurfaceRegex =
-    /shouldAlwaysUseOpaqueWindowSurface\(([A-Za-z_$][\w$]*)\)\{return\s*process\.platform===`linux`&&!([A-Za-z_$][\w$]*)\(\1\)\|\|([A-Za-z_$][\w$]*)\(\{appearance:\1,opaqueWindowsEnabled:this\.isOpaqueWindowsEnabled\(\),platform:process\.platform\}\)\|\|!([A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(\))&&!\2\(\1\)\}/u;
+    /shouldAlwaysUseOpaqueWindowSurface\(([A-Za-z_$][\w$]*)\)\{return\s*process\.platform===`linux`&&!([A-Za-z_$][\w$]*)\(\1\)\|\|([A-Za-z_$][\w$]*)\(\{appearance:\1,opaqueWindowsEnabled:this\.isOpaqueWindowsEnabled\(\),platform:process\.platform\}\)\|\|!([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?\(\))&&!\2\(\1\)\}/u;
   const shouldAlwaysOpaqueSurfaceMatch = currentSource.match(shouldAlwaysOpaqueSurfaceRegex);
   const shouldAlwaysOpaqueSurfaceReady =
     shouldAlwaysOpaqueSurfaceMatch != null ||

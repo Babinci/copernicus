@@ -23,7 +23,7 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
   }
 
   const trayIsReadyConsumerPattern =
-    /isReady\(\)\{return [A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.tray\)\}/;
+    /isReady\(\)\{return this\.tray\.isReady\(\)\}/;
   const compatibleTrayIsReadyPattern =
     /isReady\(\)\{return typeof this\.tray\.isReady==`function`\?this\.tray\.isReady\(\):!0\}/;
   if (!compatibleTrayIsReadyPattern.test(patchedSource)) {
@@ -38,7 +38,7 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
   }
 
   const trayWhenReadyConsumerPattern =
-    /waitForReady\(\)\{return [A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.tray\)\}/;
+    /async waitForReady\(\)\{try\{return await this\.tray\.whenReady\(\),!0\}catch\{return!1\}\}/;
   const compatibleTrayWhenReadyPattern =
     /async waitForReady\(\)\{if\(typeof this\.tray\.whenReady!=`function`\)return!0;try\{return await this\.tray\.whenReady\(\),!0\}catch\{return!1\}\}/;
   if (!compatibleTrayWhenReadyPattern.test(patchedSource)) {
