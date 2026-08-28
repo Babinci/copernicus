@@ -289,7 +289,7 @@ test("socket hook exports the shared Codex path without starting a process", () 
   }
 });
 
-test("injected transport rejects an existing socket without unlinking it", async () => {
+test("injected transport reuses an existing live socket without spawning or unlinking it", async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-existing-"));
   const socketPath = path.join(tempDir, "app-server.sock");
   const server = await listenUnix(socketPath);
@@ -301,16 +301,12 @@ test("injected transport rejects an existing socket without unlinking it", async
     },
   });
   const transport = new Transport(socketPath);
-  const originalCli = process.env.CODEX_CLI_PATH;
-  process.env.CODEX_CLI_PATH = "/fake/codex";
   try {
-    await assert.rejects(transport.ensureAuthority(), /path already exists/);
+    await transport.ensureAuthority();
     assert.equal(spawnCalls, 0);
     assert.equal(fs.lstatSync(socketPath).isSocket(), true);
     assert.equal(fs.existsSync(`${socketPath}.lock`), false);
   } finally {
-    if (originalCli == null) delete process.env.CODEX_CLI_PATH;
-    else process.env.CODEX_CLI_PATH = originalCli;
     await closeServer(server);
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
@@ -369,7 +365,7 @@ test("attach-only transport reuses a live socket without spawning or unlinking i
   }
 });
 
-test("injected transport serializes startup and removes only its owned socket", async () => {
+test("injected transport serializes startup, reuses the live socket, and removes only its owned socket", async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-owner-"));
   const socketPath = path.join(tempDir, "app-server.sock");
   const servers = new Map();
@@ -429,7 +425,8 @@ test("injected transport serializes startup and removes only its owned socket", 
   try {
     await first.ensureAuthority();
     assert.equal(fs.existsSync(`${socketPath}.lock`), true);
-    await assert.rejects(second.ensureAuthority(), /already owned/);
+    await second.ensureAuthority();
+    assert.equal(children.length, 1);
 
     installReplacementBeforeChildClose = true;
     const childClosed = once(children[0], "close");

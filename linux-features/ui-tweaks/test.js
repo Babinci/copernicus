@@ -474,6 +474,7 @@ test("sidebar thread colors are opt-in and patch the complete current contract o
   assert.doesNotMatch(patched, /Change pin color/);
   assert.match(patched, /tu\.SIDEBAR_THREAD_METADATA/);
   assert.doesNotMatch(patched, /labelColor:null/);
+  assert.doesNotThrow(() => new Function(patched));
   assert.equal(applySidebarThreadColorPatch(patched, context), patched);
 });
 

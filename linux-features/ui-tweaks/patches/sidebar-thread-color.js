@@ -182,7 +182,7 @@ function applySidebarThreadColorPatch(source, context = {}) {
     patched = patched.replace(
       MENU_PATTERN,
       (_match, menuPrefix, scope, _target, surface, threadId, menuItems, followingItems) =>
-        `${menuPrefix},${surface}===\`sidebar\`&&${menuItems}.push({id:\`change-thread-color\`,message:${aliases.formatMessage}({id:\`codexLinux.sidebarThreadColor.menuItem\`,defaultMessage:\`Change chat color…\`,description:\`Menu item that changes a local chat color\`}),submenu:codexLinuxSidebarThreadColorMenu(${scope},${threadId})}),${followingItems}=${surface}!==\`sidebar\``,
+        `${menuPrefix};${surface}===\`sidebar\`&&${menuItems}.push({id:\`change-thread-color\`,message:${aliases.formatMessage}({id:\`codexLinux.sidebarThreadColor.menuItem\`,defaultMessage:\`Change chat color…\`,description:\`Menu item that changes a local chat color\`}),submenu:codexLinuxSidebarThreadColorMenu(${scope},${threadId})});let ${followingItems}=${surface}!==\`sidebar\``,
     );
     const attributes = rowMatches[0][1];
     patched = patched.replace(
