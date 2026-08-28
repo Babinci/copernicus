@@ -8,8 +8,11 @@ codex-app.backup-*/
 .codex-app.candidate-*/
 .codex-app.promotion.json
 .codex-app.promotion.lock
+.codex-app-next.promotion.lock
+.codex-app*.candidate-*
 codex-*-app/
 codex-app-next/
+codex-app-next.backup-*/
 bin/codex-*
 target/
 dist/

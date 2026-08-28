@@ -17,12 +17,13 @@ Enable it in the local, gitignored feature config:
 
 | Tweak | Patch module | What it does | Settings |
 | --- | --- | --- | --- |
+| `fileTree.folderActions` | `patches/file-tree-folder-actions.js` | Extends existing file-tree path actions to folders. | `tweaks.fileTree.folderActions.enabled` |
 | `appearance.dockIcon` | `patches/dock-icon.js` | Exposes the upstream Appearance setting and search result for switching Linux windows, the system tray, and supported launchers between the official ChatGPT and Codex icons. | `tweaks.appearance.dockIcon.enabled` |
 | `home.suggestedPrompts` | `patches/suggested-prompts.js` | Exposes the upstream Suggested Prompts setting and enables generated project-aware cards on Home. | `tweaks.home.suggestedPrompts.enabled` |
 | `modelPicker.showModelsByDefault` | `patches/model-picker-model-list.js` | Opens the advanced picker by default and shows model choices inline instead of hiding them behind the compact Power slider and a nested Model submenu. | `tweaks.modelPicker.showModelsByDefault.enabled` |
 | `reasoning.keepEffortLabelsEnglish` | `patches/reasoning-effort-labels.js` | Keeps reasoning effort values in English in the Simplified Chinese UI while leaving the surrounding interface translated. | `tweaks.reasoning.keepEffortLabelsEnglish.enabled` |
 | `sidebar.projectName` | `patches/sidebar-project-name.js` | Styles project names in the left sidebar project list. It does not style `Projects` / `Chats` section headings and does not style chat rows. | `tweaks.sidebar.projectName.enabled`, `tweaks.sidebar.projectName.style` |
-| `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds a named color submenu to local chats, displaying the saved color as a soft full-row tint. | `tweaks.sidebar.threadColor.enabled` |
+| `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds a named color submenu to the visible More menu for local chats, displaying the saved color as a soft full-row tint. | `tweaks.sidebar.threadColor.enabled` |
 
 ## Settings
 
@@ -50,6 +51,15 @@ Example local config:
 ```
 
 Each tweak documents its own config keys below.
+
+### `fileTree.folderActions`
+
+Right-clicking a folder in the workspace file tree exposes the same **Copy
+path** and native **Open in File Manager** actions already available for files.
+The file-only **Add to chat** action remains hidden for folders.
+
+This tweak is independently disabled by default. Set
+`tweaks.fileTree.folderActions.enabled` to `true` to enable it.
 
 ### `appearance.dockIcon`
 
@@ -190,9 +200,11 @@ Config keys:
 
 ### `sidebar.threadColor`
 
-Adds **Change chat color…** to the context menu for local chats. The submenu
+Adds **Change chat color…** to the visible More menu and context menu for every
+local chat in the sidebar, including Pinned, Projects, and Recents. The submenu
 offers Red, Orange, Yellow, Green, Blue, Purple, and No color. The choice is
-stored in the upstream `sidebar-thread-metadata` global-state entry for that conversation, so it
+stored in the upstream `sidebar-thread-metadata` global-state entry for that
+conversation, so it
 survives restarts and changes in pin or project grouping. The sidebar keeps its
 normal text and grouping; color is only a supplementary, low-opacity row
 background.

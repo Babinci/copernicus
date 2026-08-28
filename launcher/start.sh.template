@@ -2639,6 +2639,53 @@ recover_unhealthy_running_app() {
     rm -f "$APP_PID_FILE" "$WEBVIEW_PID_FILE" "$LAUNCH_ACTION_SOCKET"
 }
 
+restart_hidden_running_app() {
+    local webview_pid=""
+
+    running_app_is_active || return 1
+    echo "The resident app has no recoverable native window; preparing a safe cold restart"
+    acquire_launcher_lock
+    if [ "$LAUNCHER_LOCK_HELD" -ne 1 ] || [ "$LAUNCHER_LOCK_TIMED_OUT" -eq 1 ]; then
+        release_launcher_lock
+        notify_error "$CODEX_LINUX_APP_DISPLAY_NAME could not lock launcher state for window recovery. Retry after the current launch finishes."
+        exit 1
+    fi
+
+    refresh_launch_state_quick
+    if ! running_app_is_active; then
+        WARM_START=0
+        reconcile_runtime_state
+        return 0
+    fi
+    webview_pid="$(cat "$WEBVIEW_PID_FILE" 2>/dev/null || true)"
+    for _ in $(seq 1 100); do
+        running_app_is_active || break
+        sleep 0.05
+    done
+    if running_app_is_active && ! terminate_stale_electron_with_pidfd "$RUNNING_APP_PID"; then
+        release_launcher_lock
+        notify_error "$CODEX_LINUX_APP_DISPLAY_NAME could not safely restart its hidden resident process. Close it manually and retry."
+        exit 1
+    fi
+
+    if [[ "$webview_pid" =~ ^[0-9]+$ ]]; then
+        for _ in $(seq 1 60); do
+            kill -0 "$webview_pid" 2>/dev/null || break
+            sleep 0.05
+        done
+        if kill -0 "$webview_pid" 2>/dev/null; then
+            release_launcher_lock
+            notify_error "$CODEX_LINUX_APP_DISPLAY_NAME webview did not stop during window recovery. Retry after closing the app."
+            exit 1
+        fi
+    fi
+
+    WARM_START=0
+    RUNNING_APP_PID=""
+    rm -f "$APP_PID_FILE" "$WEBVIEW_PID_FILE" "$LAUNCH_ACTION_SOCKET"
+    reconcile_runtime_state
+}
+
 send_warm_start_launch_action() {
     [ "$WARM_START" -eq 1 ] || return 1
     [ -S "$LAUNCH_ACTION_SOCKET" ] || return 1
@@ -2659,6 +2706,8 @@ try:
     client.sendall(payload)
     client.shutdown(socket.SHUT_WR)
     response = client.recv(32)
+    if response.startswith(b"restart\n"):
+        sys.exit(2)
     if not response.startswith(b"ok\n"):
         sys.exit(1)
 finally:
@@ -4381,10 +4430,15 @@ trap 'exit 129' HUP
 recover_unhealthy_running_app
 prepare_launch_state_under_lock
 
-if send_warm_start_launch_action "${LAUNCHER_ARGS[@]}"; then
+warm_start_status=0
+send_warm_start_launch_action "${LAUNCHER_ARGS[@]}" || warm_start_status=$?
+if [ "$warm_start_status" -eq 0 ]; then
     echo "Sent launch args over warm-start IPC"
     log_phase "warm_start_ipc_sent"
     exit 0
+elif [ "$warm_start_status" -eq 2 ]; then
+    restart_hidden_running_app
+    log_phase "hidden_window_cold_restart"
 elif [ "$WARM_START" -eq 1 ]; then
     echo "Warm-start IPC unavailable; falling back to Electron second-instance handoff"
 fi

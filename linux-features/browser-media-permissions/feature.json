@@ -1,0 +1,9 @@
+{
+  "id": "browser-media-permissions",
+  "title": "Browser Media Permissions",
+  "description": "Allows Browser Use pages from explicitly configured origins to request microphone or camera access.",
+  "defaultEnabled": false,
+  "entrypoints": {
+    "patchDescriptors": "./patch.js"
+  }
+}

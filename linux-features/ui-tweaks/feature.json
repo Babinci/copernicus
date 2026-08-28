@@ -16,6 +16,11 @@
     }
   },
   "tweaks": {
+    "fileTree": {
+      "folderActions": {
+        "enabled": false
+      }
+    },
     "appearance": {
       "dockIcon": {
         "enabled": false

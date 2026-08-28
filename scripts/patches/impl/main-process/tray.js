@@ -22,8 +22,23 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     );
   }
 
+  if (!patchedSource.includes("globalThis.codexLinuxPrimaryWindowCloseRequested=!0")) {
+    const closeHandlerPattern =
+      /([A-Za-z_$][\w$]*)&&([A-Za-z_$][\w$]*)\.on\(`close`,([A-Za-z_$][\w$]*)=>\{(?=[\s\S]{0,500}?this\.options\.canHideLastWindowToTray)/;
+    const match = patchedSource.match(closeHandlerPattern);
+    if (match == null) {
+      console.warn("WARN: Could not find primary window close handler — skipping Linux closed-window marker");
+      return currentSource;
+    }
+    const [, enabledVar, windowVar, eventVar] = match;
+    patchedSource = patchedSource.replace(
+      closeHandlerPattern,
+      `${enabledVar}&&${windowVar}.on(\`close\`,${eventVar}=>{process.platform===\`linux\`&&(globalThis.codexLinuxPrimaryWindowCloseRequested=!0);`,
+    );
+  }
+
   const trayIsReadyConsumerPattern =
-    /isReady\(\)\{return [A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.tray\)\}/;
+    /isReady\(\)\{return this\.tray\.isReady\(\)\}/;
   const compatibleTrayIsReadyPattern =
     /isReady\(\)\{return typeof this\.tray\.isReady==`function`\?this\.tray\.isReady\(\):!0\}/;
   if (!compatibleTrayIsReadyPattern.test(patchedSource)) {
@@ -38,7 +53,7 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
   }
 
   const trayWhenReadyConsumerPattern =
-    /waitForReady\(\)\{return [A-Za-z_$][\w$]*\.[A-Za-z_$][\w$]*\(this\.tray\)\}/;
+    /async waitForReady\(\)\{try\{return await this\.tray\.whenReady\(\),!0\}catch\{return!1\}\}/;
   const compatibleTrayWhenReadyPattern =
     /async waitForReady\(\)\{if\(typeof this\.tray\.whenReady!=`function`\)return!0;try\{return await this\.tray\.whenReady\(\),!0\}catch\{return!1\}\}/;
   if (!compatibleTrayWhenReadyPattern.test(patchedSource)) {
@@ -71,11 +86,11 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
   }
 
   const conditionalTrayConstructorPattern =
-    /([A-Za-z_$][\w$]*)=typeof codexLinuxRegisterTray===`function`\?codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+?)\)\):new \2\.Tray\(\3\)/;
+    /([A-Za-z_$][\w$]*)=typeof codexLinuxRegisterTray===`function`\?codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+)\)\):new \2\.Tray\(\3\)/;
   const retainedTrayConstructorPattern =
-    /([A-Za-z_$][\w$]*)=codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+?)\)\)/;
+    /([A-Za-z_$][\w$]*)=codexLinuxRegisterTray\(new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+)\)\)/;
   const trayConstructorPattern =
-    /([A-Za-z_$][\w$]*)=new ([A-Za-z_$][\w$]*)\.Tray\(([^;)]+)\)/;
+    /([A-Za-z_$][\w$]*)=new ([A-Za-z_$][\w$]*)\.Tray\(([^;]+)\)/;
   const constructorMatch =
     patchedSource.match(conditionalTrayConstructorPattern) ??
     patchedSource.match(retainedTrayConstructorPattern) ??

@@ -270,13 +270,11 @@ test("descriptor is optional and targets the main bundle", () => {
   );
 });
 
-test("socket hook exports an instance-scoped path without starting a process", () => {
+test("socket hook exports the shared Codex path without starting a process", () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-socket-runtime-"));
   const env = {
     ...process.env,
-    CODEX_LINUX_APP_ID: "codex-bridge-test",
-    CODEX_LINUX_APP_STATE_DIR: path.join(tempDir, "state"),
-    XDG_RUNTIME_DIR: tempDir,
+    CODEX_HOME: path.join(tempDir, "codex-home"),
   };
   delete env.CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET;
   try {
@@ -284,7 +282,7 @@ test("socket hook exports an instance-scoped path without starting a process", (
     assert.equal(result.status, 0, result.stderr);
     assert.equal(
       result.stdout.trim(),
-      `env CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET=${tempDir}/codex-bridge-test/app-server-bridge/app-server.sock`,
+      `env CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET=${tempDir}/codex-home/app-server-control/app-server-control.sock`,
     );
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });

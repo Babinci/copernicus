@@ -204,7 +204,7 @@ function applyLinuxAvatarOverlayMousePassthroughPatch(currentSource) {
 
   const endDragMethod = findAvatarOverlayMethod(
     patchedSource,
-    /endDrag\([A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\)\{/,
+    /endDrag\([^)]*\)\{/,
   );
   if (endDragMethod?.text.includes(
     "process.platform===`linux`&&this.applyPointerInteractivityPolicy()",
@@ -264,7 +264,7 @@ function applyLinuxAvatarOverlayMousePassthroughPatch(currentSource) {
   }
 
   const i3TrayFallbackRegex =
-    /traySize:this\.traySize\?\?(\([^{};]*?\))(?=\}\))/;
+    /traySize:this\.traySize\?\?(\([^{};]*?\))(?=,|\}\))/;
   const i3TrayFallbackPatch =
     "traySize:process.platform===`linux`&&typeof this.codexLinuxIsI3Session==`function`&&this.codexLinuxIsI3Session()?this.traySize:this.traySize??$1";
   if (
