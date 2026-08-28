@@ -2713,7 +2713,7 @@ test("retains nested native tray constructor arguments without breaking syntax",
   assert.doesNotThrow(() => new vm.Script(`let r,t,c,RAe,codexLinuxRegisterTray;${constructor};`));
 });
 
-test("bypasses the upstream before-quit confirmation after a Linux explicit quit", () => {
+test("latches quit state only for an explicit Linux quit", () => {
   const source = `${currentMainBundlePrefix}${beforeQuitConfirmationBundleFixture()}`;
   const patched = applyPatchTwice(
     applyLinuxExplicitQuitPromptBypassPatch,
@@ -2722,7 +2722,11 @@ test("bypasses the upstream before-quit confirmation after a Linux explicit quit
 
   assert.match(
     patched,
-    /if\(\(typeof codexLinuxShouldBypassQuitPrompt===`function`&&codexLinuxShouldBypassQuitPrompt\(\)\)\|\|e\|\|i\.canQuitWithoutPrompt\(\)\|\|r\|\|!s&&!c\)\{process\.platform===`linux`&&typeof codexLinuxMarkQuitInProgress===`function`&&codexLinuxMarkQuitInProgress\(\),g=!0,a\.markAppQuitting\(\);return\}/,
+    /if\(\(typeof codexLinuxShouldBypassQuitPrompt===`function`&&codexLinuxShouldBypassQuitPrompt\(\)\)\|\|e\|\|i\.canQuitWithoutPrompt\(\)\|\|r\|\|!s&&!c\)\{typeof codexLinuxShouldBypassQuitPrompt===`function`&&codexLinuxShouldBypassQuitPrompt\(\)&&process\.platform===`linux`&&typeof codexLinuxMarkQuitInProgress===`function`&&codexLinuxMarkQuitInProgress\(\),g=!0,a\.markAppQuitting\(\);return\}/,
+  );
+  assert.doesNotMatch(
+    patched,
+    /!s&&!c\)\{process\.platform===`linux`&&typeof codexLinuxMarkQuitInProgress/,
   );
   assert.match(
     patched,
@@ -5851,6 +5855,8 @@ test("adds Linux launch actions through current setSecondInstanceArgsHandler bun
   assert.match(launchPatched, /e\.includes\(`--prompt-chat`\)/);
   assert.match(launchPatched, /e\.includes\(`--quick-chat`\)/);
   assert.match(launchPatched, /e\.includes\(`--new-chat`\)/);
+  assert.match(launchPatched, /Array\.isArray\(e\)&&e\.length===0\?\(await ue\(`\/`,\{navigateExistingWindow:!1,forceFresh:!0\}\),!0\)/);
+  assert.match(launchPatched, /t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?/);
   assert.match(launchPatched, /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);l\(e=>/);
   assert.doesNotMatch(launchPatched, /l\(e=>\{z\.deepLinks\.queueProcessArgs\(e\)\|\|oe\(\)\}\)/);
   assert.match(
@@ -5911,7 +5917,7 @@ test("adds Linux launch actions after current window API drift", () => {
   const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
 
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await M\.createFreshWindow\(e\);/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\);t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?await M\.createFreshWindow\(e\);/);
   assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await M\.createFreshWindow\(`/);
 });
 
@@ -5928,7 +5934,7 @@ test("adds Linux launch actions when current upstream wraps fresh window creatio
   const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
 
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\);t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?await ee\(e\);/);
   assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await ee\(`\/`\);/);
 });
 
@@ -5940,7 +5946,7 @@ test("adds Linux launch actions after current entry-telemetry drift", () => {
 
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
   assert.match(patched, /codexLinuxStartLaunchActionSocket=\(\)=>/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\);t\.forceFresh===!0&&n!=null&&\(n\.destroy\(\),n=null\);let r=n\?\?await ee\(e\);/);
   assert.match(patched, /z\.navigateToRoute\(r,e\),ae\(r\)/);
 });
 
