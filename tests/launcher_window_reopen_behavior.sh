@@ -234,8 +234,11 @@ wait_for() {
     local description="$1"
     shift
     local attempt
+    local attempts=100
 
-    for attempt in $(seq 1 100); do
+    [ "${CODEX_TEST_RESTART_HIDDEN:-0}" = "1" ] && attempts=200
+
+    for attempt in $(seq 1 "$attempts"); do
         "$@" && return 0
         sleep 0.05
     done

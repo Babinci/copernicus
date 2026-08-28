@@ -9633,6 +9633,7 @@ async function boot(settings = {}, env = { CODEX_DESKTOP_LAUNCH_ACTION_SOCKET: "
   const context = {
     console,
     process: { platform: "linux", env },
+    setImmediate,
     require(moduleName) {
       if (moduleName === "electron") {
         return {
@@ -9825,9 +9826,11 @@ async function boot(settings = {}, env = { CODEX_DESKTOP_LAUNCH_ACTION_SOCKET: "
   };
   socket = await runSocketArgs([]);
   assert(socket.outputs[0] === "restart\n", "warm-start socket should request a cold restart for an unmapped primary window");
+  assert(state.quitCount === 1, "hidden-window recovery should request one graceful app quit before launcher fallback");
   assert(state.createFreshLocalWindowCalls.length === 0, "hidden-window recovery must not destroy and recreate BrowserWindows in the damaged resident process");
   assert(state.focusCalls.length === 0, "hidden-window recovery must not claim that the unmapped primary window was focused");
 
+  await boot();
   resetCalls();
   state.primaryWindow = state.primary;
   socket = await runSocketArgs([]);
