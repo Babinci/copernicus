@@ -2576,6 +2576,7 @@ test("destroys the registered Linux tray before the app exits", () => {
   assert.match(patched, /codexLinuxMarkQuitInProgress=\(\)=>\{codexLinuxQuitInProgress=!0,codexLinuxDestroyTray\(\)\}/);
   assert.match(patched, /c\.app\.on\(`before-quit`,\(\)=>codexLinuxDestroyTray\(\)\)/);
   assert.match(patched, /r=codexLinuxRegisterTray\(new c\.Tray\(t\.defaultIcon\)\)/);
+  assert.match(patched, /process\.platform===`linux`&&\(globalThis\.codexLinuxPrimaryWindowClosedToTray=!0\),k\.hide\(\)/);
   assert.doesNotMatch(patched, /codexLinuxTrayQuitDelayMs/);
 
   const helperStart = patched.indexOf("let codexLinuxTray=null");
@@ -5855,7 +5856,7 @@ test("adds Linux launch actions through current setSecondInstanceArgsHandler bun
   assert.match(launchPatched, /e\.includes\(`--prompt-chat`\)/);
   assert.match(launchPatched, /e\.includes\(`--quick-chat`\)/);
   assert.match(launchPatched, /e\.includes\(`--new-chat`\)/);
-  assert.match(launchPatched, /codexLinuxPrimaryWindowNeedsColdRestart=\(\)=>\{let e=M\.getPrimaryWindow\(B\);return e!=null&&!e\.isDestroyed\(\)&&!e\.isVisible\(\)&&!e\.isMinimized\(\)\}/);
+  assert.match(launchPatched, /codexLinuxPrimaryWindowNeedsColdRestart=\(\)=>\{let e=M\.getPrimaryWindow\(B\);return globalThis\.codexLinuxPrimaryWindowClosedToTray===!0&&\(e==null\|\|e\.isDestroyed\(\)\|\|!e\.isVisible\(\)\)\|\|e!=null&&!e\.isDestroyed\(\)&&!e\.isVisible\(\)&&!e\.isMinimized\(\)\}/);
   assert.match(launchPatched, /Array\.isArray\(e\)&&e\.length===0\?\(codexLinuxPrimaryWindowNeedsColdRestart\(\)\?`restart`:/);
   assert.match(launchPatched, /if\(e===`restart`\)\{t\.end\?\.\(`restart\\n`\),setImmediate\(\(\)=>/);
   assert.match(launchPatched, /require\(`electron`\)\.app\.quit\(\)/);
