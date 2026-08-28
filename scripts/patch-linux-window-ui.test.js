@@ -10820,20 +10820,31 @@ test("patches Electron Owl feature binding fallback outside the main bundle", ()
     const buildDir = path.join(tempRoot, ".vite", "build");
     fs.mkdirSync(buildDir, { recursive: true });
     const bundlePath = path.join(buildDir, "workspace-root-drop-handler-test.js");
+    const bootstrapPath = path.join(buildDir, "bootstrap-test.js");
     fs.writeFileSync(
       bundlePath,
       "var Ye=`electron_common_owl_features`,Fe={parse:e=>e},Ge={parse:e=>e};function Qe(e){let t=Ge.parse(Fe.parse(process._linkedBinding).call(process,Ye));try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}",
       "utf8",
     );
+    fs.writeFileSync(
+      bootstrapPath,
+      "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);",
+      "utf8",
+    );
 
     assert.deepEqual(patchLinuxOwlFeatureBindingFallbackAssets(tempRoot), {
-      matched: 1,
-      changed: 1,
+      matched: 2,
+      changed: 2,
+      bindingMatched: 1,
+      shellMatched: 1,
     });
     assert.match(fs.readFileSync(bundlePath, "utf8"), /codexLinuxOwlFeatureBindingFallback/);
+    assert.match(fs.readFileSync(bootstrapPath, "utf8"), /process\.platform!==`linux`/);
     assert.deepEqual(patchLinuxOwlFeatureBindingFallbackAssets(tempRoot), {
-      matched: 1,
+      matched: 2,
       changed: 0,
+      bindingMatched: 1,
+      shellMatched: 1,
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -11291,7 +11302,7 @@ test("patch report marks missing Owl feature binding bundle as required failure"
 
     const owlPatch = report.patches.find((patch) => patch.name === "linux-owl-feature-binding-fallback");
     assert.equal(owlPatch.status, "failed-required");
-    assert.match(owlPatch.reason, /Owl feature binding loader bundle missing/);
+    assert.match(owlPatch.reason, /Owl compatibility contract missing/);
     assert.ok(
       validateReport(report, "upstream-build").some((failure) =>
         failure.startsWith("linux-owl-feature-binding-fallback: failed-required"),

@@ -381,6 +381,19 @@ function applyLinuxOwlFeatureBindingFallbackPatch(currentSource) {
   );
 }
 
+function applyLinuxOwlAppShellGuardPatch(currentSource) {
+  const guard = "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
+  const patchedGuard = "if(process.platform!==`linux`&&process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
+  if (currentSource.includes(patchedGuard)) return currentSource;
+  if (!currentSource.includes(guard)) {
+    if (currentSource.includes("requires the Owl app shell")) {
+      console.warn("WARN: Could not find Owl app shell guard - skipping Linux stock Electron fallback patch");
+    }
+    return currentSource;
+  }
+  return currentSource.replace(guard, patchedGuard);
+}
+
 function patchLinuxOwlFeatureBindingFallbackAssets(extractedDir) {
   const buildDir = path.join(extractedDir, ".vite", "build");
   if (!fs.existsSync(buildDir)) {
@@ -394,17 +407,24 @@ function patchLinuxOwlFeatureBindingFallbackAssets(extractedDir) {
     .map((name) => path.join(buildDir, name))
     .filter((candidate) => {
       try {
-        return fs.readFileSync(candidate, "utf8").includes("electron_common_owl_features");
+        const source = fs.readFileSync(candidate, "utf8");
+        return source.includes("electron_common_owl_features") || source.includes("requires the Owl app shell");
       } catch {
         return false;
       }
     });
 
   let changed = 0;
+  let bindingMatched = 0;
+  let shellMatched = 0;
   const pendingWrites = [];
   for (const candidate of candidates) {
     const currentSource = fs.readFileSync(candidate, "utf8");
-    const patchedSource = applyLinuxOwlFeatureBindingFallbackPatch(currentSource);
+    if (currentSource.includes("electron_common_owl_features")) bindingMatched += 1;
+    if (currentSource.includes("requires the Owl app shell")) shellMatched += 1;
+    const patchedSource = applyLinuxOwlAppShellGuardPatch(
+      applyLinuxOwlFeatureBindingFallbackPatch(currentSource),
+    );
     if (patchedSource !== currentSource) {
       changed += 1;
       pendingWrites.push({ filePath: candidate, patchedSource });
@@ -414,7 +434,7 @@ function patchLinuxOwlFeatureBindingFallbackAssets(extractedDir) {
     fs.writeFileSync(filePath, patchedSource, "utf8");
   }
 
-  return { matched: candidates.length, changed };
+  return { matched: candidates.length, changed, bindingMatched, shellMatched };
 }
 
 function applyLinuxRemoteControlConfigPreservationPatch(currentSource) {
@@ -562,6 +582,7 @@ function applyLinuxLocalAppServerFeatureEnablementHandlerPatch(currentSource) {
 }
 
 module.exports = {
+  applyLinuxOwlAppShellGuardPatch,
   applyLinuxHostProcessEnvironmentPatch,
   applyLinuxFileManagerPatch,
   applyLinuxX11ProjectPickerPatch,
