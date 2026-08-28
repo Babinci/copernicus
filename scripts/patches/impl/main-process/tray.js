@@ -22,21 +22,6 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     );
   }
 
-  if (!patchedSource.includes("globalThis.codexLinuxPrimaryWindowClosedToTray=!0")) {
-    const guardedCloseToTrayBodyPattern =
-      /if\(\(process\.platform===`win32`\|\|process\.platform===`linux`\)&&!this\.isAppQuitting&&!\(typeof codexLinuxIsQuitInProgress===`function`&&codexLinuxIsQuitInProgress\(\)\)&&this\.options\.canHideLastWindowToTray\?\.\(\)===!0&&!([A-Za-z_$][\w$]*)\)\{([A-Za-z_$][\w$]*)\.preventDefault\(\),([A-Za-z_$][\w$]*)\.hide\(\);return\}/;
-    const match = patchedSource.match(guardedCloseToTrayBodyPattern);
-    if (match == null) {
-      console.warn("WARN: Could not find guarded Linux close-to-tray body — skipping hidden-window marker");
-      return currentSource;
-    }
-    const [, hasOtherWindowVar, eventVar, windowVar] = match;
-    patchedSource = patchedSource.replace(
-      guardedCloseToTrayBodyPattern,
-      `if((process.platform===\`win32\`||process.platform===\`linux\`)&&!this.isAppQuitting&&!(typeof codexLinuxIsQuitInProgress===\`function\`&&codexLinuxIsQuitInProgress())&&this.options.canHideLastWindowToTray?.()===!0&&!${hasOtherWindowVar}){${eventVar}.preventDefault(),process.platform===\`linux\`&&(globalThis.codexLinuxPrimaryWindowClosedToTray=!0),${windowVar}.hide();return}`,
-    );
-  }
-
   const trayIsReadyConsumerPattern =
     /isReady\(\)\{return this\.tray\.isReady\(\)\}/;
   const compatibleTrayIsReadyPattern =
