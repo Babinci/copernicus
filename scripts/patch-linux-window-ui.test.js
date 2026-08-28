@@ -101,7 +101,9 @@ const {
   applyLinuxFileManagerPatch,
   applyLinuxGitOriginsSourceFallbackPatch,
   applyLinuxLocalAppServerFeatureEnablementHandlerPatch,
+  applyLinuxOwlAppShellGuardPatch,
   applyLinuxOwlFeatureBindingFallbackPatch,
+  applyLinuxOwlPreferredLanguagesPatch,
   applyLinuxRemoteControlConfigPreservationPatch,
   applyLinuxTerminalHostEnvironmentPatch,
   applyLinuxTerminalUserPathPatch,
@@ -10823,7 +10825,7 @@ test("patches Electron Owl feature binding fallback outside the main bundle", ()
     const bootstrapPath = path.join(buildDir, "bootstrap-test.js");
     fs.writeFileSync(
       bundlePath,
-      "var Ye=`electron_common_owl_features`,Fe={parse:e=>e},Ge={parse:e=>e};function Qe(e){let t=Ge.parse(Fe.parse(process._linkedBinding).call(process,Ye));try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}",
+      "var Ye=`electron_common_owl_features`,Fe={parse:e=>e},Ge={parse:e=>e};function Qe(e){let t=Ge.parse(Fe.parse(process._linkedBinding).call(process,Ye));try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}function Kl(e){Jl(`app`).setPreferredLanguages(e)}",
       "utf8",
     );
     fs.writeFileSync(
@@ -10837,18 +10839,51 @@ test("patches Electron Owl feature binding fallback outside the main bundle", ()
       changed: 2,
       bindingMatched: 1,
       shellMatched: 1,
+      preferredLanguagesMatched: 1,
     });
     assert.match(fs.readFileSync(bundlePath, "utf8"), /codexLinuxOwlFeatureBindingFallback/);
-    assert.match(fs.readFileSync(bootstrapPath, "utf8"), /process\.platform!==`linux`/);
+    assert.match(fs.readFileSync(bundlePath, "utf8"), /setPreferredLanguages\?\./);
+    assert.match(
+      fs.readFileSync(bootstrapPath, "utf8"),
+      /process\.platform===`linux`\)\{a\.app\.setDebugChromePagesEnabled\?\?=/,
+    );
     assert.deepEqual(patchLinuxOwlFeatureBindingFallbackAssets(tempRoot), {
       matched: 2,
       changed: 0,
       bindingMatched: 1,
       shellMatched: 1,
+      preferredLanguagesMatched: 1,
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }
+});
+
+test("provides the stock Electron debug-pages compatibility hook on Linux", () => {
+  const source =
+    "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
+  const patched = applyPatchTwice(applyLinuxOwlAppShellGuardPatch, source);
+  const sandbox = {
+    process: { platform: "linux", versions: { electron: "38.0.0" } },
+    a: { app: {}, BrowserWindow: {} },
+  };
+
+  vm.runInNewContext(patched, sandbox);
+
+  assert.equal(typeof sandbox.a.app.setDebugChromePagesEnabled, "function");
+  assert.equal(sandbox.a.app.setDebugChromePagesEnabled(true), undefined);
+  assert.equal(typeof sandbox.a.app.setRuntimeFeatures, "function");
+  assert.equal(sandbox.a.app.setRuntimeFeatures({ Example: true }), undefined);
+  assert.equal(sandbox.a.BrowserWindow.isInputShapeSupported(), false);
+  assert.equal(sandbox.a.BrowserWindow.isSystemBackdropSupported(), false);
+});
+
+test("skips the Owl-only preferred-languages setter on stock Electron", () => {
+  const source = "function Kl(e){Jl(`app`).setPreferredLanguages(e)}";
+  const patched = applyPatchTwice(applyLinuxOwlPreferredLanguagesPatch, source);
+
+  assert.match(patched, /setPreferredLanguages\?\./);
+  assert.doesNotThrow(() => vm.runInNewContext(`${patched};Kl([\`pl\`])`, { Jl: () => ({}) }));
 });
 
 test("missing icon asset skips only icon patches", () => {

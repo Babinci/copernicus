@@ -13,13 +13,14 @@ module.exports = extractedAppPatch({
   ciPolicy: "required-upstream",
   apply: patchLinuxOwlFeatureBindingFallbackAssets,
   status: (result, warnings) => ({
-    status: result?.bindingMatched === 0 || result?.shellMatched === 0
+    status: result?.bindingMatched === 0 || result?.shellMatched === 0 || result?.preferredLanguagesMatched === 0
       ? "failed-required"
       : patchStatusFromChange(Boolean(result?.changed), warnings, "required-upstream"),
-    reason: result?.bindingMatched === 0 || result?.shellMatched === 0
+    reason: result?.bindingMatched === 0 || result?.shellMatched === 0 || result?.preferredLanguagesMatched === 0
       ? `Owl compatibility contract missing: ${[
           result?.bindingMatched === 0 ? "feature binding" : null,
           result?.shellMatched === 0 ? "app shell guard" : null,
+          result?.preferredLanguagesMatched === 0 ? "preferred languages" : null,
         ].filter(Boolean).join(", ")}`
       : result?.reason ?? warnings[0] ?? null,
   }),
