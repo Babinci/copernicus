@@ -22,7 +22,7 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     );
   }
 
-  if (!patchedSource.includes("globalThis.codexLinuxPrimaryWindowClosed=!0")) {
+  if (!patchedSource.includes("globalThis.codexLinuxPrimaryWindowCloseRequested=!0")) {
     const closeHandlerPattern =
       /([A-Za-z_$][\w$]*)&&([A-Za-z_$][\w$]*)\.on\(`close`,([A-Za-z_$][\w$]*)=>\{(?=[\s\S]{0,500}?this\.options\.canHideLastWindowToTray)/;
     const match = patchedSource.match(closeHandlerPattern);
@@ -33,7 +33,7 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     const [, enabledVar, windowVar, eventVar] = match;
     patchedSource = patchedSource.replace(
       closeHandlerPattern,
-      `${enabledVar}&&${windowVar}.on(\`close\`,${eventVar}=>{process.platform===\`linux\`&&${windowVar}.once(\`closed\`,()=>{globalThis.codexLinuxPrimaryWindowClosed=!0}),`,
+      `${enabledVar}&&${windowVar}.on(\`close\`,${eventVar}=>{process.platform===\`linux\`&&(globalThis.codexLinuxPrimaryWindowCloseRequested=!0,${windowVar}.once(\`show\`,()=>{globalThis.codexLinuxPrimaryWindowCloseRequested=!1}));`,
     );
   }
 
