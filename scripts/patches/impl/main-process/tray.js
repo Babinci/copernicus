@@ -22,6 +22,21 @@ function applyLinuxTrayPatch(currentSource, iconPathExpression) {
     );
   }
 
+  if (!patchedSource.includes("globalThis.codexLinuxPrimaryWindowClosed=!0")) {
+    const closeHandlerPattern =
+      /([A-Za-z_$][\w$]*)&&([A-Za-z_$][\w$]*)\.on\(`close`,([A-Za-z_$][\w$]*)=>\{(?=[\s\S]{0,500}?this\.options\.canHideLastWindowToTray)/;
+    const match = patchedSource.match(closeHandlerPattern);
+    if (match == null) {
+      console.warn("WARN: Could not find primary window close handler — skipping Linux closed-window marker");
+      return currentSource;
+    }
+    const [, enabledVar, windowVar, eventVar] = match;
+    patchedSource = patchedSource.replace(
+      closeHandlerPattern,
+      `${enabledVar}&&${windowVar}.on(\`close\`,${eventVar}=>{process.platform===\`linux\`&&${windowVar}.once(\`closed\`,()=>{globalThis.codexLinuxPrimaryWindowClosed=!0}),`,
+    );
+  }
+
   const trayIsReadyConsumerPattern =
     /isReady\(\)\{return this\.tray\.isReady\(\)\}/;
   const compatibleTrayIsReadyPattern =
