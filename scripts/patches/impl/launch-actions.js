@@ -103,7 +103,7 @@ function buildSemanticLinuxLaunchActionPatch({
 
 function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
   const handlerRegex =
-    /([A-Za-z_$][\w$]*)\(e=>\{let ([A-Za-z_$][\w$]*)=[^;{}]+;if\(([A-Za-z_$][\w$]*)\.deepLinks\.queueProcessArgs\(e\)\)\{\2&&([A-Za-z_$][\w$]*)\(\);return\}if\(\2\)\{\4\(\);return\}\4\(\)\}\);let ([A-Za-z_$][\w$]*)=async\(e,t\)=>\{/g;
+    /([A-Za-z_$][\w$]*)\(e=>\{let ([A-Za-z_$][\w$]*)=[^;{}]+;if\(([A-Za-z_$][\w$]*)\.deepLinks\.queueProcessArgs\(e\)\)\{\2&&([A-Za-z_$][\w$]*)\(\);return\}if\(\2\)\{\4\(\);return\}\4\((?:\{[^{}]*\})?\)\}\);let ([A-Za-z_$][\w$]*)=async\(e,t\)=>\{/g;
   let match;
   while ((match = handlerRegex.exec(currentSource)) != null) {
     const [, setterVar, , deepLinksVar, fallbackFn, openerFn] = match;
@@ -145,7 +145,7 @@ function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
 
     const [, windowManagerVar, currentWindowVar, hostExprRaw, createdWindowVar, createFreshWindowMethod] = openerVars;
     const routeVar = openerText.match(/([A-Za-z_$][\w$]*)\.navigateToRoute\([A-Za-z_$][\w$]*,e\)/)?.[1];
-    const focusFn = openerText.match(new RegExp(`,([A-Za-z_$][\\w$]*)\\(${escapeRegExp(createdWindowVar)}\\)\\)\\}$`))?.[1];
+    const focusFn = openerText.match(new RegExp(`,([A-Za-z_$][\\w$]*)\\(${escapeRegExp(createdWindowVar)}\\)(?:,${escapeRegExp(createdWindowVar)})?\\)\\}$`))?.[1];
     if (routeVar == null || focusFn == null) {
       continue;
     }

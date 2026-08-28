@@ -21,7 +21,7 @@ module.exports = [
     id: "linux-launch-actions",
     phase: "main-bundle",
     order: 220,
-    ciPolicy: "optional",
+    ciPolicy: "required-upstream",
     apply: applyLinuxLaunchActionArgsPatch,
   }),
   mainBundlePatch({

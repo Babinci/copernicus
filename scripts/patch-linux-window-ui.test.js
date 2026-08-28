@@ -1564,6 +1564,27 @@ function currentLaunchActionBundleWithWindowApiDriftFixture() {
     .replace("let n=M.getPrimaryWindow(),r=n??await M.createFreshWindow(e);", "let n=M.getPrimaryWindow(),r=n??await M.createFreshWindow(e);");
 }
 
+function currentLaunchActionBundleWithEntryTelemetryFixture() {
+  return currentLaunchActionBundleFixture()
+    .replaceAll("createFreshLocalWindow", "createFreshWindow")
+    .replace(
+      "let A=Date.now(),w=()=>{}",
+      "let enabled=!0,ee=e=>enabled?M.createFreshWindow(e):Promise.resolve(null),A=Date.now(),w=()=>{}",
+    )
+    .replace(
+      "let e=M.getPrimaryWindow()??await M.createFreshWindow(`/`);if(e==null)return;ae(e)",
+      "let e=M.getPrimaryWindow()??await ee(`/`);if(e==null)return;ae(e),source!=null&&entry(source,e.webContents)",
+    )
+    .replace(
+      "le=async()=>{try",
+      "le=async source=>{if(enabled)try",
+    )
+    .replace(
+      "le()});let ue=async(e,t)=>{M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await M.createFreshWindow(e);r!=null&&(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r))};",
+      "le({channel:`shortcut`,source:`shortcut`})});let ue=async(e,t)=>{if(!enabled)return null;M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await ee(e);return r==null?null:(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r),r)};",
+    );
+}
+
 function settingsPersistenceBundleFixture() {
   return [
     "let i=require(`node:path`),o=require(`node:fs`);",
@@ -5907,6 +5928,18 @@ test("adds Linux launch actions when current upstream wraps fresh window creatio
   assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
   assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
   assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await ee\(`\/`\);/);
+});
+
+test("adds Linux launch actions after current entry-telemetry drift", () => {
+  const patched = applyPatchTwice(
+    applyLinuxLaunchActionArgsPatch,
+    currentLaunchActionBundleWithEntryTelemetryFixture(),
+  );
+
+  assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
+  assert.match(patched, /codexLinuxStartLaunchActionSocket=\(\)=>/);
+  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
+  assert.match(patched, /z\.navigateToRoute\(r,e\),ae\(r\)/);
 });
 
 test("prewarms the hotkey window after startup marker drift", () => {
