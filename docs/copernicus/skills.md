@@ -1,19 +1,21 @@
 ---
 type: guide
 title: Copernicus skills
-description: Why the twelve installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
-tags: [copernicus, skills, grill-me, rick-rubin, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective, ponytail, caveman, handoff]
-generated: { by: "copernicus/0.9.0", at: 2026-08-15T00:00:00+02:00 }
+description: Why the thirteen installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, grill-me, odyseusz, metis, rick-rubin, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective, ponytail, caveman, handoff]
+generated: { by: "copernicus/0.10.0", at: 2026-08-30T11:18:28+02:00 }
 ---
 
 # Copernicus skills
 
-Installing the single `copernicus` plugin installs twelve skills. Eight form
+Installing the single `copernicus` plugin installs thirteen skills. Nine form
 the main problem-solving sequence; four govern review, implementation,
 delivery, and continuation:
 
 ```text
 $grill-me        resolve the decision tree
+      ↓
+$odyseusz        find one ethical asymmetric move
       ↓
 $rick-rubin      remove weak branches
       ↓
@@ -45,6 +47,7 @@ install a daemon, database, provider proxy, or background service.
 | Skill | Why it exists | What it produces |
 | --- | --- | --- |
 | `$grill-me` | Premature implementation hides unresolved product and architecture decisions. | One recommended question at a time, then a compact decision-ready design brief. |
+| `$odyseusz` | Force, budget, and more effort can hide a changeable asymmetry in the terrain. | One ethical leverage mechanism, a reversible first test, risks, and a direct fallback. |
 | `$rick-rubin` | Idea generation is easier than principled selection. | Essence, what stays, what goes, and the hardest cut. |
 | `$planning` | Substantial or resumable work needs an implementation contract that survives context loss. | One evidence-backed design, linked workpacks, tests or explicit waivers, and deterministic dependency indexes. |
 | `$fleet` | Breadth, implementation, criticism, and verification need different bounded roles. | Typed outputs, private seat provenance, verified synthesis, and explicit evidence gaps. |
@@ -63,6 +66,8 @@ The complete explanations ship inside the installed plugin:
 - [Breathe explained](../../plugins/copernicus/skills/breathe/references/guide.md)
 - [Auto-Research explained](../../plugins/copernicus/skills/auto-research/references/guide.md)
 - [Rick Rubin subtraction explained](../../plugins/copernicus/skills/rick-rubin/references/guide.md)
+- [Odyseusz research basis](../../plugins/copernicus/skills/odyseusz/references/origins.md)
+- [Odyseusz evaluation set](../../plugins/copernicus/skills/odyseusz/references/evals.md)
 - [Planning explained](../../plugins/copernicus/skills/planning/references/guide.md)
 - [OKF Docs explained](../../plugins/copernicus/skills/okf-docs/references/guide.md)
 - [HTML reports explained](../../plugins/copernicus/skills/html-report/references/guide.md)
@@ -72,35 +77,37 @@ The complete explanations ship inside the installed plugin:
 - [Caveman contract](../../plugins/copernicus/skills/caveman/SKILL.md)
 - [Handoff contract](../../plugins/copernicus/skills/handoff/SKILL.md)
 
-## Why these twelve
+## Why these thirteen
 
-They address twelve different failure modes:
+They address thirteen different failure modes:
 
 1. **An unresolved plan** — Grill Me resolves one dependency-ordered decision at a time.
-2. **Too many possibilities** — subtraction reduces the search space.
-3. **A substantial plan that disappears with the session** — Planning keeps one
+2. **Brute force hiding leverage** — Odyseusz maps changing terrain, applies an
+   ethical gate, and tests one non-obvious mechanism before adding force.
+3. **Too many possibilities** — subtraction reduces the search space.
+4. **A substantial plan that disappears with the session** — Planning keeps one
    evidence-backed design and a validated workpack DAG while leaving focused
    changes in native Plan Mode.
-4. **One agent doing incompatible jobs** — Fleet separates bounded work and
+5. **One agent doing incompatible jobs** — Fleet separates bounded work and
    verification while keeping one accountable lead.
-5. **Machine output becoming human coordination work** — Breathe reduces deep
+6. **Machine output becoming human coordination work** — Breathe reduces deep
    map waves to the next human checkpoint while preserving expandable evidence and dissent.
-6. **Learning from unverified guesses** — Auto-Research freezes the regime,
+7. **Learning from unverified guesses** — Auto-Research freezes the regime,
    evaluates candidates, joins evidence, and updates memory only at a cycle
    boundary.
-7. **Knowledge too wide for text search** — OKF Docs queries complete YAML,
+8. **Knowledge too wide for text search** — OKF Docs queries complete YAML,
    traverses typed structural edges, and selects a reproducible evidence packet
    without replacing Markdown with a database.
-8. **Work that remains opaque after it is done** — HTML Report turns authorized,
+9. **Work that remains opaque after it is done** — HTML Report turns authorized,
    evaluated material into a standalone reader-first explanation without making a
    dashboard, hosted service, or new source of truth.
-9. **History becoming hindsight fiction** — Retrospective separates observed
+10. **History becoming hindsight fiction** — Retrospective separates observed
    evidence from inference, finds the first divergence, and proposes a check.
-10. **Implementation buried in machinery** — Ponytail traces the real flow, then
+11. **Implementation buried in machinery** — Ponytail traces the real flow, then
    stops at the earliest native or existing solution that fully holds.
-11. **Answers buried in prose** — Caveman compresses wording while retaining all
+12. **Answers buried in prose** — Caveman compresses wording while retaining all
    load-bearing technical and safety detail.
-12. **Context loss between sessions** — Handoff moves only current decision state
+13. **Context loss between sessions** — Handoff moves only current decision state
    and references the durable sources already in the workspace.
 
 No skill is authoritative by itself. Commands, tests, measurements, primary
@@ -115,8 +122,8 @@ codex plugin list
 ```
 
 Start a new Codex task after installation. In the app, open `/plugins`, select
-**Copernicus**, and inspect its twelve skills. Invoke them explicitly as
-`$grill-me`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`,
+**Copernicus**, and inspect its thirteen skills. Invoke them explicitly as
+`$grill-me`, `$odyseusz`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`,
 `$okf-docs`, `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
 
 ## Global companion resolution
@@ -136,6 +143,8 @@ and you need to force one. Copernicus does not claim to control host precedence.
 
 ```text
 Use $grill-me to resolve the highest-leverage unknowns one question at a time.
+Then use $odyseusz to find one ethical asymmetric mechanism and its cheapest
+reversible test.
 Then use $rick-rubin to reduce the options to the few that serve the named user.
 Use $planning when the remaining work is substantial or resumable: write one
 evidence-backed design, materialize tests when authorized, and validate the

@@ -18,7 +18,18 @@ class PluginTest(unittest.TestCase):
         manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 3)
-        self.assertEqual(len(list((ROOT / "skills").glob("*/SKILL.md"))), 12)
+        self.assertEqual(len(list((ROOT / "skills").glob("*/SKILL.md"))), 13)
+
+    def test_odyseusz_is_self_contained_metis_with_an_ethical_gate(self) -> None:
+        skill = (ROOT / "skills/odyseusz/SKILL.md").read_text()
+        origins = (ROOT / "skills/odyseusz/references/origins.md").read_text()
+        metadata = (ROOT / "skills/odyseusz/agents/openai.yaml").read_text()
+        for contract in ("TELOS", "TERRAIN", "CLEVER MOVE", "FIRST TEST", "DIRECT FALLBACK"):
+            self.assertIn(contract, skill)
+        self.assertIn("Do not optimize an unethical aim", skill)
+        self.assertIn("Aristotle", origins)
+        self.assertIn("Odyssey", origins)
+        self.assertIn("$odyseusz", metadata)
 
     def test_companions_are_self_contained_opt_in_fallbacks(self) -> None:
         for name in COMPANIONS:

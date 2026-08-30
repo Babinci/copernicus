@@ -1,7 +1,7 @@
 {
   "name": "copernicus",
-  "version": "0.9.0+codex.20260816091124",
-  "description": "Implementation-ready planning, GPT-only Fleet, Breathe briefs, SAS research, OKF v0.2 documentation traversal, HTML reports, evidence-backed retrospectives, subtraction, minimal implementation, and safe handoffs for Codex.",
+  "version": "0.10.0+codex.20260830111828",
+  "description": "Ethical metis, implementation-ready planning, GPT-only Fleet, Breathe briefs, SAS research, OKF v0.2 traversal, evidence-backed retrospectives, subtraction, minimal implementation, and safe handoffs for Codex.",
   "author": {
     "name": "Wojtek (Babinci)",
     "url": "https://github.com/Babinci"
@@ -23,6 +23,8 @@
     "checkpoint-brief",
     "grill-me",
     "retrospective",
+    "odyseusz",
+    "metis",
     "ponytail",
     "caveman",
     "handoff"
@@ -31,7 +33,7 @@
   "interface": {
     "displayName": "Copernicus",
     "shortDescription": "GPT-only research and practitioner workflows.",
-    "longDescription": "Twelve bundled Codex workflows resolve decisions, subtract weak branches, create validated test-first workpacks, execute bounded Sol/Terra/Luna work, compress deep investigations, learn through evaluated SAS cycles, traverse Google OKF v0.2 knowledge, explain evidence, review outcomes, minimize implementation, deliver terse answers, and transfer redacted session state.",
+    "longDescription": "Thirteen bundled Codex workflows resolve decisions, find ethical asymmetric leverage, subtract weak branches, create validated test-first workpacks, execute bounded Sol/Terra/Luna work, compress deep investigations, learn through evaluated SAS cycles, traverse Google OKF v0.2 knowledge, explain evidence, review outcomes, minimize implementation, deliver terse answers, and transfer redacted session state.",
     "developerName": "Wojtek (Babinci)",
     "category": "Productivity",
     "capabilities": [
@@ -39,7 +41,7 @@
     ],
     "websiteURL": "https://github.com/Babinci/copernicus",
     "defaultPrompt": [
-      "Use $planning to turn this substantial change into a validated, test-first workpack bundle.",
+      "Use $odyseusz to find one ethical leverage move, then $planning for substantial implementation.",
       "Use $fleet and $breathe for a bounded GPT-only investigation and checkpoint brief.",
       "Use $auto-research and $okf-docs for evaluated research and traversable knowledge."
     ]

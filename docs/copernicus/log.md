@@ -1,5 +1,12 @@
 # Copernicus documentation log
 
+## 2026-08-30
+
+- Added Odyseusz: a self-contained, source-grounded metis workflow for finding
+  one ethical asymmetric move, a reversible test, and an honorable fallback.
+- Added cross-host skill structure, OMP discovery, ethical-trap, marketing,
+  engineering, and research-compression evaluation contracts.
+
 ## 2026-08-18
 
 - Added opt-in, exact-origin Browser Use microphone and camera permissions for

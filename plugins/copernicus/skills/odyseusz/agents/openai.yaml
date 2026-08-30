@@ -1,0 +1,4 @@
+interface:
+  display_name: "Odyseusz"
+  short_description: "Find one ethical, non-obvious leverage move."
+  default_prompt: "Use $odyseusz to find the cleverest ethical move and its smallest reversible test."
