@@ -10,14 +10,16 @@ function warn(message, patchName) {
 function applyApiKeyModelVisibilityPatch(source) {
   const modelVisibilityPattern = new RegExp(
     `(function ${JS_IDENT}\\(\\{additionalAvailableModels:${JS_IDENT},authMethod:(${JS_IDENT}),` +
-      `availableModels:${JS_IDENT},isCustomModelProvider:(${JS_IDENT}),model:${JS_IDENT},` +
+      `availableModels:${JS_IDENT},hasConfiguredModelCatalog:${JS_IDENT},` +
+      `isCustomModelProvider:(${JS_IDENT}),model:${JS_IDENT},` +
       `useHiddenModels:(${JS_IDENT})\\}\\)\\{return[\\s\\S]{0,240}?)` +
       `\\4&&!\\3&&\\2!==\\\`amazonBedrock\\\`(?=\\?)`,
     "g",
   );
   const patchedVisibilityPattern = new RegExp(
     `function ${JS_IDENT}\\(\\{additionalAvailableModels:${JS_IDENT},authMethod:(${JS_IDENT}),` +
-      `availableModels:${JS_IDENT},isCustomModelProvider:(${JS_IDENT}),model:${JS_IDENT},` +
+      `availableModels:${JS_IDENT},hasConfiguredModelCatalog:${JS_IDENT},` +
+      `isCustomModelProvider:(${JS_IDENT}),model:${JS_IDENT},` +
       `useHiddenModels:(${JS_IDENT})\\}\\)\\{return[\\s\\S]{0,240}?` +
       `\\3&&!\\2&&\\1!==\\\`amazonBedrock\\\`&&\\1!==\\\`apikey\\\`/\\*${PATCH_MARKER}\\*/(?=\\?)`,
   );

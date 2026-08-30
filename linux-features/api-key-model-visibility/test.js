@@ -28,8 +28,8 @@ function applyPatchTwice(patchFn, source) {
 
 function modelCatalogFixture() {
   return [
-    "function Tti({additionalAvailableModels:e,authMethod:t,availableModels:n,isCustomModelProvider:r,model:i,useHiddenModels:a}){return e?.has(i.model)===!0||i.model!==`codex-auto-review`&&(a&&!r&&t!==`amazonBedrock`?n.has(i.model):!i.hidden)}",
-    "function vbe({authMethod:e,availableModels:t,defaultModel:n,models:a,useHiddenModels:o}){let s=[],c=null;return a.forEach(n=>{if(Tti({additionalAvailableModels:null,authMethod:e,availableModels:t,isCustomModelProvider:!1,model:n,useHiddenModels:o})){s.push(n),n.isDefault&&(c=n)}}),c??=s.find(e=>e.model===n)??null,{models:s,defaultModel:c}}",
+    "function Tti({additionalAvailableModels:e,authMethod:t,availableModels:n,hasConfiguredModelCatalog:s,isCustomModelProvider:r,model:i,useHiddenModels:a}){return e?.has(i.model)===!0||i.model!==`codex-auto-review`&&(s&&!i.hidden||(a&&!r&&t!==`amazonBedrock`?n.has(i.model):!i.hidden))}",
+    "function vbe({authMethod:e,availableModels:t,defaultModel:n,models:a,useHiddenModels:o}){let s=[],c=null;return a.forEach(n=>{if(Tti({additionalAvailableModels:null,authMethod:e,availableModels:t,hasConfiguredModelCatalog:!1,isCustomModelProvider:!1,model:n,useHiddenModels:o})){s.push(n),n.isDefault&&(c=n)}}),c??=s.find(e=>e.model===n)??null,{models:s,defaultModel:c}}",
   ].join("");
 }
 
