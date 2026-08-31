@@ -572,6 +572,43 @@ test("injected transport reclaims a dead owner's unbound socket inode", async ()
   }
 });
 
+test("injected transport reclaims an old unbound socket without a lock", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-ownerless-socket-"));
+  const socketPath = path.join(tempDir, "app-server.sock");
+  const stalePath = `${socketPath}.stale`;
+  const server = await listenUnix(socketPath);
+  fs.renameSync(socketPath, stalePath);
+  await closeServer(server);
+  fs.renameSync(stalePath, socketPath);
+  const old = new Date(Date.now() - 60_000);
+  fs.utimesSync(socketPath, old, old);
+  const { Transport } = loadInjectedTransport({ spawnImpl: () => fakeChild() });
+  const transport = new Transport(socketPath);
+  try {
+    await transport.acquireOwnership();
+    assert.equal(fs.existsSync(socketPath), false);
+    transport.releaseOwnedPaths();
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("injected transport preserves a live socket without a lock", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-live-ownerless-socket-"));
+  const socketPath = path.join(tempDir, "app-server.sock");
+  const server = await listenUnix(socketPath);
+  const old = new Date(Date.now() - 60_000);
+  fs.utimesSync(socketPath, old, old);
+  const { Transport } = loadInjectedTransport({ spawnImpl: () => fakeChild() });
+  try {
+    await assert.rejects(new Transport(socketPath).acquireOwnership(), /path already exists/);
+    assert.equal(fs.lstatSync(socketPath).isSocket(), true);
+  } finally {
+    await closeServer(server);
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("injected transport reclaims an old legacy lock but preserves a recent one", async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-legacy-lock-"));
   const socketPath = path.join(tempDir, "app-server.sock");
