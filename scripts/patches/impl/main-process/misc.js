@@ -356,31 +356,6 @@ function applyLinuxGitOriginsSourceFallbackPatch(currentSource) {
   return currentSource;
 }
 
-function applyLinuxOwlFeatureBindingFallbackPatch(currentSource) {
-  if (!currentSource.includes("electron_common_owl_features")) {
-    return currentSource;
-  }
-  if (currentSource.includes("/*codexLinuxOwlFeatureBindingFallback*/")) {
-    return currentSource;
-  }
-
-  const loaderRegex =
-    /let ([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\.parse\(([A-Za-z_$][\w$]*)\.parse\(process\._linkedBinding\)\.call\(process,([A-Za-z_$][\w$]*)\)\);/u;
-  const match = currentSource.match(loaderRegex);
-  if (match == null) {
-    console.warn(
-      "WARN: Could not find Owl feature binding loader - skipping Linux Owl feature fallback patch",
-    );
-    return currentSource;
-  }
-
-  const [, bindingVar, schemaVar, functionSchemaVar, bindingNameVar] = match;
-  return currentSource.replace(
-    loaderRegex,
-    `let ${bindingVar};try{/*codexLinuxOwlFeatureBindingFallback*/${bindingVar}=${schemaVar}.parse(${functionSchemaVar}.parse(process._linkedBinding).call(process,${bindingNameVar}))}catch(t){if(process.platform===\`linux\`&&(typeof process._linkedBinding!=\`function\`||String(t?.message??t).includes(\`No such binding was linked\`)))return!1;throw t}`,
-  );
-}
-
 function applyLinuxOwlAppShellGuardPatch(currentSource) {
   const guard = "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
   const patchedGuard = "if(process.platform===`linux`){a.app.setDebugChromePagesEnabled??=()=>{};a.app.setRuntimeFeatures??=()=>{};a.BrowserWindow.isInputShapeSupported??=()=>!1;a.BrowserWindow.isSystemBackdropSupported??=()=>!1}else if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
@@ -400,7 +375,7 @@ function applyLinuxOwlPreferredLanguagesPatch(currentSource) {
   return currentSource.replace(".setPreferredLanguages(", ".setPreferredLanguages?.(");
 }
 
-function patchLinuxOwlFeatureBindingFallbackAssets(extractedDir) {
+function patchLinuxOwlCompatibilityAssets(extractedDir) {
   const buildDir = path.join(extractedDir, ".vite", "build");
   if (!fs.existsSync(buildDir)) {
     return { matched: 0, changed: 0 };
@@ -414,28 +389,26 @@ function patchLinuxOwlFeatureBindingFallbackAssets(extractedDir) {
     .filter((candidate) => {
       try {
         const source = fs.readFileSync(candidate, "utf8");
-        return source.includes("electron_common_owl_features") ||
-          source.includes("requires the Owl app shell") ||
-          source.includes(".setPreferredLanguages(");
+        return source.includes("requires the Owl app shell") ||
+          source.includes(".setPreferredLanguages(") ||
+          source.includes(".setPreferredLanguages?.(");
       } catch {
         return false;
       }
     });
 
   let changed = 0;
-  let bindingMatched = 0;
   let shellMatched = 0;
   let preferredLanguagesMatched = 0;
   const pendingWrites = [];
   for (const candidate of candidates) {
     const currentSource = fs.readFileSync(candidate, "utf8");
-    if (currentSource.includes("electron_common_owl_features")) bindingMatched += 1;
     if (currentSource.includes("requires the Owl app shell")) shellMatched += 1;
     if (currentSource.includes(".setPreferredLanguages(") || currentSource.includes(".setPreferredLanguages?.(")) {
       preferredLanguagesMatched += 1;
     }
     const patchedSource = applyLinuxOwlPreferredLanguagesPatch(
-      applyLinuxOwlAppShellGuardPatch(applyLinuxOwlFeatureBindingFallbackPatch(currentSource)),
+      applyLinuxOwlAppShellGuardPatch(currentSource),
     );
     if (patchedSource !== currentSource) {
       changed += 1;
@@ -446,7 +419,7 @@ function patchLinuxOwlFeatureBindingFallbackAssets(extractedDir) {
     fs.writeFileSync(filePath, patchedSource, "utf8");
   }
 
-  return { matched: candidates.length, changed, bindingMatched, shellMatched, preferredLanguagesMatched };
+  return { matched: candidates.length, changed, shellMatched, preferredLanguagesMatched };
 }
 
 function applyLinuxRemoteControlConfigPreservationPatch(currentSource) {
@@ -603,9 +576,8 @@ module.exports = {
   applyLinuxTerminalHostEnvironmentPatch,
   applyLinuxTerminalUserPathPatch,
   applyLinuxLocalAppServerFeatureEnablementHandlerPatch,
-  applyLinuxOwlFeatureBindingFallbackPatch,
   applyLinuxWorkerFileManagerPatch,
-  patchLinuxOwlFeatureBindingFallbackAssets,
+  patchLinuxOwlCompatibilityAssets,
   patchLinuxHostProcessEnvironmentTargets,
   patchLinuxWorkerFileManagerTarget,
   applyLinuxRemoteControlConfigPreservationPatch,

@@ -102,7 +102,6 @@ const {
   applyLinuxGitOriginsSourceFallbackPatch,
   applyLinuxLocalAppServerFeatureEnablementHandlerPatch,
   applyLinuxOwlAppShellGuardPatch,
-  applyLinuxOwlFeatureBindingFallbackPatch,
   applyLinuxOwlPreferredLanguagesPatch,
   applyLinuxRemoteControlConfigPreservationPatch,
   applyLinuxTerminalHostEnvironmentPatch,
@@ -110,7 +109,7 @@ const {
   applyLinuxWorkerFileManagerPatch,
   applyLinuxXdgDocumentsDirPatch,
   applyLinuxX11ProjectPickerPatch,
-  patchLinuxOwlFeatureBindingFallbackAssets,
+  patchLinuxOwlCompatibilityAssets,
   patchLinuxHostProcessEnvironmentTargets,
 } = require("./patches/impl/main-process/misc.js");
 const {
@@ -995,7 +994,7 @@ test("default core patch descriptors are grouped and unique", () => {
     "linux-set-icon",
     "linux-resize-repaint",
     "linux-opaque-background",
-    "linux-owl-feature-binding-fallback",
+    "linux-owl-compatibility",
     "linux-avatar-overlay-mouse-passthrough",
     "linux-browser-use-availability",
     "linux-browser-use-non-local-navigation",
@@ -1072,7 +1071,7 @@ test("default core patch descriptors are grouped and unique", () => {
     "extracted-app:post-webview",
   );
   assert.equal(
-    descriptors.find((descriptor) => descriptor.id === "linux-owl-feature-binding-fallback")?.phase,
+    descriptors.find((descriptor) => descriptor.id === "linux-owl-compatibility")?.phase,
     "extracted-app:pre-webview",
   );
   assert.match(
@@ -1402,7 +1401,7 @@ function beforeQuitConfirmationBundleFixture() {
 
 function willQuitDrainBundleFixture() {
   return [
-    "l.app.on(`will-quit`,e=>{if(y=!0,v)return;let t=()=>{U5(h,N5).then(()=>{g.dispose(),l.app.quit()})};if(r.shouldSkipDrainBeforeQuit()){e.preventDefault(),v=!0,c.dispose(),u.dispose(),Promise.allSettled([d.flush(),p(),m()]).then(t);return}e.preventDefault(),v=!0,c.dispose(),u.dispose(),Promise.allSettled([d.flush(),f.flush(),p(),m()]).then(t)});",
+    "l.app.on(`will-quit`,e=>{if(y=!0,v)return;z&&l.app.isPackaged&&q5();let t=()=>{U5(h,N5).then(()=>{g.dispose(),l.app.quit()})};if(r.shouldSkipDrainBeforeQuit()){e.preventDefault(),v=!0,c.dispose(),u.dispose(),Promise.allSettled([d.flush(),p(),m()]).then(t);return}e.preventDefault(),v=!0,c.dispose(),u.dispose(),Promise.allSettled([d.flush(),f.flush(),p(),m()]).then(t)});",
   ].join("");
 }
 
@@ -1454,6 +1453,7 @@ async function runPatchedLinuxWillQuit(options = {}) {
     h: {},
     l: {
       app: {
+        isPackaged: false,
         exit(exitCode) {
           state.exitCalls += 1;
           state.exitCodes.push(exitCode);
@@ -1473,6 +1473,7 @@ async function runPatchedLinuxWillQuit(options = {}) {
     p: options.stopCodexMicro ?? (() => Promise.resolve()),
     process: { platform: options.platform ?? "linux" },
     Promise,
+    q5() {},
     r: {
       shouldSkipDrainBeforeQuit() {
         return options.shouldSkipDrain === true;
@@ -1482,6 +1483,7 @@ async function runPatchedLinuxWillQuit(options = {}) {
     u: lifecycleManager,
     v: false,
     y: false,
+    z: false,
   };
   if (options.omitQuitStateHelper === true) {
     delete context.codexLinuxIsQuitInProgress;
@@ -10801,59 +10803,7 @@ test("adds a fallback source for renderer git-origins requests without weakening
   assert.match(patched, /throw Error\(`Missing git operation source for \$\{r\}`\)/);
 });
 
-test("falls back when Electron Owl feature binding is absent on Linux", () => {
-  const source =
-    "var Ye=`electron_common_owl_features`,Fe={parse:e=>{if(typeof e!=`function`)throw Error(`Expected function`);return e}},Ge={parse:e=>e};function Qe(e){let t=Ge.parse(Fe.parse(process._linkedBinding).call(process,Ye));try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}";
-
-  const patched = applyPatchTwice(applyLinuxOwlFeatureBindingFallbackPatch, source);
-
-  assert.match(patched, /codexLinuxOwlFeatureBindingFallback/);
-  assert.match(patched, /No such binding was linked/);
-  assert.match(patched, /return!1/);
-  assert.match(patched, /throw t/);
-
-  const sandbox = {
-    process: {
-      platform: "linux",
-      _linkedBinding() {
-        throw new Error("No such binding was linked: electron_common_owl_features");
-      },
-    },
-    result: null,
-  };
-  vm.createContext(sandbox);
-  vm.runInContext(`${patched};result=Qe(\`SomeOwlFlag\`);`, sandbox);
-
-  assert.equal(sandbox.result, false);
-});
-
-test("preserves real Electron Owl feature binding when available", () => {
-  const source =
-    "var Ye=`electron_common_owl_features`,Fe={parse:e=>e},Ge={parse:e=>e};function Qe(e){let t=Ge.parse(Fe.parse(process._linkedBinding).call(process,Ye));try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}";
-
-  const patched = applyPatchTwice(applyLinuxOwlFeatureBindingFallbackPatch, source);
-  const sandbox = {
-    process: {
-      platform: "linux",
-      _linkedBinding(name) {
-        assert.equal(name, "electron_common_owl_features");
-        return { isOwlFeatureEnabled: (feature) => feature === "EnabledOwlFlag" };
-      },
-    },
-    enabled: null,
-    disabled: null,
-  };
-  vm.createContext(sandbox);
-  vm.runInContext(
-    `${patched};enabled=Qe(\`EnabledOwlFlag\`);disabled=Qe(\`OtherOwlFlag\`);`,
-    sandbox,
-  );
-
-  assert.equal(sandbox.enabled, true);
-  assert.equal(sandbox.disabled, false);
-});
-
-test("patches Electron Owl feature binding fallback outside the main bundle", () => {
+test("patches current Electron Owl compatibility outside the main bundle", () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "codex-owl-feature-build-"));
   try {
     const buildDir = path.join(tempRoot, ".vite", "build");
@@ -10862,7 +10812,7 @@ test("patches Electron Owl feature binding fallback outside the main bundle", ()
     const bootstrapPath = path.join(buildDir, "bootstrap-test.js");
     fs.writeFileSync(
       bundlePath,
-      "var Ye=`electron_common_owl_features`,Fe={parse:e=>e},Ge={parse:e=>e};function Qe(e){let t=Ge.parse(Fe.parse(process._linkedBinding).call(process,Ye));try{return t.isOwlFeatureEnabled(e)}catch(e){if(e instanceof Error&&e.message.startsWith(`Unsupported Owl feature:`))return!1;throw e}}function Kl(e){Jl(`app`).setPreferredLanguages(e)}",
+      "function Kl(e){Jl(`app`).setPreferredLanguages(e)}",
       "utf8",
     );
     fs.writeFileSync(
@@ -10871,23 +10821,20 @@ test("patches Electron Owl feature binding fallback outside the main bundle", ()
       "utf8",
     );
 
-    assert.deepEqual(patchLinuxOwlFeatureBindingFallbackAssets(tempRoot), {
+    assert.deepEqual(patchLinuxOwlCompatibilityAssets(tempRoot), {
       matched: 2,
       changed: 2,
-      bindingMatched: 1,
       shellMatched: 1,
       preferredLanguagesMatched: 1,
     });
-    assert.match(fs.readFileSync(bundlePath, "utf8"), /codexLinuxOwlFeatureBindingFallback/);
     assert.match(fs.readFileSync(bundlePath, "utf8"), /setPreferredLanguages\?\./);
     assert.match(
       fs.readFileSync(bootstrapPath, "utf8"),
       /process\.platform===`linux`\)\{a\.app\.setDebugChromePagesEnabled\?\?=/,
     );
-    assert.deepEqual(patchLinuxOwlFeatureBindingFallbackAssets(tempRoot), {
+    assert.deepEqual(patchLinuxOwlCompatibilityAssets(tempRoot), {
       matched: 2,
       changed: 0,
-      bindingMatched: 1,
       shellMatched: 1,
       preferredLanguagesMatched: 1,
     });
@@ -11361,8 +11308,8 @@ test("patch report marks missing required package metadata as required failure",
   }
 });
 
-test("patch report marks missing Owl feature binding bundle as required failure", () => {
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "codex-patch-report-missing-owl-feature-"));
+test("patch report marks missing Owl compatibility bundles as required failure", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "codex-patch-report-missing-owl-compatibility-"));
   try {
     const buildDir = path.join(tempRoot, ".vite", "build");
     fs.mkdirSync(buildDir, { recursive: true });
@@ -11372,12 +11319,12 @@ test("patch report marks missing Owl feature binding bundle as required failure"
     const report = createPatchReport();
     captureWarns(() => patchExtractedApp(tempRoot, { report }));
 
-    const owlPatch = report.patches.find((patch) => patch.name === "linux-owl-feature-binding-fallback");
+    const owlPatch = report.patches.find((patch) => patch.name === "linux-owl-compatibility");
     assert.equal(owlPatch.status, "failed-required");
     assert.match(owlPatch.reason, /Owl compatibility contract missing/);
     assert.ok(
       validateReport(report, "upstream-build").some((failure) =>
-        failure.startsWith("linux-owl-feature-binding-fallback: failed-required"),
+        failure.startsWith("linux-owl-compatibility: failed-required"),
       ),
     );
   } finally {

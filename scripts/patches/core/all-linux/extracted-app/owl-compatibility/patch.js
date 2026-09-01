@@ -4,21 +4,20 @@ const {
   extractedAppPatch,
 } = require("../../../../descriptor.js");
 const { patchStatusFromChange } = require("../../../../../lib/patch-report.js");
-const { patchLinuxOwlFeatureBindingFallbackAssets } = require("../../../../impl/main-process/misc.js");
+const { patchLinuxOwlCompatibilityAssets } = require("../../../../impl/main-process/misc.js");
 
 module.exports = extractedAppPatch({
-  id: "linux-owl-feature-binding-fallback",
+  id: "linux-owl-compatibility",
   phase: "extracted-app:pre-webview",
   order: 190,
   ciPolicy: "required-upstream",
-  apply: patchLinuxOwlFeatureBindingFallbackAssets,
+  apply: patchLinuxOwlCompatibilityAssets,
   status: (result, warnings) => ({
-    status: result?.bindingMatched === 0 || result?.shellMatched === 0 || result?.preferredLanguagesMatched === 0
+    status: result?.shellMatched === 0 || result?.preferredLanguagesMatched === 0
       ? "failed-required"
       : patchStatusFromChange(Boolean(result?.changed), warnings, "required-upstream"),
-    reason: result?.bindingMatched === 0 || result?.shellMatched === 0 || result?.preferredLanguagesMatched === 0
+    reason: result?.shellMatched === 0 || result?.preferredLanguagesMatched === 0
       ? `Owl compatibility contract missing: ${[
-          result?.bindingMatched === 0 ? "feature binding" : null,
           result?.shellMatched === 0 ? "app shell guard" : null,
           result?.preferredLanguagesMatched === 0 ? "preferred languages" : null,
         ].filter(Boolean).join(", ")}`

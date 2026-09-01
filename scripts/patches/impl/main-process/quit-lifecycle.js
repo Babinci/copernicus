@@ -34,7 +34,7 @@ function linuxExplicitQuitExpression() {
 function parseCurrentWillQuitDrainBody(body, eventVar, listenerElectronVar) {
   const identifier = "[A-Za-z_$][\\w$]*";
   const outerMatch = body.match(new RegExp(
-    `^if\\((?<quitting>${identifier})=!0,(?<draining>${identifier})\\)return;let (?<upstreamFinalize>${identifier})=\\(\\)=>\\{(?<finalizer>[^;]+)\\};if\\((?<quitController>${identifier})\\.shouldSkipDrainBeforeQuit\\(\\)\\)\\{(?<reduced>[^;]+);return\\}(?<full>.+)$`,
+    `^if\\((?<quitting>${identifier})=!0,(?<draining>${identifier})\\)return;(?<updateGate>${identifier})&&(?<updateElectron>${identifier})\\.app\\.isPackaged&&(?<updateCleanup>${identifier})\\(\\);let (?<upstreamFinalize>${identifier})=\\(\\)=>\\{(?<finalizer>[^;]+)\\};if\\((?<quitController>${identifier})\\.shouldSkipDrainBeforeQuit\\(\\)\\)\\{(?<reduced>[^;]+);return\\}(?<full>.+)$`,
   ));
   if (outerMatch?.groups == null) {
     return null;
@@ -58,6 +58,7 @@ function parseCurrentWillQuitDrainBody(body, eventVar, listenerElectronVar) {
   const reduced = reducedMatch.groups;
   const full = fullMatch.groups;
   if (
+    outer.updateElectron !== listenerElectronVar ||
     finalizer.electron !== listenerElectronVar ||
     reduced.event !== eventVar ||
     full.event !== eventVar ||
