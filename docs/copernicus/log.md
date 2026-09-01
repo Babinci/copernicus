@@ -1,5 +1,14 @@
 # Copernicus documentation log
 
+## 2026-09-01
+
+- Reconciled the README feature matrix with all 34 tracked opt-in descriptors,
+  adding Browser OAuth popups, shallow repository watches, and the shared
+  app-server socket.
+- Corrected onboarding and architecture documentation to include all thirteen
+  plugin skills, including Odyseusz, and clarified the current upstream
+  `ChatGPT.dmg` versus local `Codex.dmg` naming.
+
 ## 2026-08-30
 
 - Added Odyseusz: a self-contained, source-grounded metis workflow for finding

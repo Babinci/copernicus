@@ -9,7 +9,7 @@
 </p>
 
 Copernicus is an unofficial, local-build Linux wrapper for
-[OpenAI ChatGPT Desktop](https://chatgpt.com/features/desktop/) and an installable
+[OpenAI ChatGPT Desktop](https://chatgpt.com/download/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
 pipeline with thirteen deliberately small workflows:
 
@@ -128,6 +128,9 @@ installer downloads or reuses the DMG, extracts the Electron app, applies Linux
 compatibility patches, rebuilds native modules, stages the Linux runtime, and
 packages the result. Optional Linux-only integrations live in `linux-features/`
 and stay disabled unless you enable them before building.
+
+OpenAI currently publishes the upstream file as `ChatGPT.dmg`; Copernicus caches
+that same download locally as `Codex.dmg` for compatibility with its build tools.
 
 For native packages and AppImage self-builds, start from a checkout:
 
@@ -305,11 +308,13 @@ workarounds.
 | Linux AppShots | Opt-in | `appshots` | [Docs](linux-features/appshots/README.md) |
 | Authenticated proxy | Opt-in | `authenticated-proxy` | [Docs](linux-features/authenticated-proxy/README.md) |
 | Browser media permissions | Opt-in | `browser-media-permissions` | [Docs](linux-features/browser-media-permissions/README.md) |
+| Built-in Browser OAuth popups | Opt-in | `browser-oauth-popups` | [Docs](linux-features/browser-oauth-popups/README.md) |
 | Wrapper updater button | Opt-in | `codex-wrapper-updater` | [Docs](linux-features/codex-wrapper-updater/README.md) |
 | Codex Micro (USB-C / Bluetooth) | Opt-in | `codex-micro` | [Docs](linux-features/codex-micro/README.md) |
 | Conversation mode | Opt-in | `conversation-mode` | [Docs](linux-features/conversation-mode/README.md) |
 | Copilot reasoning effort defaults | Opt-in | `copilot-reasoning-effort` | [Docs](linux-features/copilot-reasoning-effort/README.md) |
 | Directory-only working-tree watch | Opt-in | `directory-only-working-tree-watch` | [Docs](linux-features/directory-only-working-tree-watch/README.md) |
+| Shallow Linux repository watches | Opt-in alternative | `shallow-repository-watches` | [Docs](linux-features/shallow-repository-watches/README.md) |
 | Example Linux Feature | Developer example | `example-feature` | [Docs](linux-features/example-feature/README.md) |
 | Frameless titlebar | Opt-in | `frameless-titlebar` | [Docs](linux-features/frameless-titlebar/README.md) |
 | Global Dictation | Opt-in | `global-dictation` | [Docs](linux-features/global-dictation/README.md) |
@@ -325,6 +330,7 @@ workarounds.
 | Read Aloud MCP | Opt-in | `read-aloud-mcp` | [Docs](linux-features/read-aloud-mcp/README.md) |
 | Remote Control UI gates | Opt-in | `remote-control-ui` | [Docs](linux-features/remote-control-ui/README.md) |
 | Experimental Remote Mobile Control | Opt-in | `remote-mobile-control` | [Docs](linux-features/remote-mobile-control/README.md) |
+| Shared app-server socket | Opt-in | `shared-app-server-socket` | [Docs](linux-features/shared-app-server-socket/README.md) |
 | SSH command wrapper | Opt-in | `ssh-command-wrapper` | [Docs](linux-features/ssh-command-wrapper/README.md) |
 | Thorium Chrome Plugin Support | Opt-in | `thorium-chrome-plugin` | [Docs](linux-features/thorium-chrome-plugin/README.md) |
 | UI tweaks | Opt-in | `ui-tweaks` | [Docs](linux-features/ui-tweaks/README.md) |
@@ -480,9 +486,10 @@ and native packages are composite outputs containing upstream proprietary
 software; they are not MIT-licensed as a whole.
 
 This repository and its releases do not redistribute the upstream DMG or a
-converted OpenAI application package. Users must obtain their own authorized copy of Codex
-Desktop through OpenAI's official channels. The build process performs a local
-Linux compatibility conversion on the user's own copy so it can run on Linux.
+converted OpenAI application package. Users must obtain their own authorized
+copy of ChatGPT Desktop through OpenAI's official channels. The build process
+performs a local Linux compatibility conversion on the user's own copy so it
+can run on Linux.
 In practice, it automates the conversion process that users perform on their
 own copies.
 

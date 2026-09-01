@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # Copernicus
 
-Copernicus is a local-build Linux Desktop fork plus an installable GPT-only
+Copernicus is a local-build Linux Desktop adaptation plus an installable GPT-only
 problem-solving plugin.
 
 ## Start here

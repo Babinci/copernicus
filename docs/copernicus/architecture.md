@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Copernicus architecture
-description: Product boundaries and data flow for the Linux wrapper, durable Planning workpacks, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and traversable OKF memory.
-tags: [copernicus, planning, workpacks, fleet, breathe, sas, okf, okf-docs, retrospective, architecture]
-generated: { by: "copernicus/0.9.0", at: 2026-08-15T21:52:03+02:00 }
+description: Product boundaries and data flow for the Linux wrapper, Odysean metis, durable Planning workpacks, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and traversable OKF memory.
+tags: [copernicus, odyseusz, metis, planning, workpacks, fleet, breathe, sas, okf, okf-docs, retrospective, architecture]
+generated: { by: "copernicus/0.10.0", at: 2026-09-01T10:22:14+02:00 }
 ---
 
 # Copernicus architecture
@@ -15,7 +15,8 @@ authentication, sandbox, plugin, or Scheduled-task surfaces.
 flowchart TD
     U["Human in ChatGPT Desktop or Codex"] --> P["Copernicus plugin"]
     P --> Q["Grill Me: resolve decisions"]
-    Q --> R
+    Q --> L["Odyseusz: find ethical leverage"]
+    L --> R
     P --> R["Rick Rubin: subtract"]
     R --> W["Planning: design + workpack DAG"]
     W --> F
