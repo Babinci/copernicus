@@ -44,13 +44,17 @@ const {
   applyEnglishReasoningLabels,
 } = require("./patches/reasoning-effort-labels.js");
 const {
+  COLOR_ATTRIBUTE: THREAD_COLOR_ATTRIBUTE,
   INITIAL_ASSET_PATTERN: THREAD_COLOR_INITIAL_ASSET_PATTERN,
   PRIMARY_ASSET_PATTERN: THREAD_COLOR_PRIMARY_ASSET_PATTERN,
   STATE_MARKER: THREAD_COLOR_STATE_MARKER,
+  STYLE_ID: THREAD_COLOR_STYLE_ID,
+  THREAD_COLORS,
   UI_MARKER: THREAD_COLOR_UI_MARKER,
   applySidebarThreadColorStatePatch,
   applySidebarThreadColorUiPatch,
   descriptors: threadColorDescriptors,
+  sidebarThreadColorCss,
 } = require("./patches/sidebar-thread-color.js");
 const {
   RUNTIME_MARKER: FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER,
@@ -74,17 +78,17 @@ function modelPickerStateBundleFixture() {
 }
 
 function sidebarThreadColorStateBundleFixture() {
-  return [
+  return `${[
     "Pan=ro(Q,(e,{get:t})=>e==null?null:im(t,tu.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
     "async function rm(e,t,n,r){return fetch(`set-global-state`,{params:{key:t,value:n}})}",
-  ].join("");
+  ].join("")}\n//# sourceMappingURL=app-initial-current.js.map`;
 }
 
 function sidebarThreadColorUiBundleFixture() {
   return [
-    "function vwn({scope:e,target:t,actions:n,onRename:r,onArchive:i,surface:o}){let{conversationId:f}=t,S=!1,D=jQ({rename:S?void 0:{id:`rename-thread`,onSelect:r}}),O=o!==`sidebar`||S?[]:[...UCn([])];if(o===`header`)O.push({message:iv({id:`threadHeader.openSideChat`})});return[D,O]}",
+    "function SAn({scope:e,target:t,actions:n,onRename:r,onArchive:i,executeAction:a,surface:o}){let{conversationId:m,hostId:h,cwd:g}=t,w=!1,k=zZ({rename:w?void 0:{id:`rename-thread`,onSelect:r}}),A=o!==`sidebar`||w?[]:[...Zkn([])];if(o===`header`)A.push({message:Zy({id:`threadHeader.openSideChat`})});return[k,A]}",
     "function fTn(e){let{conversationId:n,labelColor:u}=e,C=u===void 0?null:u,T=rC(Rh),w={},U=``;let Fe=()=>{QC(T,wxn,{conversationId:n,initialValue:U??``,initialColor:null,showColorPicker:!1,onSave:(e,t)=>{ie({conversationId:n,hostId:w?.hostId,previousTitle:U??void 0,title:e})}})};return Fe}",
-    "function BTn(e){let t=[],n={kind:`local`,conversationId:`one`,modelProvider:null},se=n.conversationId,Ce=pE(_Pe,se),rt;t[136]!==Ce||t[137]!==null?(rt=()=>jsx(fTn,{labelColor:null,modelProvider:n?.modelProvider}),t[136]=Ce,t[137]=null,t[158]=rt):rt=t[158];return rt}",
+    "function Ljn(e){let t=[],n={kind:`local`,conversationId:`one`,modelProvider:null},de=n.conversationId,De=M_(fIe,de),ot;t[144]!==De||t[145]!==null||t[146]!==n?(ot=()=>jsx(fTn,{labelColor:null,modelProvider:n?.modelProvider,dataAttributes:vo.sidebarThreadRow({active:l,hostId:m,id:d,kind:`local`,pinned:i,selected:a,title:void 0})}),t[144]=De,t[145]=null,t[146]=n,t[167]=ot):ot=t[167];return ot}",
   ].join("");
 }
 
@@ -468,12 +472,24 @@ test("sidebar thread colors patch the current split bundles once", () => {
   const patchedInitial = applySidebarThreadColorStatePatch(initial, context);
   const patchedPrimary = applySidebarThreadColorUiPatch(primary, context);
   assert.match(patchedInitial, new RegExp(THREAD_COLOR_STATE_MARKER));
+  assert.match(
+    patchedInitial,
+    /sourceMappingURL=app-initial-current\.js\.map\n;globalThis\.codexLinuxSetSidebarThreadColor/,
+  );
+  assert.match(patchedInitial, new RegExp(THREAD_COLOR_STYLE_ID));
+  assert.match(patchedInitial, new RegExp(THREAD_COLOR_ATTRIBUTE));
+  assert.ok(patchedInitial.includes(JSON.stringify(sidebarThreadColorCss())));
   assert.match(patchedPrimary, new RegExp(THREAD_COLOR_UI_MARKER.replace(/[/*]/g, "\\$&")));
-  assert.match(patchedPrimary, /labelColor:Ce/);
-  assert.match(patchedPrimary, /initialColor:C,showColorPicker:!0/);
-  assert.match(patchedPrimary, /codexLinuxSetSidebarThreadColor\?\.\(T,n,t\)/);
+  assert.match(patchedPrimary, /labelColor:De/);
+  assert.match(patchedPrimary, /submenu:/);
+  assert.match(patchedPrimary, new RegExp(THREAD_COLOR_ATTRIBUTE));
   assert.match(patchedPrimary, /defaultMessage:`Change chat color…`/);
-  assert.match(patchedPrimary, /t\[136\]!==Ce\|\|t\[137\]!==Ce/);
+  assert.match(patchedPrimary, /t\[144\]!==De\|\|t\[145\]!==De/);
+  for (const { id, label, value } of THREAD_COLORS) {
+    assert.match(patchedPrimary, new RegExp(`change-thread-color-${id}`));
+    assert.match(patchedPrimary, new RegExp(label));
+    assert.match(patchedPrimary, new RegExp(value));
+  }
   assert.equal(applySidebarThreadColorStatePatch(patchedInitial, context), patchedInitial);
   assert.equal(applySidebarThreadColorUiPatch(patchedPrimary, context), patchedPrimary);
   assert.doesNotThrow(() => new Function(patchedInitial));
@@ -550,7 +566,7 @@ test("sidebar thread color drift warns and remains byte-identical", () => {
 
   assert.equal(value, source);
   assert.equal(warnings.length, 1);
-  assert.match(warnings[0], /current sidebar row and rename dialog/);
+  assert.match(warnings[0], /current sidebar row and menu/);
 });
 
 test("patch injects sidebar project-name stylesheet runtime once", () => {
