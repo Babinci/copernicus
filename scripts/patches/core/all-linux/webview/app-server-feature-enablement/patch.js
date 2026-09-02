@@ -5,6 +5,7 @@ const {
 } = require("../../../../descriptor.js");
 const {
   applyLinuxAppServerFeatureEnablementPatch,
+  applyLinuxCodexAppMcpTransportGuardPatch,
 } = require("../../../../impl/webview/index.js");
 
 module.exports = [
@@ -17,5 +18,15 @@ module.exports = [
     missingDescription: "webview app main bundle",
     skipDescription: "app-server feature enablement compatibility patch",
     apply: applyLinuxAppServerFeatureEnablementPatch,
+  }),
+  webviewAssetPatch({
+    id: "linux-codex-app-mcp-transport-guard",
+    phase: "webview-asset",
+    order: 1041,
+    ciPolicy: "required-upstream",
+    pattern: /^app-initial-.*\.js$/,
+    missingDescription: "Codex app MCP config webview bundle",
+    skipDescription: "transport-less Codex app MCP config guard",
+    apply: applyLinuxCodexAppMcpTransportGuardPatch,
   }),
 ];

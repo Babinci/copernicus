@@ -36,13 +36,41 @@ test("browser media permission is opt-in and exact-origin only", () => {
 
   let granted;
   context.globalThis.handlers.request(
-    {},
+    {
+      isCapturingUserMedia() {},
+      isCapturingCamera() {},
+      isCapturingMicrophone() {},
+    },
     "media",
     (value) => { granted = value; },
     { securityOrigin: "http://localhost:39137/path" },
   );
   assert.equal(granted, true);
-  assert.equal(context.globalThis.handlers.check({}, "media", "https://denied.test", {}), false);
+  context.globalThis.handlers.request(
+    {
+      __codexLinuxOwlCaptureFallback: true,
+      isCapturingUserMedia() {},
+      isCapturingCamera() {},
+      isCapturingMicrophone() {},
+    },
+    "media",
+    (value) => { granted = value; },
+    { securityOrigin: "http://localhost:39137/path" },
+  );
+  assert.equal(granted, false);
+  context.globalThis.handlers.request(
+    {},
+    "media",
+    (value) => { granted = value; },
+    { securityOrigin: "http://localhost:39137/path" },
+  );
+  assert.equal(granted, false);
+  assert.equal(context.globalThis.handlers.check({}, "media", "http://localhost:39137", {}), false);
+  assert.equal(context.globalThis.handlers.check({
+    isCapturingUserMedia() {},
+    isCapturingCamera() {},
+    isCapturingMicrophone() {},
+  }, "media", "https://denied.test", {}), false);
   assert.equal(
     context.globalThis.handlers.check({}, "display-capture", "http://localhost:39137", {}),
     false,

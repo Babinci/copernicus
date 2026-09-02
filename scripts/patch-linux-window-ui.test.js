@@ -102,7 +102,9 @@ const {
   applyLinuxGitOriginsSourceFallbackPatch,
   applyLinuxLocalAppServerFeatureEnablementHandlerPatch,
   applyLinuxOwlAppShellGuardPatch,
+  applyLinuxOwlDownloadHistoryPatch,
   applyLinuxOwlPreferredLanguagesPatch,
+  applyLinuxOwlWebContentsCapturePatch,
   applyLinuxRemoteControlConfigPreservationPatch,
   applyLinuxTerminalHostEnvironmentPatch,
   applyLinuxTerminalUserPathPatch,
@@ -179,6 +181,7 @@ const {
   applyPersistentRateLimitFooterPatch,
   applyLinuxAppServerBackfillWaitPatch,
   applyLinuxAppServerFeatureEnablementPatch,
+  applyLinuxCodexAppMcpTransportGuardPatch,
   applyAutomationUpdateEagerToolPatch,
   applyLinuxAppSunsetPatch,
   applyLinuxBrowserUseAvailabilityPatch,
@@ -1039,6 +1042,7 @@ test("default core patch descriptors are grouped and unique", () => {
     "automation-update-eager-tool",
     "linux-app-sunset-gate",
     "linux-app-server-feature-enablement",
+    "linux-codex-app-mcp-transport-guard",
     "linux-app-server-backfill-wait",
     "linux-skills-list-dedupe",
     "linux-config-write-version-conflict",
@@ -7416,6 +7420,25 @@ test("keeps automation_update eager in dynamic tools built during thread start",
   assert.doesNotMatch(patched, /codex-linux-automation-dynamic-tools-diagnostics/);
 });
 
+test("omits transport-less Codex app MCP config during thread start and resume", () => {
+  const source = [
+    "var NDt=`mcp_servers.codex_app.enabled_tools`;",
+    "async function Rrn(e,t){let a={config:e.config};",
+    "if(t.readDynamicTools!=null){let n=await t.readDynamicTools();",
+    "a.dynamicTools=void 0,e.registerDynamicTools!==!1&&(a.dynamicTools=e.usesDesktopMcp?[]:ADt(n)),",
+    "e.usesDesktopMcp&&(a.config={...a.config,[NDt]:n.flatMap(e=>e.type===`namespace`?e.tools.map(({name:e})=>e):[e.name])})}",
+    "return a}",
+  ].join("");
+
+  const patched = applyPatchTwice(applyLinuxCodexAppMcpTransportGuardPatch, source);
+
+  assert.match(
+    patched,
+    /\/\*codexLinuxOmitTransportlessCodexAppMcp\*\/!1&&e\.usesDesktopMcp&&\(a\.config=/,
+  );
+  assert.equal(patched.includes("mcp_servers.codex_app.enabled_tools"), true);
+});
+
 test("removes unsupported features from default app-server feature sync", () => {
   const source = [
     "var GF=[`apps`,`auth_elicitation`,`enable_mcp_apps`,`memories`,`mentions_v2`,`plugins`,`remote_control`,`remote_plugin`,`tool_call_mcp_elicitation`,`tool_search`,`tool_suggest`,te];",
@@ -10817,7 +10840,12 @@ test("patches current Electron Owl compatibility outside the main bundle", () =>
     );
     fs.writeFileSync(
       bootstrapPath,
-      "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);",
+      [
+        "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);",
+        "function gu(e){return l.session.fromPartition(du(e))}",
+        "async function history(){return gu(`persist:test`).getDownloadHistory()}",
+        "function attach(e,t,i,a){i.isAudible=a.isCurrentlyAudible(),i.isCapturingUserMedia=a.isCapturingUserMedia(),i.isCapturingCamera=a.isCapturingCamera(),i.isCapturingMicrophone=a.isCapturingMicrophone()}",
+      ].join(""),
       "utf8",
     );
 
@@ -10826,6 +10854,8 @@ test("patches current Electron Owl compatibility outside the main bundle", () =>
       changed: 2,
       shellMatched: 1,
       preferredLanguagesMatched: 1,
+      captureMatched: 1,
+      downloadHistoryMatched: 1,
     });
     assert.match(fs.readFileSync(bundlePath, "utf8"), /setPreferredLanguages\?\./);
     assert.match(
@@ -10837,6 +10867,8 @@ test("patches current Electron Owl compatibility outside the main bundle", () =>
       changed: 0,
       shellMatched: 1,
       preferredLanguagesMatched: 1,
+      captureMatched: 1,
+      downloadHistoryMatched: 1,
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -10868,6 +10900,38 @@ test("skips the Owl-only preferred-languages setter on stock Electron", () => {
 
   assert.match(patched, /setPreferredLanguages\?\./);
   assert.doesNotThrow(() => vm.runInNewContext(`${patched};Kl([\`pl\`])`, { Jl: () => ({}) }));
+});
+
+test("provides missing Owl capture methods on Linux without replacing native methods", () => {
+  const source = "function attach(e,t,i,a){i.isAudible=a.isCurrentlyAudible(),i.isCapturingUserMedia=a.isCapturingUserMedia(),i.isCapturingCamera=a.isCapturingCamera(),i.isCapturingMicrophone=a.isCapturingMicrophone();return i}";
+  const patched = applyPatchTwice(applyLinuxOwlWebContentsCapturePatch, source);
+  const nativeCamera = () => true;
+  const sandbox = { process: { platform: "linux" } };
+
+  vm.runInNewContext(
+    `${patched};globalThis.firstGuest={isCurrentlyAudible:()=>false,isCapturingCamera:nativeCamera};globalThis.secondGuest={isCurrentlyAudible:()=>false};globalThis.first=attach(null,null,{},globalThis.firstGuest);attach(null,null,{},globalThis.firstGuest);globalThis.second=attach(null,null,{},globalThis.secondGuest);`,
+    { ...sandbox, globalThis: sandbox, nativeCamera },
+  );
+
+  assert.equal(sandbox.first.isCapturingUserMedia, false);
+  assert.equal(sandbox.first.isCapturingCamera, true);
+  assert.equal(sandbox.first.isCapturingMicrophone, false);
+  assert.equal(sandbox.firstGuest.__codexLinuxOwlCaptureFallback, true);
+  assert.equal(sandbox.second.isCapturingUserMedia, false);
+});
+
+test("provides empty Owl download history on stock Electron sessions", async () => {
+  const source = "function gu(e){return l.session.fromPartition(du(e))}async function history(){return gu(`persist:test`).getDownloadHistory()}";
+  const patched = applyPatchTwice(applyLinuxOwlDownloadHistoryPatch, source);
+  const session = {};
+  const sandbox = {
+    process: { platform: "linux" },
+    l: { session: { fromPartition: () => session } },
+    du: (value) => value,
+  };
+
+  vm.runInNewContext(patched, sandbox);
+  assert.equal((await sandbox.gu("persist:test").getDownloadHistory()).length, 0);
 });
 
 test("missing icon asset skips only icon patches", () => {

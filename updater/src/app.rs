@@ -93,7 +93,7 @@ pub async fn run(cli: Cli) -> Result<()> {
         Commands::Daemon | Commands::CheckNow { .. } | Commands::InstallReady
     ) {
         let original_state = state.clone();
-        state.installed_version = install::installed_package_version();
+        sync_runtime_state(&config, &mut state);
         persist_if_changed(&paths, &state, &original_state)?;
     }
     #[cfg(test)]
@@ -183,6 +183,36 @@ fn sync_runtime_state(config: &RuntimeConfig, state: &mut PersistedState) {
         state.waiting_for_app_exit_auto_install = false;
     }
     state.installed_version = install::installed_package_version();
+    let artifact_version = state
+        .artifact_paths
+        .package_path
+        .as_deref()
+        .and_then(|path| install::package_version(path).ok());
+    reconcile_installed_artifact_metadata(state, artifact_version.as_deref());
+}
+
+fn reconcile_installed_artifact_metadata(
+    state: &mut PersistedState,
+    artifact_version: Option<&str>,
+) {
+    if !matches!(state.status, UpdateStatus::Idle | UpdateStatus::Installed)
+        || state.candidate_version.is_some()
+        || state.candidate_wrapper_version.is_some()
+    {
+        return;
+    }
+
+    if artifact_version.is_some_and(|version| {
+        !installed_version_matches_candidate(&state.installed_version, version)
+    }) {
+        state.artifact_paths.package_path = None;
+        state.artifact_paths.workspace_dir = None;
+    }
+
+    let current_event = format!("installed:{}", state.installed_version);
+    state
+        .notified_events
+        .retain(|event| !event.starts_with("installed:") || event == &current_event);
 }
 
 fn sync_and_persist(
@@ -4515,6 +4545,44 @@ mod tests {
         assert_eq!(state.error_message, None);
         assert!(state.notified_events.is_empty());
         Ok(())
+    }
+
+    #[test]
+    fn idle_state_discards_package_metadata_from_an_older_external_install() {
+        let mut state = PersistedState::new(true);
+        state.status = UpdateStatus::Idle;
+        state.installed_version = "2026.09.02.105700+71c3d032".to_string();
+        state.artifact_paths.package_path = Some(PathBuf::from("/cache/old.deb"));
+        state.artifact_paths.workspace_dir = Some(PathBuf::from("/cache/old-workspace"));
+        state
+            .notified_events
+            .insert("installed:2026.09.02.083542+71c3d032".to_string());
+        state.notified_events.insert("cli_missing".to_string());
+
+        reconcile_installed_artifact_metadata(&mut state, Some("2026.09.02.083542+71c3d032"));
+
+        assert_eq!(state.artifact_paths.package_path, None);
+        assert_eq!(state.artifact_paths.workspace_dir, None);
+        assert_eq!(state.artifact_paths.rollback_package_path, None);
+        assert_eq!(state.last_known_good_version, None);
+        assert_eq!(state.notified_events.len(), 1);
+        assert!(state.notified_events.contains("cli_missing"));
+    }
+
+    #[test]
+    fn pending_update_keeps_its_different_package_metadata() {
+        let mut state = PersistedState::new(true);
+        state.status = UpdateStatus::ReadyToInstall;
+        state.installed_version = "2026.09.02.083542+71c3d032".to_string();
+        state.candidate_version = Some("2026.09.02.105700+71c3d032".to_string());
+        state.artifact_paths.package_path = Some(PathBuf::from("/cache/candidate.deb"));
+
+        reconcile_installed_artifact_metadata(&mut state, Some("2026.09.02.105700+71c3d032"));
+
+        assert_eq!(
+            state.artifact_paths.package_path.as_deref(),
+            Some(Path::new("/cache/candidate.deb")),
+        );
     }
 
     #[test]

@@ -10887,6 +10887,36 @@ EOF
     )
 }
 
+test_launcher_log_rotation() {
+    info "Checking launcher log size cap"
+    local workspace="$TMP_DIR/launcher-log-rotation"
+    local app_dir="$workspace/app"
+    local home_dir="$workspace/home"
+    local runtime_dir="$workspace/runtime"
+    local log_file="$home_dir/.cache/codex-log-rotation/launcher.log"
+
+    mkdir -p "$app_dir" "$(dirname "$log_file")" "$home_dir" "$runtime_dir"
+    {
+        printf '%s\n' \
+            '#!/usr/bin/env bash' \
+            'set -Eeuo pipefail' \
+            'CODEX_LINUX_APP_ID=codex-log-rotation' \
+            'CODEX_LINUX_APP_DISPLAY_NAME="Codex Desktop"' \
+            'CODEX_LINUX_WEBVIEW_PORT="${CODEX_WEBVIEW_PORT:-5175}"'
+        cat "$REPO_DIR/launcher/start.sh.template"
+    } > "$app_dir/start.sh"
+    chmod +x "$app_dir/start.sh"
+
+    dd if=/dev/zero of="$log_file" bs=1M count=17 status=none
+    printf 'preserved-tail\n' >> "$log_file"
+    HOME="$home_dir" XDG_RUNTIME_DIR="$runtime_dir" "$app_dir/start.sh" --help >/dev/null
+
+    [ "$(stat -c %s "$log_file")" -le 4194304 ] \
+        || fail "Launcher log was not capped to 4 MiB"
+    tail -c 15 "$log_file" | grep -Fxq 'preserved-tail' \
+        || fail "Launcher log cap did not preserve the newest bytes"
+}
+
 test_launcher_warm_start_recovery() {
     info "Checking warm-start recovery after launcher SIGKILL"
     bash "$REPO_DIR/tests/launcher_warm_start_recovery.sh"
@@ -11153,6 +11183,7 @@ main() {
     test_launcher_extra_bundled_plugin_cache_concurrent_destination
     test_launcher_rejects_missing_webview_entrypoint
     test_launcher_marketplace_metadata_atomic_staging
+    test_launcher_log_rotation
     test_launcher_template_sanity
     test_launcher_warm_start_recovery
     test_launcher_window_reopen_behavior

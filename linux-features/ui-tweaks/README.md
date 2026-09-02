@@ -23,7 +23,7 @@ Enable it in the local, gitignored feature config:
 | `modelPicker.showModelsByDefault` | `patches/model-picker-model-list.js` | Opens the advanced picker by default and shows model choices inline instead of hiding them behind the compact Power slider and a nested Model submenu. | `tweaks.modelPicker.showModelsByDefault.enabled` |
 | `reasoning.keepEffortLabelsEnglish` | `patches/reasoning-effort-labels.js` | Keeps reasoning effort values in English in the Simplified Chinese UI while leaving the surrounding interface translated. | `tweaks.reasoning.keepEffortLabelsEnglish.enabled` |
 | `sidebar.projectName` | `patches/sidebar-project-name.js` | Styles project names in the left sidebar project list. It does not style `Projects` / `Chats` section headings and does not style chat rows. | `tweaks.sidebar.projectName.enabled`, `tweaks.sidebar.projectName.style` |
-| `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds a named color submenu to the visible More menu for local chats, displaying the saved color as a soft full-row tint. | `tweaks.sidebar.threadColor.enabled` |
+| `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds **Change chat color…** to the More menu and enables the upstream title/color dialog and row color rendering. | `tweaks.sidebar.threadColor.enabled` |
 
 ## Settings
 
@@ -200,14 +200,11 @@ Config keys:
 
 ### `sidebar.threadColor`
 
-Adds **Change chat color…** to the visible More menu and context menu for every
-local chat in the sidebar, including Pinned, Projects, and Recents. The submenu
-offers Red, Orange, Yellow, Green, Blue, Purple, and No color. The choice is
-stored in the upstream `sidebar-thread-metadata` global-state entry for that
-conversation, so it
-survives restarts and changes in pin or project grouping. The sidebar keeps its
-normal text and grouping; color is only a supplementary, low-opacity row
-background.
+Adds **Change chat color…** to the visible More menu for local chats and opens
+the app's existing rename dialog with its upstream color picker enabled. The
+choice is stored in the upstream `sidebar-thread-metadata` global-state entry
+and passed to the existing row renderer, so it survives restarts and grouping
+changes without a second palette or CSS implementation.
 
 This tweak is independently disabled by default. Enable it locally with:
 

@@ -375,6 +375,32 @@ function applyLinuxOwlPreferredLanguagesPatch(currentSource) {
   return currentSource.replace(".setPreferredLanguages(", ".setPreferredLanguages?.(");
 }
 
+function applyLinuxOwlWebContentsCapturePatch(currentSource) {
+  const marker = "/*codexLinuxOwlCaptureFallback*/";
+  if (currentSource.includes(marker)) return currentSource;
+  const captureReads = /([A-Za-z_$][\w$]*)\.isAudible=([A-Za-z_$][\w$]*)\.isCurrentlyAudible\(\),\1\.isCapturingUserMedia=\2\.isCapturingUserMedia\(\),\1\.isCapturingCamera=\2\.isCapturingCamera\(\),\1\.isCapturingMicrophone=\2\.isCapturingMicrophone\(\)/u;
+  const match = currentSource.match(captureReads);
+  if (match == null) return currentSource;
+  const webContents = match[2];
+  return currentSource.replace(
+    captureReads,
+    `${marker}process.platform===\`linux\`&&(${webContents}.__codexLinuxOwlCaptureFallback??=![\`isCapturingUserMedia\`,\`isCapturingCamera\`,\`isCapturingMicrophone\`].every(e=>typeof ${webContents}[e]===\`function\`),${webContents}.isCapturingUserMedia??=()=>!1,${webContents}.isCapturingCamera??=()=>!1,${webContents}.isCapturingMicrophone??=()=>!1),$&`,
+  );
+}
+
+function applyLinuxOwlDownloadHistoryPatch(currentSource) {
+  const marker = "/*codexLinuxOwlDownloadHistoryFallback*/";
+  if (currentSource.includes(marker)) return currentSource;
+  const sessionFactory = /function ([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\)\{return ([A-Za-z_$][\w$]*)\.session\.fromPartition\(([A-Za-z_$][\w$]*)\(\2\)\)\}/u;
+  const match = currentSource.match(sessionFactory);
+  if (match == null || !currentSource.includes(".getDownloadHistory(")) return currentSource;
+  const [, functionName, argument, electron, partition] = match;
+  return currentSource.replace(
+    sessionFactory,
+    `function ${functionName}(${argument}){let codexLinuxSession=${electron}.session.fromPartition(${partition}(${argument}));return ${marker}process.platform===\`linux\`&&(codexLinuxSession.getDownloadHistory??=async()=>[]),codexLinuxSession}`,
+  );
+}
+
 function patchLinuxOwlCompatibilityAssets(extractedDir) {
   const buildDir = path.join(extractedDir, ".vite", "build");
   if (!fs.existsSync(buildDir)) {
@@ -391,7 +417,11 @@ function patchLinuxOwlCompatibilityAssets(extractedDir) {
         const source = fs.readFileSync(candidate, "utf8");
         return source.includes("requires the Owl app shell") ||
           source.includes(".setPreferredLanguages(") ||
-          source.includes(".setPreferredLanguages?.(");
+          source.includes(".setPreferredLanguages?.(") ||
+          source.includes(".isCapturingUserMedia(") ||
+          source.includes("codexLinuxOwlCaptureFallback") ||
+          source.includes(".getDownloadHistory(") ||
+          source.includes("codexLinuxOwlDownloadHistoryFallback");
       } catch {
         return false;
       }
@@ -400,6 +430,8 @@ function patchLinuxOwlCompatibilityAssets(extractedDir) {
   let changed = 0;
   let shellMatched = 0;
   let preferredLanguagesMatched = 0;
+  let captureMatched = 0;
+  let downloadHistoryMatched = 0;
   const pendingWrites = [];
   for (const candidate of candidates) {
     const currentSource = fs.readFileSync(candidate, "utf8");
@@ -407,8 +439,18 @@ function patchLinuxOwlCompatibilityAssets(extractedDir) {
     if (currentSource.includes(".setPreferredLanguages(") || currentSource.includes(".setPreferredLanguages?.(")) {
       preferredLanguagesMatched += 1;
     }
-    const patchedSource = applyLinuxOwlPreferredLanguagesPatch(
-      applyLinuxOwlAppShellGuardPatch(currentSource),
+    if (currentSource.includes(".isCapturingUserMedia(") || currentSource.includes("codexLinuxOwlCaptureFallback")) {
+      captureMatched += 1;
+    }
+    if (currentSource.includes(".getDownloadHistory(") || currentSource.includes("codexLinuxOwlDownloadHistoryFallback")) {
+      downloadHistoryMatched += 1;
+    }
+    const patchedSource = applyLinuxOwlDownloadHistoryPatch(
+      applyLinuxOwlWebContentsCapturePatch(
+        applyLinuxOwlPreferredLanguagesPatch(
+          applyLinuxOwlAppShellGuardPatch(currentSource),
+        ),
+      ),
     );
     if (patchedSource !== currentSource) {
       changed += 1;
@@ -419,7 +461,14 @@ function patchLinuxOwlCompatibilityAssets(extractedDir) {
     fs.writeFileSync(filePath, patchedSource, "utf8");
   }
 
-  return { matched: candidates.length, changed, shellMatched, preferredLanguagesMatched };
+  return {
+    matched: candidates.length,
+    changed,
+    shellMatched,
+    preferredLanguagesMatched,
+    captureMatched,
+    downloadHistoryMatched,
+  };
 }
 
 function applyLinuxRemoteControlConfigPreservationPatch(currentSource) {
@@ -568,7 +617,9 @@ function applyLinuxLocalAppServerFeatureEnablementHandlerPatch(currentSource) {
 
 module.exports = {
   applyLinuxOwlAppShellGuardPatch,
+  applyLinuxOwlDownloadHistoryPatch,
   applyLinuxOwlPreferredLanguagesPatch,
+  applyLinuxOwlWebContentsCapturePatch,
   applyLinuxHostProcessEnvironmentPatch,
   applyLinuxFileManagerPatch,
   applyLinuxX11ProjectPickerPatch,

@@ -1,6 +1,7 @@
 "use strict";
 
 const HELPER = "codexLinuxBrowserUseMediaOriginAllowed";
+const CAPTURE_HELPER = "codexLinuxBrowserUseMediaCaptureSupported";
 const MARKER = "/*codexLinuxBrowserUseMediaPermission*/";
 
 function applyLinuxBrowserUseMediaPermissionPatch(source) {
@@ -23,10 +24,10 @@ function applyLinuxBrowserUseMediaPermissionPatch(source) {
   const [original, session, requestContents, requestPermission, callback,
     checkContents, checkPermission] = match;
   const replacement =
-    `${session}.setPermissionRequestHandler((${requestContents},${requestPermission},${callback},__codexDetails)=>{${callback}(${requestPermission}===\`clipboard-sanitized-write\`||${requestPermission}===\`media\`&&${HELPER}(__codexDetails?.securityOrigin??__codexDetails?.requestingUrl))}),` +
-    `${session}.setPermissionCheckHandler((${checkContents},${checkPermission},__codexOrigin,__codexDetails)=>${checkPermission}===\`clipboard-sanitized-write\`||${checkPermission}===\`media\`&&${HELPER}(__codexDetails?.securityOrigin??__codexDetails?.requestingUrl??__codexOrigin))${MARKER}`;
+    `${session}.setPermissionRequestHandler((${requestContents},${requestPermission},${callback},__codexDetails)=>{${callback}(${requestPermission}===\`clipboard-sanitized-write\`||${requestPermission}===\`media\`&&${CAPTURE_HELPER}(${requestContents})&&${HELPER}(__codexDetails?.securityOrigin??__codexDetails?.requestingUrl))}),` +
+    `${session}.setPermissionCheckHandler((${checkContents},${checkPermission},__codexOrigin,__codexDetails)=>${checkPermission}===\`clipboard-sanitized-write\`||${checkPermission}===\`media\`&&${CAPTURE_HELPER}(${checkContents})&&${HELPER}(__codexDetails?.securityOrigin??__codexDetails?.requestingUrl??__codexOrigin))${MARKER}`;
   const helper =
-    `function ${HELPER}(e){if(process.platform!==\`linux\`||typeof e!==\`string\`)return!1;let t;try{t=new URL(e).origin}catch{return!1}return(process.env.CODEX_BROWSER_USE_MEDIA_ORIGINS??\`\`).split(\`,\`).some(e=>{try{return new URL(e.trim()).origin===t}catch{return!1}})}`;
+    `function ${CAPTURE_HELPER}(e){return e?.__codexLinuxOwlCaptureFallback!==!0&&[\`isCapturingUserMedia\`,\`isCapturingCamera\`,\`isCapturingMicrophone\`].every(t=>typeof e?.[t]===\`function\`)}function ${HELPER}(e){if(process.platform!==\`linux\`||typeof e!==\`string\`)return!1;let t;try{t=new URL(e).origin}catch{return!1}return(process.env.CODEX_BROWSER_USE_MEDIA_ORIGINS??\`\`).split(\`,\`).some(e=>{try{return new URL(e.trim()).origin===t}catch{return!1}})}`;
   const patched = source.replace(original, replacement);
   const insertion = patched.startsWith('"use strict";') ? '"use strict";'.length : 0;
   return patched.slice(0, insertion) + helper + patched.slice(insertion);

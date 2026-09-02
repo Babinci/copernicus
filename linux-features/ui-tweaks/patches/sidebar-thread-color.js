@@ -1,34 +1,14 @@
 "use strict";
 
-const THREAD_COLOR_ASSET_PATTERN = /^app-initial-[^.]+\.js$/;
-const RUNTIME_MARKER = "codexLinuxSidebarThreadColorRuntime";
-const COLOR_ATTRIBUTE = "data-codex-linux-thread-label-color";
-const STYLE_ID = "codex-linux-sidebar-thread-color-style";
-const THREAD_COLORS = Object.freeze([
-  { id: "red", label: "Red", value: "#ef4444" },
-  { id: "orange", label: "Orange", value: "#f97316" },
-  { id: "yellow", label: "Yellow", value: "#eab308" },
-  { id: "green", label: "Green", value: "#22c55e" },
-  { id: "blue", label: "Blue", value: "#3b82f6" },
-  { id: "purple", label: "Purple", value: "#a855f7" },
-]);
+const INITIAL_ASSET_PATTERN = /^app-initial-[^.]+\.js$/;
+const PRIMARY_ASSET_PATTERN = /^app-primary-[^.]+\.js$/;
+const STATE_MARKER = "codexLinuxSetSidebarThreadColor";
+const UI_MARKER = "/*codexLinuxSidebarThreadColorUi*/";
 
-const COLOR_SELECTOR_DEFINITION_PATTERN =
-  /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),\(e,\{get:t\}\)=>e==null\?null:([A-Za-z_$][\w$]*)\(t,([A-Za-z_$][\w$]*)\.SIDEBAR_THREAD_METADATA\)\?\.\[e\]\?\.labelColor\?\?null\)/gu;
-const NULL_COLOR_MARKER = "labelColor:null,modelProvider:";
-const NULL_COLOR_REPLACEMENT = "labelColor:Te,modelProvider:";
-const COLOR_CACHE_DEPENDENCY_MARKER = "t[135]!==Te||t[136]!==null";
-const COLOR_CACHE_DEPENDENCY_REPLACEMENT = "t[135]!==Te||t[136]!==Te";
-const COLOR_CACHE_VALUE_MARKER = "t[135]=Te,t[136]=null";
-const COLOR_CACHE_VALUE_REPLACEMENT = "t[135]=Te,t[136]=Te";
-const ROW_ATTRIBUTES_PATTERN =
-  /dataAttributes:([A-Za-z_$][\w$]*)\.sidebarThreadRow\(\{active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k\}\)/gu;
-const MENU_PATTERN =
-  /(function [A-Za-z_$][\w$]*\(\{scope:([A-Za-z_$][\w$]*),target:([A-Za-z_$][\w$]*),[^)]*?surface:([A-Za-z_$][\w$]*),[^)]*\}\)\{let\{conversationId:([A-Za-z_$][\w$]*)[^}]*\}=\3,[\s\S]{0,1500}?let ([A-Za-z_$][\w$]*)=[A-Za-z_$][\w$]*\(\{pin:[\s\S]{0,800}?archive:[\s\S]{0,250}?\}\)),([A-Za-z_$][\w$]*)=\4!==`sidebar`/u;
-
-function warn(message) {
-  console.warn(`WARN: ${message} - skipping ui-tweaks sidebar thread color patch`);
-}
+const SELECTOR_PATTERN =
+  /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),\(e,\{get:t\}\)=>e==null\?null:([A-Za-z_$][\w$]*)\(t,([A-Za-z_$][\w$]*)\.SIDEBAR_THREAD_METADATA\)\?\.\[e\]\?\.labelColor\?\?null\)/u;
+const WRITER_PATTERN =
+  /async function ([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\)\{[\s\S]{0,900}?`set-global-state`,\{params:\{key:\3,value:\4\}\}/u;
 
 function threadColorConfig(context) {
   const defaults = context?.feature?.manifest?.tweaks?.sidebar?.threadColor;
@@ -43,181 +23,116 @@ function enabled(context) {
   return threadColorConfig(context).enabled === true;
 }
 
-function countOccurrences(source, marker) {
-  let count = 0;
-  let offset = 0;
-  while ((offset = source.indexOf(marker, offset)) >= 0) {
-    count += 1;
-    offset += marker.length;
-  }
-  return count;
+function warn(message) {
+  console.warn(`WARN: ${message} - skipping ui-tweaks sidebar thread color patch`);
 }
 
-function sidebarThreadColorCss() {
-  return THREAD_COLORS.flatMap(({ value }) => [
-    `[${COLOR_ATTRIBUTE}=${JSON.stringify(value)}]{background-color:${value}24!important;}`,
-    `[${COLOR_ATTRIBUTE}=${JSON.stringify(value)}]:hover{background-color:${value}38!important;}`,
-  ]).join("");
+function initialContract(source) {
+  return source.includes(STATE_MARKER) ||
+    (SELECTOR_PATTERN.test(source) && WRITER_PATTERN.test(source));
 }
 
-function refreshSidebarThreadColorCss(source) {
-  const prefix = `STYLE_ID=${JSON.stringify(STYLE_ID)},CSS=`;
-  const start = source.indexOf(prefix);
-  if (start < 0) return source;
-  const cssStart = start + prefix.length;
-  const cssEnd = source.indexOf(";if(typeof document===", cssStart);
-  if (cssEnd < 0) return source;
-  return `${source.slice(0, cssStart)}${JSON.stringify(sidebarThreadColorCss())}${source.slice(cssEnd)}`;
+function primaryContract(source) {
+  return source.includes(UI_MARKER) ||
+    (source.includes("labelColor:null,modelProvider:") &&
+      source.includes("initialColor:null,showColorPicker:!1") &&
+      source.includes("function vwn("));
 }
 
-function sidebarThreadColorRuntimeSource({
-  errorToastAtom = "ov",
-  formatMessage = "kd",
-  globalStateKeys = "ru",
-  readGlobalState = "cm",
-  writeGlobalState = "sm",
-} = {}) {
-  const css = sidebarThreadColorCss();
-
-  return [
-    `;var codexLinuxSidebarThreadColors=${JSON.stringify(THREAD_COLORS)};`,
-    `async function codexLinuxSetSidebarThreadColor(scope,threadId,color){`,
-    `let selected=color==null?null:codexLinuxSidebarThreadColors.find(item=>item.value===color)?.value;`,
-    `if(color!=null&&selected==null)return;`,
-    `let raw=${readGlobalState}(scope.get,${globalStateKeys}.SIDEBAR_THREAD_METADATA),metadata=raw&&typeof raw===\"object\"&&!Array.isArray(raw)?{...raw}:{},`,
-    `rawEntry=metadata[threadId],entry=rawEntry&&typeof rawEntry===\"object\"&&!Array.isArray(rawEntry)?{...rawEntry}:{};`,
-    `if(selected==null){if(!Object.prototype.hasOwnProperty.call(entry,\"labelColor\"))return;delete entry.labelColor}`,
-    `else{if(entry.labelColor===selected)return;entry.labelColor=selected}`,
-    `Object.keys(entry).length>0?metadata[threadId]=entry:delete metadata[threadId];`,
-    `try{await ${writeGlobalState}(scope,${globalStateKeys}.SIDEBAR_THREAD_METADATA,Object.keys(metadata).length>0?metadata:void 0,{throwOnFailure:!0})}`,
-    `catch(error){scope.get(${errorToastAtom}).danger(\"Could not update chat color\")}}`,
-    `function codexLinuxSidebarThreadColorMenu(scope,threadId){return[`,
-    `...codexLinuxSidebarThreadColors.map(item=>({id:\`change-thread-color-\${item.id}\`,`,
-    `message:${formatMessage}({id:\`codexLinux.sidebarThreadColor.\${item.id}\`,defaultMessage:item.label,`,
-    `description:\`Color choice for a local chat\`}),`,
-    `onSelect:()=>codexLinuxSetSidebarThreadColor(scope,threadId,item.value)})),`,
-    `{id:\`change-thread-color-clear\`,message:${formatMessage}({id:\`codexLinux.sidebarThreadColor.clear\`,`,
-    `defaultMessage:\`No color\`,description:\`Remove the color from a local chat\`}),`,
-    `onSelect:()=>codexLinuxSetSidebarThreadColor(scope,threadId,null)}]}`,
-    `;(()=>{const ${RUNTIME_MARKER}=true,STYLE_ID=${JSON.stringify(STYLE_ID)},CSS=${JSON.stringify(css)};`,
-    `if(typeof document===\"undefined\")return;let style=document.getElementById(STYLE_ID);`,
-    `if(style){style.textContent!==CSS&&(style.textContent=CSS);return}`,
-    `style=document.createElement(\"style\");style.id=STYLE_ID;style.textContent=CSS;`,
-    `(document.head||document.documentElement)?.appendChild(style)})();`,
-  ].join("");
-}
-
-function currentBundleAliases(source) {
-  const selectorMatches = [...source.matchAll(COLOR_SELECTOR_DEFINITION_PATTERN)];
-  if (selectorMatches.length !== 1) return null;
-  const selector = selectorMatches[0][1];
-  const readGlobalState = selectorMatches[0][4];
-  const globalStateKeys = selectorMatches[0][5];
-
-  const writerPattern =
-    /async function ([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\)\{[\s\S]{0,900}?`set-global-state`,\{params:\{key:\3,value:\4\}\}/gu;
-  const writers = new Set([...source.matchAll(writerPattern)].map((match) => match[1]));
-  const formatMatches = [
-    ...source.matchAll(
-      /message:([A-Za-z_$][\w$]*)\(\{id:`threadHeader\.openSideChat`/gu,
-    ),
-  ];
-  const toastMatches = [
-    ...source.matchAll(
-      /function [A-Za-z_$][\w$]*\(e,t\)\{e\.get\(([A-Za-z_$][\w$]*)\)\.danger\(e\.get\([A-Za-z_$][\w$]*\)\.formatMessage\(t\)\)\}/gu,
-    ),
-  ];
-  if (writers.size !== 1 || formatMatches.length !== 1 || toastMatches.length !== 1) {
-    return null;
-  }
-
-  return {
-    errorToastAtom: toastMatches[0][1],
-    formatMessage: formatMatches[0][1],
-    globalStateKeys,
-    readGlobalState,
-    selector,
-    writeGlobalState: [...writers][0],
-  };
-}
-
-function applySidebarThreadColorPatch(source, context = {}) {
-  try {
-    if (typeof source !== "string") {
-      warn("Asset source is not a string");
-      return source;
-    }
-    if (!enabled(context)) {
-      return source;
-    }
-    if (source.includes(RUNTIME_MARKER)) return refreshSidebarThreadColorCss(source);
-
-    const aliases = currentBundleAliases(source);
-    if (aliases == null) {
-      if (context.warnOnMissingMarkers === true) {
-        warn("Could not identify the current sidebar metadata helpers");
-      }
-      return source;
-    }
-
-    const rowMatches = [...source.matchAll(ROW_ATTRIBUTES_PATTERN)];
-    const menuMatches = [...source.matchAll(new RegExp(MENU_PATTERN.source, "gu"))];
-    const replacements = [
-      [NULL_COLOR_MARKER, NULL_COLOR_REPLACEMENT],
-      [COLOR_CACHE_DEPENDENCY_MARKER, COLOR_CACHE_DEPENDENCY_REPLACEMENT],
-      [COLOR_CACHE_VALUE_MARKER, COLOR_CACHE_VALUE_REPLACEMENT],
-    ];
-    const invalid = replacements.find(([marker]) => countOccurrences(source, marker) !== 1);
-    if (invalid != null || rowMatches.length !== 1 || menuMatches.length !== 1) {
-      if (context.warnOnMissingMarkers === true) {
-        warn(`Expected exactly one current sidebar marker: ${invalid?.[0] ?? (rowMatches.length !== 1 ? "sidebarThreadRow" : "thread menu")}`);
-      }
-      return source;
-    }
-
-    let patched = source;
-    for (const [marker, replacement] of replacements) {
-      patched = patched.replace(marker, replacement);
-    }
-    patched = patched.replace(
-      MENU_PATTERN,
-      (_match, menuPrefix, scope, _target, surface, threadId, menuItems, followingItems) =>
-        `${menuPrefix};${surface}===\`sidebar\`&&${menuItems}.push({id:\`change-thread-color\`,message:${aliases.formatMessage}({id:\`codexLinux.sidebarThreadColor.menuItem\`,defaultMessage:\`Change chat color…\`,description:\`Menu item that changes a local chat color\`}),submenu:codexLinuxSidebarThreadColorMenu(${scope},${threadId})});let ${followingItems}=${surface}!==\`sidebar\``,
-    );
-    const attributes = rowMatches[0][1];
-    patched = patched.replace(
-      ROW_ATTRIBUTES_PATTERN,
-      `dataAttributes:{...${attributes}.sidebarThreadRow({active:c,hostId:m,id:u,kind:\`local\`,pinned:r,selected:i,title:k}),${JSON.stringify(COLOR_ATTRIBUTE)}:Te}`,
-    );
-    return `${patched}\n${sidebarThreadColorRuntimeSource(aliases)}`;
-  } catch (error) {
-    warn(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+function applySidebarThreadColorStatePatch(source, context = {}) {
+  if (!enabled(context) || source.includes(STATE_MARKER)) return source;
+  const selector = source.match(SELECTOR_PATTERN);
+  const writer = source.match(WRITER_PATTERN);
+  if (selector == null || writer == null) {
+    if (context.warnOnMissingMarkers === true) warn("Could not identify sidebar metadata helpers");
     return source;
   }
+
+  const read = selector[4];
+  const keys = selector[5];
+  const write = writer[1];
+  return `${source};globalThis.${STATE_MARKER}=async function(scope,threadId,color){try{if(color!=null&&typeof color!==\`string\`)return;let raw=${read}(scope.get,${keys}.SIDEBAR_THREAD_METADATA),metadata=raw&&typeof raw===\`object\`&&!Array.isArray(raw)?{...raw}:{},rawEntry=metadata[threadId],entry=rawEntry&&typeof rawEntry===\`object\`&&!Array.isArray(rawEntry)?{...rawEntry}:{};if(color==null){if(!Object.hasOwn(entry,\`labelColor\`))return;delete entry.labelColor}else{if(entry.labelColor===color)return;entry.labelColor=color}Object.keys(entry).length===0?delete metadata[threadId]:metadata[threadId]=entry;await ${write}(scope,${keys}.SIDEBAR_THREAD_METADATA,Object.keys(metadata).length===0?void 0:metadata,{throwOnFailure:!0})}catch(error){console.error(\`Could not update chat color\`,error)}}`;
+}
+
+function applySidebarThreadColorUiPatch(source, context = {}) {
+  if (!enabled(context) || source.includes(UI_MARKER)) return source;
+  if (!primaryContract(source)) {
+    if (context.warnOnMissingMarkers === true) warn("Could not identify current sidebar row and rename dialog");
+    return source;
+  }
+
+  const colorSelector = source.match(/([A-Za-z_$][\w$]*)=pE\(_Pe,([A-Za-z_$][\w$]*)\),/u)?.[1];
+  const cache = colorSelector == null
+    ? null
+    : source.match(new RegExp(`t\\[(\\d+)\\]!==${colorSelector}\\|\\|t\\[(\\d+)\\]!==null`, "u"));
+  const menu = /O=([A-Za-z_$][\w$]*)!==`sidebar`\|\|([A-Za-z_$][\w$]*)\?\[\]:\[\.\.\.UCn/u.exec(source);
+  const formatMessage = /message:([A-Za-z_$][\w$]*)\(\{id:`threadHeader\.openSideChat`/u.exec(source)?.[1];
+  if (colorSelector == null || cache == null || menu == null || formatMessage == null) {
+    if (context.warnOnMissingMarkers === true) warn("Could not identify current sidebar color bindings");
+    return source;
+  }
+
+  const [, firstCache, colorCache] = cache;
+  const colorAssignment = `t[${firstCache}]=${colorSelector},t[${colorCache}]=null`;
+  if (!source.includes(colorAssignment)) {
+    if (context.warnOnMissingMarkers === true) warn("Could not identify current sidebar color cache");
+    return source;
+  }
+
+  let patched = source
+    .replace("labelColor:null,modelProvider:", `labelColor:${colorSelector},modelProvider:`)
+    .replace(cache[0], `t[${firstCache}]!==${colorSelector}||t[${colorCache}]!==${colorSelector}`)
+    .replace(colorAssignment, `t[${firstCache}]=${colorSelector},t[${colorCache}]=${colorSelector}`)
+    .replace(
+      "initialColor:null,showColorPicker:!1,onSave:(e,t)=>{ie({conversationId:n,hostId:w?.hostId,previousTitle:U??void 0,title:e})}",
+      `initialColor:C,showColorPicker:!0,onSave:(e,t)=>{ie({conversationId:n,hostId:w?.hostId,previousTitle:U??void 0,title:e}),globalThis.${STATE_MARKER}?.(T,n,t)}`,
+    );
+  patched = patched.replace(
+    menu[0],
+    `O=${menu[1]}!==\`sidebar\`||${menu[2]}?[]:[{id:\`change-thread-color\`,message:${formatMessage}({id:\`codexLinux.sidebarThreadColor.menuItem\`,defaultMessage:\`Change chat color…\`,description:\`Menu item that changes a local chat color\`}),onSelect:r},...UCn`,
+  );
+  if (patched === source || patched.includes("initialColor:null,showColorPicker:!1")) {
+    if (context.warnOnMissingMarkers === true) warn("Could not apply current sidebar color bindings");
+    return source;
+  }
+  return `${UI_MARKER}${patched}`;
 }
 
 const descriptors = [
   {
-    id: "sidebar-thread-color",
+    id: "sidebar-thread-color-state",
     phase: "webview-asset",
     order: 20_792,
     ciPolicy: "optional",
-    pattern: THREAD_COLOR_ASSET_PATTERN,
-    missingDescription: "local thread sidebar bundle",
-    skipDescription: "ui-tweaks sidebar thread color patch",
+    pattern: INITIAL_ASSET_PATTERN,
+    enabled: (context) => enabled(context),
+    assetMatch: initialContract,
+    missingDescription: "sidebar thread metadata bundle",
+    skipDescription: "ui-tweaks sidebar thread color state patch",
     apply: (source, context = {}) =>
-      applySidebarThreadColorPatch(source, { ...context, warnOnMissingMarkers: true }),
+      applySidebarThreadColorStatePatch(source, { ...context, warnOnMissingMarkers: true }),
+  },
+  {
+    id: "sidebar-thread-color-ui",
+    phase: "webview-asset",
+    order: 20_793,
+    ciPolicy: "optional",
+    pattern: PRIMARY_ASSET_PATTERN,
+    enabled: (context) => enabled(context),
+    assetMatch: primaryContract,
+    missingDescription: "local thread sidebar bundle",
+    skipDescription: "ui-tweaks sidebar thread color UI patch",
+    apply: (source, context = {}) =>
+      applySidebarThreadColorUiPatch(source, { ...context, warnOnMissingMarkers: true }),
   },
 ];
 
 module.exports = {
-  COLOR_ATTRIBUTE,
-  RUNTIME_MARKER,
-  STYLE_ID,
-  THREAD_COLORS,
-  THREAD_COLOR_ASSET_PATTERN,
-  applySidebarThreadColorPatch,
+  INITIAL_ASSET_PATTERN,
+  PRIMARY_ASSET_PATTERN,
+  STATE_MARKER,
+  UI_MARKER,
+  applySidebarThreadColorStatePatch,
+  applySidebarThreadColorUiPatch,
   descriptors,
-  sidebarThreadColorCss,
-  sidebarThreadColorRuntimeSource,
 };

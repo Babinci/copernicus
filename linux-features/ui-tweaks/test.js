@@ -14,6 +14,8 @@ const {
   discoverLinuxFeatureManifests,
   loadLinuxFeaturePatchDescriptors,
 } = require("../../scripts/lib/linux-features.js");
+const { createPatchReport } = require("../../scripts/lib/patch-report.js");
+const { applyWebviewAssetPatchDescriptors } = require("../../scripts/patches/engine.js");
 const {
   ADVANCED_MENU_VIEW_PATTERN,
   DYNAMIC_POWER_EFFORTS_RUNTIME_MARKER,
@@ -42,13 +44,13 @@ const {
   applyEnglishReasoningLabels,
 } = require("./patches/reasoning-effort-labels.js");
 const {
-  COLOR_ATTRIBUTE: THREAD_COLOR_ATTRIBUTE,
-  RUNTIME_MARKER: THREAD_COLOR_RUNTIME_MARKER,
-  STYLE_ID: THREAD_COLOR_STYLE_ID,
-  THREAD_COLORS,
-  applySidebarThreadColorPatch,
-  sidebarThreadColorCss,
-  sidebarThreadColorRuntimeSource,
+  INITIAL_ASSET_PATTERN: THREAD_COLOR_INITIAL_ASSET_PATTERN,
+  PRIMARY_ASSET_PATTERN: THREAD_COLOR_PRIMARY_ASSET_PATTERN,
+  STATE_MARKER: THREAD_COLOR_STATE_MARKER,
+  UI_MARKER: THREAD_COLOR_UI_MARKER,
+  applySidebarThreadColorStatePatch,
+  applySidebarThreadColorUiPatch,
+  descriptors: threadColorDescriptors,
 } = require("./patches/sidebar-thread-color.js");
 const {
   RUNTIME_MARKER: FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER,
@@ -71,18 +73,18 @@ function modelPickerStateBundleFixture() {
   ].join("");
 }
 
-function sidebarThreadColorBundleFixture() {
+function sidebarThreadColorStateBundleFixture() {
   return [
     "Pan=ro(Q,(e,{get:t})=>e==null?null:im(t,tu.SIDEBAR_THREAD_METADATA)?.[e]?.labelColor??null);",
     "async function rm(e,t,n,r){return fetch(`set-global-state`,{params:{key:t,value:n}})}",
-    "function toast(e,t){e.get(ov).danger(e.get(qb).formatMessage(t))}",
-    "function GLc({scope:e,target:t,actions:n,onRename:r,onArchive:i,executeRouteAction:a,surface:o,isUnread:s,isWorktreeThread:c,canOpenSideChat:l,canPin:u,getConversationMarkdown:d}){let{conversationId:f,hostId:p,cwd:m}=t,x=1;let D=uLc({pin:null,rename:{id:`rename-thread`,onSelect:r},readState:null,archive:{id:`archive-thread`,onSelect:i}}),O=o!==`sidebar`?[]:[{id:`open-side-chat`,message:wd({id:`threadHeader.openSideChat`})}];return[D,O]}",
-    "function pxl(){",
-    "return jsx(Row,{labelColor:null,modelProvider:n.modelProvider,",
-    "dataAttributes:Dp.sidebarThreadRow({active:c,hostId:m,id:u,kind:`local`,pinned:r,selected:i,title:k})})}",
-    "function WSl(){let ce=n.conversationId,Te=bs(Pan,ce),it;",
-    "t[135]!==Te||t[136]!==null?(it=()=>pxl(),",
-    "t[135]=Te,t[136]=null,t[158]=it):it=t[158];return it}",
+  ].join("");
+}
+
+function sidebarThreadColorUiBundleFixture() {
+  return [
+    "function vwn({scope:e,target:t,actions:n,onRename:r,onArchive:i,surface:o}){let{conversationId:f}=t,S=!1,D=jQ({rename:S?void 0:{id:`rename-thread`,onSelect:r}}),O=o!==`sidebar`||S?[]:[...UCn([])];if(o===`header`)O.push({message:iv({id:`threadHeader.openSideChat`})});return[D,O]}",
+    "function fTn(e){let{conversationId:n,labelColor:u}=e,C=u===void 0?null:u,T=rC(Rh),w={},U=``;let Fe=()=>{QC(T,wxn,{conversationId:n,initialValue:U??``,initialColor:null,showColorPicker:!1,onSave:(e,t)=>{ie({conversationId:n,hostId:w?.hostId,previousTitle:U??void 0,title:e})}})};return Fe}",
+    "function BTn(e){let t=[],n={kind:`local`,conversationId:`one`,modelProvider:null},se=n.conversationId,Ce=pE(_Pe,se),rt;t[136]!==Ce||t[137]!==null?(rt=()=>jsx(fTn,{labelColor:null,modelProvider:n?.modelProvider}),t[136]=Ce,t[137]=null,t[158]=rt):rt=t[158];return rt}",
   ].join("");
 }
 
@@ -209,7 +211,8 @@ test("ui-tweaks is discoverable and disabled until listed in features.json", () 
       descriptors.map((descriptor) => [descriptor.id, descriptor.phase, descriptor.ciPolicy]),
       [
         ["feature:ui-tweaks:sidebar-project-name-style", "webview-asset", "optional"],
-        ["feature:ui-tweaks:sidebar-thread-color", "webview-asset", "optional"],
+        ["feature:ui-tweaks:sidebar-thread-color-state", "webview-asset", "optional"],
+        ["feature:ui-tweaks:sidebar-thread-color-ui", "webview-asset", "optional"],
         ["feature:ui-tweaks:file-tree-folder-actions", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-default-advanced-view", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-inline-model-list", "webview-asset", "optional"],
@@ -454,137 +457,92 @@ test("sidebar project descriptor targets only the current project sidebar asset"
   );
 });
 
-test("sidebar thread colors are opt-in and patch the complete current contract once", () => {
-  const source = sidebarThreadColorBundleFixture();
-  assert.equal(applySidebarThreadColorPatch(source), source);
-
+test("sidebar thread colors patch the current split bundles once", () => {
   const context = enabledThreadColorContext();
-  const patched = applySidebarThreadColorPatch(source, context);
+  const initial = sidebarThreadColorStateBundleFixture();
+  const primary = sidebarThreadColorUiBundleFixture();
 
-  assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
-  assert.match(patched, new RegExp(THREAD_COLOR_STYLE_ID));
-  assert.match(patched, new RegExp(THREAD_COLOR_ATTRIBUTE));
-  assert.match(patched, /labelColor:Te/);
-  assert.match(patched, /change-thread-color/);
-  assert.match(patched, /o===`sidebar`&&D\.push\(\{id:`change-thread-color`/);
-  assert.match(patched, /t\[135\]!==Te\|\|t\[136\]!==Te/);
-  assert.match(patched, /t\[135\]=Te,t\[136\]=Te/);
-  assert.match(patched, /dataAttributes:\{\.\.\.Dp\.sidebarThreadRow/);
-  assert.match(patched, /defaultMessage:`Change chat color…`/);
-  assert.doesNotMatch(patched, /Change pin color/);
-  assert.match(patched, /tu\.SIDEBAR_THREAD_METADATA/);
-  assert.doesNotMatch(patched, /labelColor:null/);
-  assert.doesNotThrow(() => new Function(patched));
-  assert.equal(applySidebarThreadColorPatch(patched, context), patched);
+  assert.equal(applySidebarThreadColorStatePatch(initial), initial);
+  assert.equal(applySidebarThreadColorUiPatch(primary), primary);
+
+  const patchedInitial = applySidebarThreadColorStatePatch(initial, context);
+  const patchedPrimary = applySidebarThreadColorUiPatch(primary, context);
+  assert.match(patchedInitial, new RegExp(THREAD_COLOR_STATE_MARKER));
+  assert.match(patchedPrimary, new RegExp(THREAD_COLOR_UI_MARKER.replace(/[/*]/g, "\\$&")));
+  assert.match(patchedPrimary, /labelColor:Ce/);
+  assert.match(patchedPrimary, /initialColor:C,showColorPicker:!0/);
+  assert.match(patchedPrimary, /codexLinuxSetSidebarThreadColor\?\.\(T,n,t\)/);
+  assert.match(patchedPrimary, /defaultMessage:`Change chat color…`/);
+  assert.match(patchedPrimary, /t\[136\]!==Ce\|\|t\[137\]!==Ce/);
+  assert.equal(applySidebarThreadColorStatePatch(patchedInitial, context), patchedInitial);
+  assert.equal(applySidebarThreadColorUiPatch(patchedPrimary, context), patchedPrimary);
+  assert.doesNotThrow(() => new Function(patchedInitial));
+  assert.doesNotThrow(() => new Function(patchedPrimary));
 });
 
-test("sidebar thread colors tolerate upstream minifier alias changes", () => {
-  const source = sidebarThreadColorBundleFixture().replace(
-    "dataAttributes:Dp.sidebarThreadRow",
-    "dataAttributes:Ep.sidebarThreadRow",
-  );
-  const patched = applySidebarThreadColorPatch(source, enabledThreadColorContext());
-
-  assert.match(patched, /dataAttributes:\{\.\.\.Ep\.sidebarThreadRow/);
-  assert.match(patched, new RegExp(THREAD_COLOR_RUNTIME_MARKER));
-});
-
-test("sidebar thread color runtime is dependency-free valid JavaScript", () => {
-  const runtime = sidebarThreadColorRuntimeSource();
-  assert.doesNotThrow(() => Function(runtime)());
-  assert.match(runtime, /background-color:#ef444424!important/);
-  assert.match(runtime, /:hover\{background-color:#ef444438!important/);
-  assert.doesNotMatch(runtime, /::before/);
-  for (const { label, value } of THREAD_COLORS) {
-    assert.match(runtime, new RegExp(label));
-    assert.match(runtime, new RegExp(value));
-  }
-});
-
-test("sidebar thread color patch upgrades an existing marker runtime to the full-row tint", () => {
-  const context = enabledThreadColorContext();
-  const current = applySidebarThreadColorPatch(sidebarThreadColorBundleFixture(), context);
-  const legacy = current.replace(
-    JSON.stringify(sidebarThreadColorCss()),
-    JSON.stringify(`[${THREAD_COLOR_ATTRIBUTE}]{position:relative;}`),
-  );
-
-  assert.notEqual(legacy, current);
-  assert.equal(applySidebarThreadColorPatch(legacy, context), current);
-});
-
-test("sidebar thread color runtime merges, clears, validates, and reports failures", async () => {
+test("sidebar thread color metadata writer merges and clears upstream state", async () => {
   let persisted = {
     "thread-one": { labelColor: "#ef4444", futureField: true },
     "thread-two": { labelColor: "#22c55e" },
   };
-  let writes = 0;
-  const toasts = [];
-  const toastKey = Symbol("toast");
-  const scope = { get: (key) => (key === toastKey ? { danger: (message) => toasts.push(message) } : null) };
-  let failWrite = false;
-  const runtime = Function(
-    "im",
-    "tu",
-    "rm",
-    "wd",
-    "ov",
-    "document",
-    `${sidebarThreadColorRuntimeSource({
-      errorToastAtom: "ov",
-      formatMessage: "wd",
-      globalStateKeys: "tu",
-      readGlobalState: "im",
-      writeGlobalState: "rm",
-    })};return {` +
-      `setColor:codexLinuxSetSidebarThreadColor,menu:codexLinuxSidebarThreadColorMenu};`,
-  )(
-    () => persisted,
-    { SIDEBAR_THREAD_METADATA: "sidebar-thread-metadata" },
-    async (_scope, _key, value) => {
-      writes += 1;
-      if (failWrite) throw new Error("write failed");
-      persisted = value;
-    },
-    (message) => message,
-    toastKey,
-    undefined,
+  const initial = applySidebarThreadColorStatePatch(
+    sidebarThreadColorStateBundleFixture(),
+    enabledThreadColorContext(),
   );
+  const sandbox = {
+    Q: {},
+    ro: () => null,
+    tu: { SIDEBAR_THREAD_METADATA: "sidebar-thread-metadata" },
+    im: (get, key) => get(key),
+    fetch: async (_method, { params }) => { persisted = params.value; },
+    globalThis: {},
+    console,
+  };
+  new Function(...Object.keys(sandbox), initial)(...Object.values(sandbox));
+  const scope = { get: () => persisted };
 
-  assert.deepEqual(runtime.menu(scope, "thread-one").map((item) => item.message.defaultMessage), [
-    ...THREAD_COLORS.map(({ label }) => label),
-    "No color",
-  ]);
-
-  await runtime.setColor(scope, "thread-one", "#3b82f6");
+  await sandbox.globalThis[THREAD_COLOR_STATE_MARKER](scope, "thread-one", "#3b82f6");
   assert.deepEqual(persisted, {
     "thread-one": { labelColor: "#3b82f6", futureField: true },
     "thread-two": { labelColor: "#22c55e" },
   });
+  await sandbox.globalThis[THREAD_COLOR_STATE_MARKER](scope, "thread-one", null);
+  assert.deepEqual(persisted["thread-one"], { futureField: true });
+});
 
-  await runtime.setColor(scope, "thread-one", null);
-  assert.deepEqual(persisted, {
-    "thread-one": { futureField: true },
-    "thread-two": { labelColor: "#22c55e" },
-  });
+test("sidebar thread color descriptors target split assets and expose disabled state", () => {
+  assert.equal(threadColorDescriptors.length, 2);
+  assert.match("app-initial-current.js", THREAD_COLOR_INITIAL_ASSET_PATTERN);
+  assert.match("app-primary-current.js", THREAD_COLOR_PRIMARY_ASSET_PATTERN);
+  assert.equal(threadColorDescriptors.every((descriptor) => descriptor.enabled({}) === false), true);
+  assert.equal(
+    threadColorDescriptors.every((descriptor) => descriptor.enabled(enabledThreadColorContext()) === true),
+    true,
+  );
+});
 
-  const writesBeforeInvalid = writes;
-  await runtime.setColor(scope, "thread-one", "red");
-  assert.equal(writes, writesBeforeInvalid);
-
-  failWrite = true;
-  await runtime.setColor(scope, "thread-two", "#a855f7");
-  assert.deepEqual(toasts, ["Could not update chat color"]);
-  assert.deepEqual(persisted["thread-two"], { labelColor: "#22c55e" });
+test("disabled sidebar thread color descriptors report skipped-disabled", () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "sidebar-thread-color-disabled-"));
+  try {
+    fs.mkdirSync(path.join(tempRoot, "webview", "assets"), { recursive: true });
+    const report = createPatchReport();
+    applyWebviewAssetPatchDescriptors(tempRoot, threadColorDescriptors, {}, report);
+    assert.deepEqual(report.patches.map(({ status }) => status), [
+      "skipped-disabled",
+      "skipped-disabled",
+    ]);
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("sidebar thread color drift warns and remains byte-identical", () => {
-  const source = sidebarThreadColorBundleFixture().replace(
+  const source = sidebarThreadColorUiBundleFixture().replace(
     "labelColor:null,modelProvider:",
     "labelColor:void 0,modelProvider:",
   );
   const { value, warnings } = withCapturedWarns(() =>
-    applySidebarThreadColorPatch(source, {
+    applySidebarThreadColorUiPatch(source, {
       ...enabledThreadColorContext(),
       warnOnMissingMarkers: true,
     }),
@@ -592,7 +550,7 @@ test("sidebar thread color drift warns and remains byte-identical", () => {
 
   assert.equal(value, source);
   assert.equal(warnings.length, 1);
-  assert.match(warnings[0], /Expected exactly one current sidebar marker/);
+  assert.match(warnings[0], /current sidebar row and rename dialog/);
 });
 
 test("patch injects sidebar project-name stylesheet runtime once", () => {

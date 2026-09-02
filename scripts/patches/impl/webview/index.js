@@ -1303,6 +1303,33 @@ function applyLinuxAppServerFeatureEnablementPatch(currentSource) {
   ].join("");
 }
 
+function applyLinuxCodexAppMcpTransportGuardPatch(currentSource) {
+  const marker = "/*codexLinuxOmitTransportlessCodexAppMcp*/";
+  if (currentSource.includes(marker)) return currentSource;
+
+  const keyMatch = currentSource.match(
+    /\b([A-Za-z_$][\w$]*)=`mcp_servers\.codex_app\.enabled_tools`/u,
+  );
+  if (keyMatch == null) return currentSource;
+
+  const keyIndex = currentSource.indexOf(`[${keyMatch[1]}]:`, keyMatch.index);
+  const gateNeedle = ".usesDesktopMcp&&(";
+  const gateIndex = keyIndex < 0 ? -1 : currentSource.lastIndexOf(gateNeedle, keyIndex);
+  const branch = gateIndex < 0 ? "" : currentSource.slice(gateIndex, keyIndex);
+  const ownerMatch = gateIndex < 0
+    ? null
+    : currentSource.slice(0, gateIndex).match(/[A-Za-z_$][\w$]*$/u);
+  if (keyIndex < 0 || gateIndex < keyIndex - 512 || !branch.includes(".config={") || ownerMatch == null) {
+    console.warn(
+      "WARN: Could not find transport-less Codex app MCP config injection — thread start/resume may fail",
+    );
+    return currentSource;
+  }
+
+  const insertionIndex = gateIndex - ownerMatch[0].length;
+  return `${currentSource.slice(0, insertionIndex)}${marker}!1&&${currentSource.slice(insertionIndex)}`;
+}
+
 const AUTOMATION_UPDATE_EAGER_MARKER_PATTERN =
   /[A-Za-z_$][\w$]*\.name===`automation_update`&&delete [A-Za-z_$][\w$]*\.deferLoading/u;
 const AUTOMATION_UPDATE_DYNAMIC_TOOLS_PATTERN =
@@ -2336,6 +2363,7 @@ module.exports = {
   applyBrowserAnnotationScreenshotPatch,
   applyLinuxAppServerBackfillWaitPatch,
   applyLinuxAppServerFeatureEnablementPatch,
+  applyLinuxCodexAppMcpTransportGuardPatch,
   applyAutomationUpdateEagerToolPatch,
   matchesAutomationUpdateEagerToolContract,
   applyLinuxChatSearchHydrationPatch,

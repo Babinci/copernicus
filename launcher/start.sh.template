@@ -298,6 +298,21 @@ WEBVIEW_RENDERER_URL_OVERRIDE_ACTIVE=0
 
 mkdir -p "$LOG_DIR" "$APP_CONFIG_DIR" "$APP_STATE_DIR" "$LAUNCH_ACTION_RUNTIME_DIR"
 chmod 700 "$LAUNCH_ACTION_RUNTIME_DIR" 2>/dev/null || true
+
+LAUNCHER_LOG_TRIMMED=0
+if [ -f "$LOG_FILE" ] && [ ! -L "$LOG_FILE" ]; then
+    launcher_log_size="$(stat -c %s -- "$LOG_FILE" 2>/dev/null || echo 0)"
+    if [[ "$launcher_log_size" =~ ^[0-9]+$ ]] && [ "$launcher_log_size" -gt 16777216 ]; then
+        if launcher_log_tail="$(mktemp "$LOG_DIR/.launcher-log.XXXXXX")"; then
+            if tail -c 4194304 -- "$LOG_FILE" > "$launcher_log_tail" && mv -f -- "$launcher_log_tail" "$LOG_FILE"; then
+                LAUNCHER_LOG_TRIMMED=1
+            else
+                rm -f -- "$launcher_log_tail"
+            fi
+        fi
+    fi
+fi
+
 export CODEX_DESKTOP_LAUNCH_ACTION_SOCKET="$LAUNCH_ACTION_SOCKET"
 STARTED_WEBVIEW_PID=""
 ADOPTED_WEBVIEW_PID=""
@@ -389,6 +404,9 @@ else
 fi
 
 echo "[$(date -Is)] Starting $CODEX_LINUX_APP_DISPLAY_NAME launcher"
+if [ "$LAUNCHER_LOG_TRIMMED" -eq 1 ]; then
+    echo "Trimmed launcher log to its most recent 4 MiB"
+fi
 if [ "$MULTI_LAUNCH_ACTIVE" -eq 1 ]; then
     echo "Multi-launch instance: id=$CODEX_LINUX_INSTANCE_ID webview_port=$CODEX_LINUX_WEBVIEW_PORT state_dir=$APP_STATE_DIR user_data_dir=$CODEX_ELECTRON_USER_DATA_DIR"
 fi

@@ -175,6 +175,15 @@ pub fn installed_package_version() -> String {
     }
 }
 
+/// Returns the version recorded inside a native package artifact.
+pub fn package_version(path: &Path) -> Result<String> {
+    match PackageKind::from_path(path) {
+        PackageKind::Deb => deb_package_version(path),
+        PackageKind::Rpm => rpm_package_version(path),
+        PackageKind::Pacman => pacman_package_version(path),
+    }
+}
+
 /// Returns whether the primary native package still appears to be installed.
 pub fn is_primary_package_installed() -> bool {
     installed_package_version() != "unknown"
