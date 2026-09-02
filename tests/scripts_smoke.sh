@@ -5171,7 +5171,7 @@ SCRIPT
             "$app_dir/start.sh"
     }
 
-    printf '%s\n' '<!doctype html><title>Codex</title><div id="startup-loader">first build</div>' \
+    printf '%s\n' '<!doctype html><title>ChatGPT</title><div id="startup-loader">first build</div>' \
         > "$app_dir/content/webview/index.html"
     rm -f "$electron_marker"
     run_packaged_launcher >/dev/null 2>&1
@@ -5187,7 +5187,7 @@ SCRIPT
     [ "$(cat "$electron_marker")" = "$first_renderer_url" ] \
         || fail "Packaged renderer URL should remain stable while the webview index is unchanged"
 
-    printf '%s\n' '<!doctype html><title>Codex</title><div id="startup-loader">second build</div>' \
+    printf '%s\n' '<!doctype html><title>ChatGPT</title><div id="startup-loader">second build</div>' \
         > "$app_dir/content/webview/index.html"
     rm -f "$electron_marker"
     run_packaged_launcher >/dev/null 2>&1
@@ -7397,7 +7397,7 @@ proc = None
 try:
     (workspace / "assets").mkdir()
     (workspace / "apps").mkdir()
-    (workspace / "index.html").write_text("<!doctype html><title>Codex</title>", encoding="utf8")
+    (workspace / "index.html").write_text("<!doctype html><title>ChatGPT</title>", encoding="utf8")
     (workspace / "assets" / "app-test-abc123.js").write_text("export default 1;\n", encoding="utf8")
     (workspace / "apps" / "icon.png").write_bytes(b"png")
     fixed_mtime = 1_700_000_000

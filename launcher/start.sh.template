@@ -2748,7 +2748,7 @@ webview_origin_is_reachable_fast() {
     fi
     rm -f "$err"
 
-    [[ "$body" == *"<title>Codex</title>"* ]] || return 1
+    [[ "$body" == *"<title>ChatGPT</title>"* ]] || return 1
     [[ "$body" == *"startup-loader"* ]] || return 1
 }
 
@@ -2837,7 +2837,7 @@ verify_webview_origin() {
     rm -f "$err"
 
     local missing=()
-    [[ "$body" == *"<title>Codex</title>"* ]] || missing+=("<title>Codex</title>")
+    [[ "$body" == *"<title>ChatGPT</title>"* ]] || missing+=("<title>ChatGPT</title>")
     [[ "$body" == *"startup-loader"* ]]       || missing+=("startup-loader")
     if [ ${#missing[@]} -gt 0 ]; then
         echo "Webview origin validation failed for $url; missing markers: ${missing[*]}" >&2

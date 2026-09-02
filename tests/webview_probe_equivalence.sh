@@ -63,7 +63,7 @@ verify_webview_origin__orig() {
     python3 - "$url" <<'PY' 2>/dev/null
 import sys, urllib.request
 url = sys.argv[1]
-required_markers = ("<title>Codex</title>", "startup-loader")
+required_markers = ("<title>ChatGPT</title>", "startup-loader")
 try:
     with urllib.request.urlopen(url, timeout=2) as response:
         body = response.read(8192).decode("utf-8", "ignore")
@@ -202,7 +202,7 @@ setup_server() {
     cat >"$FIXTURES/index.html" <<'EOF'
 <!doctype html>
 <html>
-<head><title>Codex</title></head>
+<head><title>ChatGPT</title></head>
 <body>
 <div id="startup-loader">loading</div>
 <script>console.log('Codex webview');</script>
@@ -216,7 +216,7 @@ EOF
 EOF
     cat >"$FIXTURES/missing-loader.html" <<'EOF'
 <!doctype html>
-<html><head><title>Codex</title></head>
+<html><head><title>ChatGPT</title></head>
 <body>no loader marker</body></html>
 EOF
 
@@ -276,7 +276,7 @@ import time
 
 INDEX_BODY = b"""<!doctype html>
 <html>
-<head><title>Codex</title></head>
+<head><title>ChatGPT</title></head>
 <body>
 <div id="startup-loader">loading</div>
 </body>
