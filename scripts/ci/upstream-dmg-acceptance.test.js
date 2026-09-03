@@ -246,6 +246,8 @@ test("upstream workflow gates the enabled chat-colour feature against the curren
   assert.match(workflow, /--require-enabled-feature ui-tweaks/);
   assert.match(workflow, /--require-applied feature:ui-tweaks:sidebar-thread-color-state/);
   assert.match(workflow, /--require-applied feature:ui-tweaks:sidebar-thread-color-ui/);
+  assert.match(workflow, /--require-applied feature:ui-tweaks:thread-session-id-copy/);
+  assert.match(workflow, /--require-applied feature:ui-tweaks:browser-tab-session-id-copy/);
   assert.match(workflow, /validate-thread-color-build\.js codex-app/);
 
   const makefile = fs.readFileSync(path.resolve(__dirname, "../../Makefile"), "utf8");

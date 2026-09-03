@@ -24,6 +24,7 @@ Enable it in the local, gitignored feature config:
 | `reasoning.keepEffortLabelsEnglish` | `patches/reasoning-effort-labels.js` | Keeps reasoning effort values in English in the Simplified Chinese UI while leaving the surrounding interface translated. | `tweaks.reasoning.keepEffortLabelsEnglish.enabled` |
 | `sidebar.projectName` | `patches/sidebar-project-name.js` | Styles project names in the left sidebar project list. It does not style `Projects` / `Chats` section headings and does not style chat rows. | `tweaks.sidebar.projectName.enabled`, `tweaks.sidebar.projectName.style` |
 | `sidebar.threadColor` | `patches/sidebar-thread-color.js` | Adds a six-color **Change chat color…** submenu and full-row color rendering. | `tweaks.sidebar.threadColor.enabled` |
+| Session ID copy | `patches/session-id-copy.js` | Adds **Copy session ID** to task and Browser-tab menus. | Enabled with `ui-tweaks` |
 
 ## Settings
 

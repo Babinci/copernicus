@@ -57,6 +57,13 @@ const {
   sidebarThreadColorCss,
 } = require("./patches/sidebar-thread-color.js");
 const {
+  BROWSER_TAB_MARKER: SESSION_COPY_BROWSER_MARKER,
+  THREAD_MARKER: SESSION_COPY_THREAD_MARKER,
+  applyBrowserTabSessionCopyPatch,
+  applyThreadSessionCopyPatch,
+  descriptors: sessionCopyDescriptors,
+} = require("./patches/session-id-copy.js");
+const {
   RUNTIME_MARKER: FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER,
   applyFileTreeFolderActionsPatch,
   runtimeSource: fileTreeFolderActionsRuntimeSource,
@@ -217,6 +224,8 @@ test("ui-tweaks is discoverable and disabled until listed in features.json", () 
         ["feature:ui-tweaks:sidebar-project-name-style", "webview-asset", "optional"],
         ["feature:ui-tweaks:sidebar-thread-color-state", "webview-asset", "optional"],
         ["feature:ui-tweaks:sidebar-thread-color-ui", "webview-asset", "optional"],
+        ["feature:ui-tweaks:thread-session-id-copy", "webview-asset", "optional"],
+        ["feature:ui-tweaks:browser-tab-session-id-copy", "webview-asset", "optional"],
         ["feature:ui-tweaks:file-tree-folder-actions", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-default-advanced-view", "webview-asset", "optional"],
         ["feature:ui-tweaks:model-picker-inline-model-list", "webview-asset", "optional"],
@@ -500,6 +509,25 @@ test("sidebar thread colors patch the current split bundles once", () => {
   assert.equal(applySidebarThreadColorUiPatch(patchedPrimary, context), patchedPrimary);
   assert.doesNotThrow(() => new Function(patchedInitial));
   assert.doesNotThrow(() => new Function(patchedPrimary));
+});
+
+test("session ID is copyable from both current native menus", () => {
+  const thread = "function GLc({scope:e,target:t,actions:n}){let{conversationId:f,hostId:p,cwd:m}=t,{copyAppLink:y,copyConversationMarkdown:x}=n;return fLc({workingDirectory:{onSelect:()=>v(m)},link:{onSelect:()=>y(f)},additionalItems:[{id:`copy-conversation-markdown`,message:xL.copyConversationMarkdown,onSelect:()=>x(f)}]})}";
+  const browser = "function tn({browserConversationId:e,browserHostDisplayName:t,browserTabId:r,cwd:i,target:a}){return(o,s)=>{let c=u.getSnapshot(e,r),l=[{id:`new-browser-tab-to-the-right`,message:D({id:`thread.sidePanel.browserTabMenu.newTabToTheRight`}),onSelect:()=>Z(o)}];l.push({id:`copy-browser-tab-url`,onSelect:()=>A.clipboard.writeText(c.url)});return l}}";
+  const patchedThread = applyThreadSessionCopyPatch(thread);
+  const patchedBrowser = applyBrowserTabSessionCopyPatch(browser);
+
+  assert.match(patchedThread, new RegExp(SESSION_COPY_THREAD_MARKER));
+  assert.match(patchedThread, /defaultMessage:`Copy session ID`/);
+  assert.match(patchedThread, /navigator\.clipboard\.writeText\(f\)/);
+  assert.match(patchedBrowser, new RegExp(SESSION_COPY_BROWSER_MARKER));
+  assert.match(patchedBrowser, /defaultMessage:`Copy session ID`/);
+  assert.match(patchedBrowser, /A\.clipboard\.writeText\(e\)/);
+  assert.equal(applyThreadSessionCopyPatch(patchedThread), patchedThread);
+  assert.equal(applyBrowserTabSessionCopyPatch(patchedBrowser), patchedBrowser);
+  assert.doesNotThrow(() => new Function(patchedThread));
+  assert.doesNotThrow(() => new Function(patchedBrowser));
+  assert.equal(sessionCopyDescriptors.length, 2);
 });
 
 test("sidebar thread color metadata writer merges and clears upstream state", async () => {
