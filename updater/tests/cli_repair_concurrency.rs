@@ -635,16 +635,16 @@ fn killed_npm_supervisor_cleans_descendants_before_lock_release() -> Result<()> 
 
     wait_for_process_group_exit(background_process_group, "npm group after supervisor death")?;
     fs::remove_file(&fixture.background_process_group)?;
-    let first = preflight.wait()?;
-    anyhow::ensure!(
-        !first.status.success(),
-        "cli-preflight unexpectedly succeeded after its npm supervisor was killed"
-    );
     wait_for_path(&fixture.install_started, "replacement npm install")?;
     assert_eq!(install_count(&fixture.install_log)?, 2);
     assert!(!fixture.install_overlap.exists());
 
     fs::write(&fixture.install_release, b"continue")?;
+    let first = preflight.wait()?;
+    anyhow::ensure!(
+        !first.status.success(),
+        "cli-preflight unexpectedly succeeded after its npm supervisor was killed"
+    );
     ensure_success("status", &status.wait()?)?;
     assert!(!fixture.install_overlap.exists());
     Ok(())
