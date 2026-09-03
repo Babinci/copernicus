@@ -2508,6 +2508,7 @@ terminate_stale_electron_with_pidfd() {
         "$MULTI_LAUNCH_ACTIVE" <<'PY'
 import os
 import select
+import shlex
 import signal
 import sys
 
@@ -2538,6 +2539,7 @@ try:
     actual_uid = int(uid_line.split()[1])
     with open(f"/proc/{pid}/cmdline", "rb") as handle:
         cmdline = [part for part in handle.read().split(b"\0") if part]
+    executable = os.readlink(f"/proc/{pid}/exe")
     with open(f"/proc/{pid}/environ", "rb") as handle:
         environ_entries = [part for part in handle.read().split(b"\0") if b"=" in part]
 except (OSError, IndexError, StopIteration, ValueError) as exc:
@@ -2550,15 +2552,29 @@ for entry in environ_entries:
     key, value = entry.split(b"=", 1)
     environ[os.fsdecode(key)] = os.fsdecode(value)
 
+argv = [os.fsdecode(part) for part in cmdline]
+if len(argv) == 1:
+    try:
+        argv = shlex.split(argv[0])
+    except ValueError:
+        argv = []
+app_ids = {
+    arg.split("=", 1)[1]
+    for arg in argv[1:]
+    if arg.startswith("--app-id=")
+}
+
 identity_matches = (
     actual_start_time == expected_start_time
     and actual_uid == os.geteuid()
-    and bool(cmdline)
-    and os.fsdecode(cmdline[0]) == expected_executable
-    and not any(part.startswith(b"--type=") for part in cmdline[1:])
+    and os.path.realpath(executable) == os.path.realpath(expected_executable)
+    and bool(argv)
+    and argv[0] == expected_executable
+    and not any(arg.startswith("--type=") for arg in argv[1:])
     and expected_app_id in {
         environ.get("CODEX_LINUX_APP_ID"),
         environ.get("CODEX_APP_ID"),
+        *app_ids,
     }
 )
 if expected_multi_launch:

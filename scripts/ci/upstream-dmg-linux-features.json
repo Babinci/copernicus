@@ -1,0 +1,27 @@
+{
+  "enabled": ["ui-tweaks"],
+  "settings": {
+    "ui-tweaks": {
+      "tweaks": {
+        "modelPicker": {
+          "showModelsByDefault": {
+            "enabled": false
+          }
+        },
+        "reasoning": {
+          "keepEffortLabelsEnglish": {
+            "enabled": false
+          }
+        },
+        "sidebar": {
+          "projectName": {
+            "enabled": false
+          },
+          "threadColor": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  }
+}

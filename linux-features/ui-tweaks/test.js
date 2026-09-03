@@ -485,6 +485,12 @@ test("sidebar thread colors patch the current split bundles once", () => {
   assert.match(patchedPrimary, new RegExp(THREAD_COLOR_ATTRIBUTE));
   assert.match(patchedPrimary, /defaultMessage:`Change chat color…`/);
   assert.match(patchedPrimary, /t\[144\]!==De\|\|t\[145\]!==De/);
+  assert.doesNotMatch(
+    patchedPrimary,
+    /id:`change-thread-color`[^}]*onSelect:r/,
+    "chat colour must not reopen the rename dialog",
+  );
+  assert.doesNotMatch(patchedPrimary, /initialColor:C,showColorPicker:!0/);
   for (const { id, label, value } of THREAD_COLORS) {
     assert.match(patchedPrimary, new RegExp(`change-thread-color-${id}`));
     assert.match(patchedPrimary, new RegExp(label));

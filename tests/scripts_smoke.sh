@@ -10920,6 +10920,7 @@ test_launcher_log_rotation() {
 test_launcher_warm_start_recovery() {
     info "Checking warm-start recovery after launcher SIGKILL"
     bash "$REPO_DIR/tests/launcher_warm_start_recovery.sh"
+    CODEX_TEST_PACKED_CMDLINE=1 bash "$REPO_DIR/tests/launcher_warm_start_recovery.sh"
     CODEX_TEST_DISABLE_WARM_START=1 bash "$REPO_DIR/tests/launcher_warm_start_recovery.sh"
     CODEX_TEST_KILL_DURING_PRELAUNCH=1 bash "$REPO_DIR/tests/launcher_warm_start_recovery.sh"
     CODEX_TEST_RESTART_HIDDEN=1 bash "$REPO_DIR/tests/launcher_window_reopen_behavior.sh"

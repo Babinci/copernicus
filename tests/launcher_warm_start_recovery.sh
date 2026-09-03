@@ -30,7 +30,7 @@ cleanup() {
         pid="${cmdline#/proc/}"
         pid="${pid%/cmdline}"
         IFS= read -r -d '' arg0 < "$cmdline" 2>/dev/null || true
-        if [ "${arg0:-}" = "$APP_DIR/electron" ]; then
+        if [[ "${arg0:-}" == "$APP_DIR/electron" || "${arg0:-}" == "$APP_DIR/electron "* ]]; then
             kill "$pid" 2>/dev/null || true
         fi
         arg0=""
@@ -143,12 +143,25 @@ printf '%s\n' '<!doctype html><title>ChatGPT</title><div id="startup-loader"></d
 
 g++ -x c++ -O2 -o "$APP_DIR/electron" - <<'CPP'
 #include <csignal>
+#include <cstdlib>
+#include <cstring>
+#include <string>
 #include <unistd.h>
 
 static volatile sig_atomic_t running = 1;
 static void stop(int) { running = 0; }
 
-int main() {
+int main(int, char **argv) {
+    if (std::getenv("CODEX_TEST_PACKED_CMDLINE") != nullptr &&
+        std::strstr(argv[0], " --app-id=") == nullptr) {
+        std::string packed = std::string(argv[0]) +
+            " --no-sandbox --app-id=codex-desktop";
+        unsetenv("CODEX_TEST_PACKED_CMDLINE");
+        unsetenv("CODEX_LINUX_APP_ID");
+        unsetenv("CODEX_APP_ID");
+        execl("/proc/self/exe", packed.c_str(), nullptr);
+        return 2;
+    }
     std::signal(SIGTERM, stop);
     std::signal(SIGINT, stop);
     while (running) pause();
@@ -198,6 +211,9 @@ COMMON_ENV=(
     "CODEX_WEBVIEW_PORT=$PORT"
     "CODEX_TEST_HOOK_PID_FILE=$TMP_DIR/hook.pid"
 )
+if [ "${CODEX_TEST_PACKED_CMDLINE:-0}" = "1" ]; then
+    COMMON_ENV+=("CODEX_TEST_PACKED_CMDLINE=1")
+fi
 if [ "${CODEX_TEST_DISABLE_PIDFD:-0}" = "1" ]; then
     COMMON_ENV+=("PYTHONPATH=$TMP_DIR/python-site")
 fi

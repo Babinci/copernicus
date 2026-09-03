@@ -12,6 +12,7 @@ on:
       - scripts/patches/**
       - scripts/ci/validate-patch-report.js
       - scripts/ci/upstream-dmg-*.js
+      - scripts/ci/upstream-dmg-linux-features.json
       - scripts/validate-upstream-dmg.js
       - scripts/lib/candidate-install.sh
       - scripts/lib/bundled-plugins.sh
@@ -35,6 +36,7 @@ on:
       - scripts/patches/**
       - scripts/ci/validate-patch-report.js
       - scripts/ci/upstream-dmg-*.js
+      - scripts/ci/upstream-dmg-linux-features.json
       - scripts/validate-upstream-dmg.js
       - scripts/lib/candidate-install.sh
       - scripts/lib/bundled-plugins.sh
@@ -168,9 +170,19 @@ jobs:
           CODEX_ACCEPTANCE_DECISION_JSON: ${{ github.workspace }}/upstream-dmg-decision.json
           CODEX_ACCEPTANCE_OVERRIDE: '0'
           CODEX_ACCEPTANCE_SOURCE: github-actions
+          CODEX_LINUX_FEATURES_CONFIG: ${{ github.workspace }}/scripts/ci/upstream-dmg-linux-features.json
           CODEX_UPSTREAM_DMG_METADATA_JSON: ${{ github.workspace }}/upstream-dmg-metadata.json
           REBUILD_REPORT_DIR: ${{ github.workspace }}/upstream-acceptance
         run: make build-app DMG=/tmp/codex-upstream-ci/Codex.dmg
+
+      - name: Enforce current-DMG chat colour contract
+        if: steps.acceptance-build.outcome == 'success'
+        run: |
+          node scripts/ci/validate-patch-report.js upstream-acceptance/patch-report.json \
+            --require-enabled-feature ui-tweaks \
+            --require-applied feature:ui-tweaks:sidebar-thread-color-state \
+            --require-applied feature:ui-tweaks:sidebar-thread-color-ui
+          node scripts/ci/validate-thread-color-build.js codex-app
 
       - name: Import staged Browser clients through node_repl
         if: steps.acceptance-build.outcome == 'success'

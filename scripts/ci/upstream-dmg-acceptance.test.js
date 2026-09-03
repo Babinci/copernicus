@@ -217,6 +217,38 @@ test("upstream workflow concurrency is isolated per PR or ref", () => {
   assert.match(workflow, /persist-credentials: false/);
 });
 
+test("upstream workflow gates the enabled chat-colour feature against the current DMG", () => {
+  const workflow = fs.readFileSync(
+    path.resolve(__dirname, "../../.github/workflows/upstream-build-app.yml"),
+    "utf8",
+  );
+  const featureProfile = JSON.parse(fs.readFileSync(
+    path.resolve(__dirname, "upstream-dmg-linux-features.json"),
+    "utf8",
+  ));
+
+  assert.deepEqual(featureProfile, {
+    enabled: ["ui-tweaks"],
+    settings: {
+      "ui-tweaks": {
+        tweaks: {
+          modelPicker: { showModelsByDefault: { enabled: false } },
+          reasoning: { keepEffortLabelsEnglish: { enabled: false } },
+          sidebar: {
+            projectName: { enabled: false },
+            threadColor: { enabled: true },
+          },
+        },
+      },
+    },
+  });
+  assert.match(workflow, /CODEX_LINUX_FEATURES_CONFIG:.*upstream-dmg-linux-features\.json/);
+  assert.match(workflow, /--require-enabled-feature ui-tweaks/);
+  assert.match(workflow, /--require-applied feature:ui-tweaks:sidebar-thread-color-state/);
+  assert.match(workflow, /--require-applied feature:ui-tweaks:sidebar-thread-color-ui/);
+  assert.match(workflow, /validate-thread-color-build\.js codex-app/);
+});
+
 test("Nix refresh serializes campaigns and deduplicates refresh and exact-head CI", () => {
   const workflow = fs.readFileSync(
     path.resolve(__dirname, "../../.github/workflows/update-codex-hash.yml"),
