@@ -10490,7 +10490,9 @@ SCRIPT
     printf '#!/usr/bin/env bash\nexit 0\n' > "$fake_bin/update-desktop-database"
     chmod +x "$fake_bin/7z" "$fake_bin/systemctl" "$fake_bin/update-desktop-database"
     mkdir -p "$app_dir"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$app_dir/start.sh"
     printf '%s\n' "26.609.41114" > "$app_dir/version"
+    chmod +x "$app_dir/start.sh"
 
     PATH="$fake_bin:$PATH" \
         HOME="$home" \
@@ -10514,6 +10516,109 @@ SCRIPT
     assert_contains "$metadata_file" "DMG_SHA256=unavailable"
 }
 
+test_user_local_fresh_install_builds_runnable_app() {
+    info "Checking a fresh user-local install produces a runnable app"
+    local workspace="$TMP_DIR/user-local-fresh-install"
+    local origin_repo="$workspace/origin.git"
+    local source_repo="$workspace/source"
+    local fake_bin="$workspace/bin"
+    local home="$workspace/home"
+    local app_dir="$home/.local/opt/codex-desktop-linux/codex-app"
+    local build_marker="$workspace/build-ran"
+    local unexpected_curl_marker="$workspace/unexpected-curl"
+    local launch_log="$workspace/launch.log"
+
+    mkdir -p "$workspace" "$fake_bin"
+    git init --bare --initial-branch=main "$origin_repo" >/dev/null
+    git clone "$origin_repo" "$source_repo" >/dev/null 2>&1
+    git -C "$source_repo" config user.name "Smoke Test"
+    git -C "$source_repo" config user.email "smoke@example.com"
+    mkdir -p "$source_repo/packaging/linux" "$source_repo/assets"
+    cp "$REPO_DIR/packaging/linux/codex-desktop-entry-doctor.sh" "$source_repo/packaging/linux/"
+    cp "$REPO_DIR/assets/codex.png" "$source_repo/assets/"
+    cat > "$source_repo/install.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+set -euo pipefail
+: "${EXPECTED_APP_DIR:?}"
+: "${EXPECTED_INSTALL_ROOT:?}"
+: "${USER_LOCAL_BUILD_MARKER:?}"
+[ "${CODEX_ACCEPTANCE_OVERRIDE-}" = "0" ]
+[ "${CODEX_INSTALL_ALLOW_RUNNING-}" = "0" ]
+[ "${CODEX_INSTALL_DIR-}" = "$EXPECTED_APP_DIR" ]
+[ "${CODEX_INSTALL_ROOT-}" = "$EXPECTED_INSTALL_ROOT" ]
+mkdir -p "$CODEX_INSTALL_DIR/.codex-linux"
+cat > "$CODEX_INSTALL_DIR/start.sh" <<'LAUNCHER'
+#!/usr/bin/env bash
+printf '%s\n' 'user-local fixture launched'
+LAUNCHER
+chmod +x "$CODEX_INSTALL_DIR/start.sh"
+printf '%s\n' 'fixture-version' > "$CODEX_INSTALL_DIR/version"
+cp assets/codex.png "$CODEX_INSTALL_DIR/.codex-linux/codex-desktop.png"
+printf '%s\n' built >> "$USER_LOCAL_BUILD_MARKER"
+SCRIPT
+    chmod +x "$source_repo/install.sh"
+    git -C "$source_repo" add .
+    git -C "$source_repo" commit -m "fixture" >/dev/null
+    git -C "$source_repo" push -u origin main >/dev/null
+    git -C "$source_repo" remote set-head origin -a >/dev/null 2>&1 || true
+
+    cat > "$fake_bin/curl" <<'SCRIPT'
+#!/usr/bin/env bash
+set -euo pipefail
+if [ "$#" -eq 2 ] && [ "$1" = "-fsSIL" ]; then
+    printf '%s\r\n' \
+        'HTTP/2 200' \
+        'etag: "user-local-fixture"' \
+        'last-modified: Thu, 04 Sep 2026 00:00:00 GMT' \
+        'content-length: 1' \
+        ''
+    exit 0
+fi
+printf '%s\n' "$*" > "${UNEXPECTED_CURL_MARKER:?}"
+exit 1
+SCRIPT
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$fake_bin/systemctl"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$fake_bin/update-desktop-database"
+    chmod +x "$fake_bin/curl" "$fake_bin/systemctl" "$fake_bin/update-desktop-database"
+
+    PATH="$fake_bin:$HOST_TOOL_PATH" \
+        HOME="$home" \
+        XDG_CONFIG_HOME="$workspace/config" \
+        XDG_DATA_HOME="$workspace/data" \
+        XDG_STATE_HOME="$workspace/state" \
+        EXPECTED_APP_DIR="$app_dir" \
+        EXPECTED_INSTALL_ROOT="$home/.local/opt/codex-desktop-linux" \
+        USER_LOCAL_BUILD_MARKER="$build_marker" \
+        UNEXPECTED_CURL_MARKER="$unexpected_curl_marker" \
+        CODEX_USER_LOCAL_SOURCE_REPO_DIR="$source_repo" \
+        bash "$REPO_DIR/contrib/user-local-install/install-user-local.sh" >/dev/null
+
+    assert_file_exists "$build_marker"
+    [ -x "$app_dir/start.sh" ] || fail "Fresh user-local install did not create an executable app launcher"
+    assert_file_not_exists "$unexpected_curl_marker"
+    HOME="$home" XDG_CONFIG_HOME="$workspace/config" \
+        "$home/.local/bin/codex-desktop" > "$launch_log"
+    assert_contains "$launch_log" "user-local fixture launched"
+
+    rm -rf "$app_dir"
+    PATH="$fake_bin:$HOST_TOOL_PATH" \
+        HOME="$home" \
+        XDG_CONFIG_HOME="$workspace/config" \
+        XDG_DATA_HOME="$workspace/data" \
+        XDG_STATE_HOME="$workspace/state" \
+        EXPECTED_APP_DIR="$app_dir" \
+        EXPECTED_INSTALL_ROOT="$home/.local/opt/codex-desktop-linux" \
+        USER_LOCAL_BUILD_MARKER="$build_marker" \
+        UNEXPECTED_CURL_MARKER="$unexpected_curl_marker" \
+        CODEX_USER_LOCAL_SOURCE_REPO_DIR="$source_repo" \
+        bash "$REPO_DIR/contrib/user-local-install/install-user-local.sh" >/dev/null
+    [ "$(wc -l < "$build_marker")" -eq 2 ] \
+        || fail "Missing user-local app did not trigger exactly one recovery rebuild"
+    HOME="$home" XDG_CONFIG_HOME="$workspace/config" \
+        "$home/.local/bin/codex-desktop" > "$launch_log"
+    assert_contains "$launch_log" "user-local fixture launched"
+}
+
 test_user_local_install_preserves_persisted_x11_preference_on_refresh() {
     info "Checking user-local X11 fallback preference persists across helper refreshes"
     local workspace="$TMP_DIR/user-local-x11-preference"
@@ -10521,8 +10626,12 @@ test_user_local_install_preserves_persisted_x11_preference_on_refresh() {
     local home="$workspace/home"
     local config_home="$workspace/config"
     local preference_file="$config_home/codex-desktop-linux/user-local.env"
+    local app_dir="$home/.local/opt/codex-desktop-linux/codex-app"
 
-    mkdir -p "$stub_bin"
+    mkdir -p "$stub_bin" "$app_dir"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$app_dir/start.sh"
+    printf '%s\n' "fixture-version" > "$app_dir/version"
+    chmod +x "$app_dir/start.sh"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$stub_bin/7z"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$stub_bin/systemctl"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$stub_bin/update-desktop-database"
@@ -11213,6 +11322,7 @@ main() {
     test_user_local_prepare_build_repo_handles_relative_origin_url
     test_desktop_entry_doctor_repairs_only_legacy_generated_entries
     test_user_local_install_from_update_defers_record_only_metadata
+    test_user_local_fresh_install_builds_runnable_app
     test_user_local_install_preserves_persisted_x11_preference_on_refresh
     test_user_local_prepare_build_repo_copies_enabled_local_features
     test_user_local_prepare_build_repo_updates_existing_single_branch_fetch_refspec

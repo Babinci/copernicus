@@ -71,6 +71,11 @@ repo_changed=0
 dmg_changed=0
 repo_upstream_changed=0
 repo_overlay_changed=0
+app_missing=0
+
+if [ ! -x "$APP_DIR/start.sh" ]; then
+    app_missing=1
+fi
 
 if [ "$build_head" != "$remote_head" ]; then
     repo_changed=1
@@ -86,9 +91,14 @@ if [ "$force" -eq 1 ] || [ "${DMG_ETAG-}" != "$remote_etag" ] || [ "${DMG_LAST_M
     dmg_changed=1
 fi
 
-if [ "$repo_changed" -eq 0 ] && [ "$dmg_changed" -eq 0 ] && [ "$force" -eq 0 ]; then
+if [ "$repo_changed" -eq 0 ] && [ "$dmg_changed" -eq 0 ] && \
+   [ "$force" -eq 0 ] && [ "$app_missing" -eq 0 ]; then
     log "ChatGPT Desktop wrapper is already up to date."
     exit 0
+fi
+
+if [ "$app_missing" -eq 1 ]; then
+    log "Installed app is missing; rebuilding wrapper..."
 fi
 
 prepare_build_repo
@@ -126,6 +136,7 @@ log "Rebuilding wrapper..."
         export CODEX_LINUX_FEATURES_CONFIG="$SOURCE_REPO_DIR/linux-features/features.json"
     fi
     TMPDIR="$STATE_DIR/tmp" \
+    CODEX_ACCEPTANCE_OVERRIDE=0 \
     CODEX_INSTALL_ALLOW_RUNNING=0 \
         CODEX_INSTALL_ROOT="$OPT_ROOT" \
         CODEX_INSTALL_DIR="$APP_DIR" \

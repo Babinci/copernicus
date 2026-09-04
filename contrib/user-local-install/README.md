@@ -1,6 +1,7 @@
-# User-Local Desktop Integration
+# User-Local Desktop Installation
 
-This folder packages a user-local install layout for `codex-desktop-linux`.
+This folder packages a complete user-local install and update path for
+`codex-desktop-linux`.
 
 It adds:
 
@@ -74,7 +75,13 @@ The installer:
 5. reloads the user `systemd` daemon if available
 6. enables the weekly timer only if `--enable-timer` was passed
 7. refreshes desktop metadata if available
-8. records local metadata and extracts the icon if `Codex.dmg` already exists
+8. builds and installs the app when no runnable user-local app exists
+9. records local metadata and installs the app icon
+
+The initial app build can take several minutes. The command reports success
+only after `~/.local/opt/codex-desktop-linux/codex-app/start.sh` is runnable.
+Re-running it for an existing app refreshes the installed integration and its
+metadata without replacing the working app unnecessarily.
 
 ## Commands
 
@@ -92,6 +99,7 @@ codex-desktop-version
 - The icon is not committed as a binary asset here. It is generated locally from `Codex.dmg`.
 - The helper scripts track both upstream wrapper changes and upstream `Codex.dmg` headers.
 - The helper scripts are copied into `~/.local/opt` and do not run from the git checkout directly.
+- App rebuilds and replacements stay under the user's home and need no `sudo`; installing missing system build dependencies may still require administrator authentication.
 - The X11/XWayland preference is stored in `~/.config/codex-desktop-linux/user-local.env` and is preserved across updater refreshes.
 - The weekly timer runs `codex-desktop-update --quiet`. It is opt-in: pass `--enable-timer` to `install-user-local.sh` to activate it, or run `systemctl --user enable --now codex-desktop-update.timer` manually after install.
 - Automated rebuilds never bypass the running-app or DMG acceptance gates. They may build a candidate while ChatGPT Desktop is open, but promotion waits for the in-app after-exit flow or fails safely for a manual/timer run. Retry after closing the app.

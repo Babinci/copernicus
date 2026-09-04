@@ -247,13 +247,14 @@ The updater runs unprivileged and only escalates through `pkexec` for
 
 ## User-Local Install
 
-`contrib/user-local-install/` is an opt-in install path for users who do not
-want a system-wide native package. The daily-driver flow remains `install.sh`
-plus a native package plus `codex-update-manager`.
+`contrib/user-local-install/` is the supported rootless install path for users
+who do not want a system-wide native package. Native packages remain the
+recommended distro-integrated path; the two channels must not be conflated.
 
 - `install-user-local.sh`
-  Installs under `~/.local/opt/codex-desktop-linux`, creates wrappers under
-  `~/.local/bin`, and installs a user desktop entry.
+  Installs under `~/.local/opt/codex-desktop-linux`, bootstraps the app when it
+  is absent, creates wrappers under `~/.local/bin`, and installs a user desktop
+  entry.
 - `files/.local/bin/codex-desktop{,-update,-check-update,-version}`
   Installed launcher and update/version maintenance wrappers.
 - `files/.local/lib/codex-desktop-linux/common.sh`

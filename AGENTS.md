@@ -111,6 +111,7 @@ Use source files, not generated artifacts. Main routing:
 - Linux features: `linux-features/<id>/`.
 - Package builders: `scripts/build-*.sh` and `scripts/lib/package-common.sh`.
 - Updater: `updater/src/`.
+- Rootless install/update path: `contrib/user-local-install/`.
 - Upstream DMG automation: `scripts/automation/upstream-dmg-watchdog/` and
   `docs/upstream-dmg-watchdog.md`.
 - Computer Use: `computer-use-linux/`; compositor backends under
@@ -188,6 +189,10 @@ Repository governance: [issue and pull request labels](docs/label-governance.md)
   `systemd --user` updater service on a best-effort basis.
 - Failed privileged updater installs stay failed until a newer rebuild or an
   explicit retry path; avoid auto-retrying every reconcile cycle.
+- Before an install or update handoff, resolve the active launcher and install
+  root. A native package under `/opt` requires polkit or sudo; a request for
+  rootless routine updates must use the tested user-local channel under
+  `~/.local/opt`, not a `.deb`-only handoff.
 - Automated user-local updater paths must force acceptance and running-app
   overrides off. They may build alongside a running app, but promotion must
   wait for exit or fail without replacing the installed runtime.
@@ -225,6 +230,9 @@ for details.
 Regenerate the Linux app: `./install.sh ./Codex.dmg` or `./install.sh`.
 Guided native setup/install/update: `make setup-native`,
 `make bootstrap-native`, `make install-native`, `make update-native`.
+Rootless user-local install/update:
+`./contrib/user-local-install/install-user-local.sh --enable-timer`,
+`codex-desktop-update`.
 
 Build native packages:
 

@@ -145,6 +145,7 @@ cd copernicus
 | Fedora | `make bootstrap-native` | Builds and installs an `.rpm` |
 | openSUSE | `make bootstrap-native` | Builds and installs an `.rpm` |
 | Arch, Manjaro, EndeavourOS | `make bootstrap-native` | Builds and installs a pacman package |
+| Any supported Linux, user-local | `./contrib/user-local-install/install-user-local.sh --enable-timer` | Installs under `~/.local`; routine app updates need no `sudo` |
 | NixOS / Nix | `NIXPKGS_ALLOW_UNFREE=1 nix run --impure github:Babinci/copernicus` | See [Nix docs](docs/nix.md) |
 | Atomic desktops / other distros | `make build-app && make appimage` | Local self-build; no bundled updater |
 
@@ -164,6 +165,19 @@ make install-native
 upstream `Codex.dmg`, downloads it only when missing or stale, builds
 `codex-app/`, packages it for your distro, and installs the newest artifact
 from `dist/`.
+
+For a user-owned installation whose routine rebuilds and replacements do not
+need administrator authentication:
+
+```bash
+./contrib/user-local-install/install-user-local.sh --enable-timer
+```
+
+On a fresh profile this command builds the app before reporting success. It
+installs under `~/.local/opt/codex-desktop-linux`; the optional timer checks for
+updates weekly. Installing system build dependencies may still require a
+one-time administrator action. A native package under `/opt/codex-desktop` is a
+separate channel and continues to require polkit or `sudo` when it is replaced.
 
 If you are installing dependencies manually on Fedora:
 

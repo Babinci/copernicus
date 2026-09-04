@@ -152,10 +152,11 @@ if command -v systemctl >/dev/null 2>&1; then
     fi
 fi
 
-if [ "$FROM_UPDATE" -eq 0 ] && [ -x "${HOME}/.local/bin/codex-desktop-update" ]; then
-    "${HOME}/.local/bin/codex-desktop-update" --record-only >/dev/null 2>&1 || true
-fi
-
 if [ "$FROM_UPDATE" -eq 0 ]; then
-    echo "Installed user-local ChatGPT Desktop integration."
+    if [ -x "${OPT_ROOT}/codex-app/start.sh" ]; then
+        "${OPT_BIN_DIR}/codex-desktop-update" --record-only >/dev/null 2>&1 || true
+    else
+        "${OPT_BIN_DIR}/codex-desktop-update"
+    fi
+    echo "Installed user-local ChatGPT Desktop."
 fi
