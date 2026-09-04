@@ -885,14 +885,14 @@ stage_upstream_bundled_skills() {
         warn "Failed to clean macOS sidecar files from bundled skills"
         return 1
     fi
+    if ! chmod -R a-s,u+rwX,go-w "$staging_skills"; then
+        rm -rf -- "$staging_skills"
+        warn "Failed to normalize bundled skills permissions"
+        return 1
+    fi
     if ! validate_upstream_bundled_skills "$staging_skills"; then
         rm -rf -- "$staging_skills" || warn "Failed to clean bundled skills staging directory"
         warn "Bundled skills failed post-copy validation"
-        return 1
-    fi
-    if ! chmod -R u+rwX,go-w "$staging_skills"; then
-        rm -rf -- "$staging_skills"
-        warn "Failed to normalize bundled skills permissions"
         return 1
     fi
 

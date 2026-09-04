@@ -7890,6 +7890,10 @@ test_upstream_bundled_skills_staging() {
         mkdir -p "$WORK_DIR"
         warn() { echo "[WARN] $*" >&2; }
         info() { echo "[INFO] $*" >&2; }
+        cp() {
+            command cp "$@" || return
+            find "${@: -1}" -type d -exec chmod g+s {} +
+        }
         # shellcheck disable=SC1091
         source "$REPO_DIR/scripts/lib/bundled-plugins.sh"
         stage_linux_computer_use_plugin() { return 1; }
@@ -7910,6 +7914,8 @@ test_upstream_bundled_skills_staging() {
         || fail "Expected internal bundled-skill symlink to remain inside the staged root"
     [ ! -e "$target_skill/scripts/render_animation_previews.py:com.apple.FinderInfo" ] \
         || fail "Expected macOS sidecar metadata to be removed from staged bundled skills"
+    [ -z "$(find "$install_dir/resources/skills" -perm /6000 -print -quit)" ] \
+        || fail "Expected inherited privileged bits to be cleared from staged bundled skills"
     assert_contains "$output_log" "Bundled skills staged from upstream DMG"
 }
 
