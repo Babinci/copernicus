@@ -32,9 +32,10 @@ pipeline with thirteen deliberately small workflows:
 - **Caveman** removes prose weight without weakening technical or safety detail.
 - **Handoff** transfers redacted session state while linking durable artifacts.
 
-There are no third-party model providers, API-key routers, autonomous publishing
-paths, databases, or always-on agent societies. Commands and trusted evaluators
-outrank model votes.
+The bundled Copernicus skills use native GPT models and need no third-party
+model router, database, or always-on agent society. The Linux wrapper separately
+offers opt-in transport and provider-compatibility features. Commands and
+trusted evaluators outrank model votes.
 
 The project builds native `.deb`, `.rpm`, and `.pkg.tar.zst` packages, supports
 local AppImage self-builds and Nix, and can install a local update manager that

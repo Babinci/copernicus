@@ -1775,16 +1775,21 @@ printf '%s\n' "$#" > "$TEST_INSTALL_LOG"
 if [ "$#" -gt 0 ]; then
     printf '%s\n' "$1" >> "$TEST_INSTALL_LOG"
 fi
+printf '%s\n' "${REBUILD_REPORT_DIR-}" >> "$TEST_INSTALL_LOG"
 SCRIPT
     chmod +x "$workspace/install.sh"
 
-    TEST_INSTALL_LOG="$install_log" make -f "$REPO_DIR/Makefile" -C "$workspace" build-app >/dev/null
+    TEST_INSTALL_LOG="$install_log" \
+    REBUILD_REPORT_DIR="$workspace/custom-reports" \
+        make -f "$REPO_DIR/Makefile" -C "$workspace" build-app >/dev/null
 
     assert_file_exists "$install_log"
     first_line="$(sed -n '1p' "$install_log")"
     second_line="$(sed -n '2p' "$install_log")"
     [ "$first_line" = "1" ] || fail "Expected make build-app to call install.sh with a single default argument slot, got: $(cat "$install_log")"
     [ -z "$second_line" ] || fail "Expected make build-app default DMG argument to be empty so install.sh falls back to reuse/download, got: $(cat "$install_log")"
+    [ "$(sed -n '3p' "$install_log")" = "$workspace/custom-reports" ] \
+        || fail "Expected make build-app to preserve REBUILD_REPORT_DIR in the installer environment"
 }
 
 test_make_build_app_fresh_uses_installer_fresh_flow() {
@@ -1969,6 +1974,23 @@ EOF
     [ "$(cat "$matching/Codex.dmg")" = "old" ] || fail "Expected matching metadata to reuse cache"
     assert_not_contains "$matching/curl.log" "GET"
     assert_contains "$matching/output.log" "Using cached DMG"
+
+    local content_length_only="$workspace/content-length-only"
+    mkdir -p "$content_length_only"
+    printf '%s' "old" >"$content_length_only/Codex.dmg"
+    cat >"$content_length_only/Codex.dmg.metadata" <<EOF
+url_sha256=$url_sha256
+etag=
+last_modified=
+content_length=3
+EOF
+    run_dmg_cache_case "$content_length_only" "$content_length_only/output.log" \
+        TEST_CONTENT_LENGTH=3 \
+        TEST_DOWNLOAD_CONTENT=new
+    [ "$(cat "$content_length_only/Codex.dmg")" = "new" ] \
+        || fail "Expected content-length-only metadata to force a DMG refresh"
+    assert_contains "$content_length_only/curl.log" "GET"
+    assert_contains "$content_length_only/Codex.dmg.metadata" "url_sha256=$url_sha256"
 
     local differing="$workspace/differing"
     mkdir -p "$differing"
@@ -10522,6 +10544,49 @@ SCRIPT
     assert_contains "$metadata_file" "DMG_SHA256=unavailable"
 }
 
+test_user_local_update_is_serialized() {
+    info "Checking user-local updates share one lock"
+    local workspace="$TMP_DIR/user-local-update-lock"
+    local home="$workspace/home"
+    local state_dir="$workspace/state/codex-desktop-linux"
+    local opt_dir="$home/.local/opt/codex-desktop-linux"
+    local fake_bin="$workspace/bin"
+    local update_pid
+
+    mkdir -p "$opt_dir/bin" "$opt_dir/lib/codex-desktop-linux" \
+        "$opt_dir/codex-app" "$state_dir" "$fake_bin"
+    cp "$REPO_DIR/contrib/user-local-install/files/.local/bin/codex-desktop-update" \
+        "$opt_dir/bin/codex-desktop-update"
+    cp "$REPO_DIR/contrib/user-local-install/files/.local/lib/codex-desktop-linux/common.sh" \
+        "$opt_dir/lib/codex-desktop-linux/common.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$opt_dir/codex-app/start.sh"
+    printf '%s\n' fixture-version > "$opt_dir/codex-app/version"
+    chmod +x "$opt_dir/bin/codex-desktop-update" "$opt_dir/codex-app/start.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$fake_bin/curl"
+    chmod +x "$fake_bin/curl"
+    cat > "$state_dir/install.env" <<EOF
+SOURCE_REPO_DIR=$(printf '%q' "$REPO_DIR")
+MANAGED_REPO_DIR=$(printf '%q' "$workspace/managed-repo")
+REPO_ORIGIN_URL=$(printf '%q' "https://example.invalid/copernicus.git")
+OPT_ROOT=$(printf '%q' "$opt_dir")
+EOF
+
+    exec 8>"$state_dir/update.lock"
+    flock 8
+    PATH="$fake_bin:$HOST_TOOL_PATH" HOME="$home" \
+        XDG_DATA_HOME="$workspace/data" XDG_STATE_HOME="$workspace/state" \
+        "$opt_dir/bin/codex-desktop-update" --record-only >/dev/null &
+    update_pid=$!
+    sleep 0.1
+    kill -0 "$update_pid" 2>/dev/null \
+        || fail "User-local update did not wait for the shared lock"
+    assert_file_not_exists "$state_dir/metadata.env"
+    flock -u 8
+    exec 8>&-
+    wait "$update_pid"
+    assert_file_exists "$state_dir/metadata.env"
+}
+
 test_user_local_fresh_install_builds_runnable_app() {
     info "Checking a fresh user-local install produces a runnable app"
     local workspace="$TMP_DIR/user-local-fresh-install"
@@ -10576,8 +10641,6 @@ set -euo pipefail
 if [ "$#" -eq 2 ] && [ "$1" = "-fsSIL" ]; then
     printf '%s\r\n' \
         'HTTP/2 200' \
-        'etag: "user-local-fixture"' \
-        'last-modified: Thu, 04 Sep 2026 00:00:00 GMT' \
         'content-length: 1' \
         ''
     exit 0
@@ -10603,10 +10666,26 @@ SCRIPT
 
     assert_file_exists "$build_marker"
     [ -x "$app_dir/start.sh" ] || fail "Fresh user-local install did not create an executable app launcher"
+    assert_file_exists "$workspace/data/applications/codex-desktop.desktop"
+    assert_file_not_exists "$home/.local/share/applications/codex-desktop.desktop"
     assert_file_not_exists "$unexpected_curl_marker"
     HOME="$home" XDG_CONFIG_HOME="$workspace/config" \
         "$home/.local/bin/codex-desktop" > "$launch_log"
     assert_contains "$launch_log" "user-local fixture launched"
+
+    PATH="$fake_bin:$HOST_TOOL_PATH" \
+        HOME="$home" \
+        XDG_CONFIG_HOME="$workspace/config" \
+        XDG_DATA_HOME="$workspace/data" \
+        XDG_STATE_HOME="$workspace/state" \
+        EXPECTED_APP_DIR="$app_dir" \
+        EXPECTED_INSTALL_ROOT="$home/.local/opt/codex-desktop-linux" \
+        USER_LOCAL_BUILD_MARKER="$build_marker" \
+        UNEXPECTED_CURL_MARKER="$unexpected_curl_marker" \
+        CODEX_USER_LOCAL_SOURCE_REPO_DIR="$source_repo" \
+        "$home/.local/bin/codex-desktop-update" >/dev/null
+    [ "$(wc -l < "$build_marker")" -eq 2 ] \
+        || fail "Content-length-only user-local metadata did not force a rebuild"
 
     rm -rf "$app_dir"
     PATH="$fake_bin:$HOST_TOOL_PATH" \
@@ -10620,7 +10699,7 @@ SCRIPT
         UNEXPECTED_CURL_MARKER="$unexpected_curl_marker" \
         CODEX_USER_LOCAL_SOURCE_REPO_DIR="$source_repo" \
         bash "$REPO_DIR/contrib/user-local-install/install-user-local.sh" >/dev/null
-    [ "$(wc -l < "$build_marker")" -eq 2 ] \
+    [ "$(wc -l < "$build_marker")" -eq 3 ] \
         || fail "Missing user-local app did not trigger exactly one recovery rebuild"
     HOME="$home" XDG_CONFIG_HOME="$workspace/config" \
         "$home/.local/bin/codex-desktop" > "$launch_log"
@@ -11026,12 +11105,19 @@ test_launcher_log_rotation() {
 
     dd if=/dev/zero of="$log_file" bs=1M count=17 status=none
     printf 'preserved-tail\n' >> "$log_file"
+    exec 8>>"$log_file"
     HOME="$home_dir" XDG_RUNTIME_DIR="$runtime_dir" "$app_dir/start.sh" --help >/dev/null
+    local rotated_size
+    rotated_size="$(stat -c %s "$log_file")"
+    printf 'live-writer-remains-visible\n' >&8
+    exec 8>&-
 
-    [ "$(stat -c %s "$log_file")" -le 4194304 ] \
+    [ "$rotated_size" -le 4194304 ] \
         || fail "Launcher log was not capped to 4 MiB"
-    tail -c 15 "$log_file" | grep -Fxq 'preserved-tail' \
+    grep -Fxq 'preserved-tail' "$log_file" \
         || fail "Launcher log cap did not preserve the newest bytes"
+    grep -Fxq 'live-writer-remains-visible' "$log_file" \
+        || fail "Launcher log rotation disconnected an existing writer"
 }
 
 test_launcher_warm_start_recovery() {
@@ -11330,6 +11416,7 @@ main() {
     test_user_local_prepare_build_repo_handles_relative_origin_url
     test_desktop_entry_doctor_repairs_only_legacy_generated_entries
     test_user_local_install_from_update_defers_record_only_metadata
+    test_user_local_update_is_serialized
     test_user_local_fresh_install_builds_runnable_app
     test_user_local_install_preserves_persisted_x11_preference_on_refresh
     test_user_local_prepare_build_repo_copies_enabled_local_features

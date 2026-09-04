@@ -62,8 +62,9 @@ that agents need without keeping them in the main quick-start.
 - ASAR patches are fail-soft unless intentionally marked required. Each patch
   should be idempotent and report warnings when upstream drift prevents a
   needle from matching.
-- Patch reports are written for installs/rebuilds. Upstream-build CI fails only
-  for required upstream patches that are missing or skipped.
+- Patch reports are written for installs/rebuilds. Upstream-build CI fails for
+  required upstream patches that are missing or skipped and for every
+  `failed-integrity` status.
 - Linux Computer Use plugin registration is default-on platform port glue, but
   Computer Use UI enablement remains opt-in and must not bypass upstream
   server-side rollouts unrelated to local Linux support.

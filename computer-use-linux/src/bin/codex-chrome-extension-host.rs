@@ -1925,6 +1925,6 @@ while True:
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        env::temp_dir().join(format!("{prefix}-{}-{nonce}", process::id()))
+        Path::new("/tmp").join(format!("{prefix}-{}-{nonce}", process::id()))
     }
 }

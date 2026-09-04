@@ -8125,7 +8125,7 @@ test("materializes trusted Linux bundled plugins through a private staging root"
     applyLinuxBundledPluginCopyPermissionsPatch,
     currentBundledPluginCopyBundleFixture(),
   );
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "codex-bundled-plugin-permissions-"));
+  const root = fs.mkdtempSync(path.join("/tmp", "codex-bundled-plugin-permissions-"));
   const sourcePlugin = path.join(root, "source-plugin");
   const sourceManifestDir = path.join(sourcePlugin, ".codex-plugin");
   const sourceManifest = path.join(sourceManifestDir, "plugin.json");

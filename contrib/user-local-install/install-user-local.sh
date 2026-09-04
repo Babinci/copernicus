@@ -12,6 +12,7 @@ OPT_LIB_DIR="${OPT_ROOT}/lib/codex-desktop-linux"
 XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
 DATA_DIR="${XDG_DATA_HOME}/codex-desktop-linux"
+APPLICATIONS_DIR="${XDG_DATA_HOME}/applications"
 CONFIG_DIR="${XDG_CONFIG_HOME}/codex-desktop-linux"
 USER_LOCAL_ENV_FILE="${CONFIG_DIR}/user-local.env"
 MANAGED_REPO_DIR="${DATA_DIR}/managed-repo"
@@ -88,7 +89,7 @@ detected_repo_default_branch() {
 
 install_manager_files() {
     local systemd_user_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/systemd/user"
-    mkdir -p "$OPT_BIN_DIR" "$OPT_LIB_DIR" "$DATA_DIR" "${HOME}/.local/share/applications" "${HOME}/.local/bin" "$STATE_DIR" "$systemd_user_dir"
+    mkdir -p "$OPT_BIN_DIR" "$OPT_LIB_DIR" "$DATA_DIR" "$APPLICATIONS_DIR" "${HOME}/.local/bin" "$STATE_DIR" "$systemd_user_dir"
 
     copy_file "${FILES_DIR}/.local/lib/codex-desktop-linux/common.sh" "${OPT_LIB_DIR}/common.sh"
     copy_file "${FILES_DIR}/.local/bin/codex-desktop" "${OPT_BIN_DIR}/codex-desktop"
@@ -119,7 +120,7 @@ EOF
 
     codex_desktop_write_user_local_entry \
         "${FILES_DIR}/.local/share/applications/codex-desktop.desktop" \
-        "${HOME}/.local/share/applications/codex-desktop.desktop" \
+        "${APPLICATIONS_DIR}/codex-desktop.desktop" \
         "${HOME}"
 
     copy_file "${FILES_DIR}/.config/systemd/user/codex-desktop-update.service" "${systemd_user_dir}/codex-desktop-update.service"

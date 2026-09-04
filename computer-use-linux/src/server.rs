@@ -4076,7 +4076,7 @@ mod tests {
 
     #[tokio::test]
     async fn avatar_cursor_signal_uses_the_private_unix_stream_protocol() {
-        let root = std::env::temp_dir().join(format!(
+        let root = std::path::Path::new("/tmp").join(format!(
             "computer-use-avatar-cursor-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()

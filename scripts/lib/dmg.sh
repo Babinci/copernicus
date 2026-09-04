@@ -114,13 +114,14 @@ fetch_dmg_remote_fingerprint() {
             next
         }
         END {
-            if (etag == "" && last_modified == "" && content_length == "") {
-                exit 1
-            }
+            # Content-Length alone is not a stable identity. Match the shared
+            # acceptance rule: require ETag, or Last-Modified plus length.
+            identity_status = etag == "" && (last_modified == "" || content_length == "") ? 2 : 0
             print "url_sha256=" url_sha256
             print "etag=" etag
             print "last_modified=" last_modified
             print "content_length=" content_length
+            exit identity_status
         }
     ' "$headers_file"
 }
@@ -130,8 +131,16 @@ cached_dmg_is_fresh() {
     local metadata_path="$2"
     local dmg_url="$3"
     local remote_fingerprint
+    local fingerprint_status=0
 
-    if ! remote_fingerprint="$(fetch_dmg_remote_fingerprint "$dmg_url")"; then
+    if remote_fingerprint="$(fetch_dmg_remote_fingerprint "$dmg_url")"; then
+        :
+    else
+        fingerprint_status=$?
+        if [ "$fingerprint_status" -eq 2 ]; then
+            warn "Upstream DMG metadata has no stable validator; refreshing cached DMG"
+            return 1
+        fi
         if cached_dmg_metadata_matches_url "$metadata_path" "$dmg_url"; then
             warn "Could not check upstream DMG metadata; using cached DMG for matching URL"
             return 0
@@ -207,6 +216,7 @@ get_dmg() {
     local dmg_dest="$CACHED_DMG_PATH"
     local metadata_path="$CACHED_DMG_METADATA_PATH"
     local download_fingerprint=""
+    local fingerprint_status=0
     local tmp_dest="$dmg_dest.part"
 
     if dmg_refresh_mode_is_pinned; then
@@ -235,9 +245,16 @@ get_dmg() {
     fi
 
     if [ -z "$download_fingerprint" ]; then
-        if ! download_fingerprint="$(fetch_dmg_remote_fingerprint "$DMG_URL")"; then
-            warn "Could not record upstream DMG metadata"
-            download_fingerprint=""
+        if download_fingerprint="$(fetch_dmg_remote_fingerprint "$DMG_URL")"; then
+            :
+        else
+            fingerprint_status=$?
+            if [ "$fingerprint_status" -eq 2 ]; then
+                warn "Upstream DMG metadata has no stable validator"
+            else
+                warn "Could not record upstream DMG metadata"
+                download_fingerprint=""
+            fi
         fi
     fi
 

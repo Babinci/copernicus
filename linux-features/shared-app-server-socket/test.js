@@ -904,7 +904,7 @@ test("documented wrapper attaches to a real Codex authority through the stock pr
     return;
   }
 
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-socket-integration-"));
+  const tempDir = fs.mkdtempSync(path.join("/tmp", "shared-app-server-socket-integration-"));
   const codexHome = path.join(tempDir, "codex-home");
   const socketPath = path.join(tempDir, "authority", "app-server.sock");
   const binDir = path.join(tempDir, "bin");

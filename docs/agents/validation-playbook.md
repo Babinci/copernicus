@@ -32,9 +32,12 @@ bash tests/webview_probe_equivalence.sh
 
 ```bash
 node --test scripts/patch-linux-window-ui.test.js
-node --test linux-features/*/test.js
+node --test linux-features/<id>/test.js
 bash tests/scripts_smoke.sh
 ```
+
+Use `node --test linux-features/*/test.js` when the feature framework or shared
+descriptor runner changes across feature boundaries.
 
 For upstream drift or protected surface analysis:
 

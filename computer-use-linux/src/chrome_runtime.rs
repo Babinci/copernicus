@@ -3194,7 +3194,7 @@ mod tests {
     }
 
     fn test_root(name: &str) -> PathBuf {
-        env::temp_dir().join(format!(
+        Path::new("/tmp").join(format!(
             "chrome-runtime-test-{name}-{}-{}",
             std::process::id(),
             random_hex(4).unwrap()

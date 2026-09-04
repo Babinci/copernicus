@@ -70,6 +70,10 @@ FINAL_ELECTRON_PID=""
 HANDOFF_STATUS="not-attempted"
 TIMEOUT_STATUS="false"
 ERROR_STATUS="false"
+AFTER_EXIT_STARTED="$STATE_DIR/after-exit.started"
+AFTER_EXIT_RESULT="$STATE_DIR/after-exit.result"
+AFTER_EXIT_RELEASE="$STATE_DIR/after-exit.release"
+AFTER_EXIT_DONE="$STATE_DIR/after-exit.done"
 
 count_test_main_processes() {
     local count=0
@@ -178,6 +182,7 @@ cleanup() {
 
     trap - EXIT
     set +e
+    touch "$AFTER_EXIT_RELEASE"
     webview_pid="$(cat "$STATE_DIR/webview.pid" 2>/dev/null || true)"
     stop_owned_process_bounded "$LAUNCHER_PID" argv "$APP_DIR/start.sh" || cleanup_failed=1
     stop_owned_process_bounded "$SECOND_LAUNCHER_PID" argv "$APP_DIR/start.sh" || cleanup_failed=1
@@ -350,6 +355,30 @@ ln -s "$(command -v node)" "$APP_DIR/resources/node-runtime/bin/node"
 printf '%s\n' '<!doctype html><title>ChatGPT</title><div id="startup-loader"></div>' \
     > "$APP_DIR/content/webview/index.html"
 
+if [ "${CODEX_TEST_RESTART_HIDDEN:-0}" = "1" ]; then
+    cat > "$APP_DIR/.codex-linux/after-exit.d/blocking-test-hook" <<'HOOK'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+state_dir="$2"
+result="stopped"
+if [ -s "$state_dir/webview.pid" ]; then
+    webview_pid="$(cat "$state_dir/webview.pid" 2>/dev/null || true)"
+    if [[ "$webview_pid" =~ ^[0-9]+$ ]] && kill -0 "$webview_pid" 2>/dev/null; then
+        result="live"
+    fi
+fi
+printf '%s\n' "$result" > "$state_dir/after-exit.result"
+touch "$state_dir/after-exit.started"
+for _ in $(seq 1 300); do
+    [ -e "$state_dir/after-exit.release" ] && break
+    sleep 0.05
+done
+touch "$state_dir/after-exit.done"
+HOOK
+    chmod +x "$APP_DIR/.codex-linux/after-exit.d/blocking-test-hook"
+fi
+
 g++ -x c++ -O2 -o "$APP_DIR/electron" - <<'CPP'
 #include <csignal>
 #include <unistd.h>
@@ -417,6 +446,9 @@ if [ "${CODEX_TEST_RESTART_HIDDEN:-0}" = "1" ]; then
     "${COMMON_ENV[@]}" "$APP_DIR/start.sh" > "$SECOND_LOG" 2>&1 &
     SECOND_LAUNCHER_PID=$!
     wait_for "hidden-window restart request" handoff_was_recorded
+    wait_for "blocking after-exit hook" test -e "$AFTER_EXIT_STARTED"
+    [ "$(cat "$AFTER_EXIT_RESULT")" = "stopped" ] \
+        || fail "owned webview was still live when the after-exit hook started"
     wait_for "replacement Electron process" resident_was_restarted
     HANDOFF_STATUS="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$HANDOFF_RESULT")"
     FINAL_ELECTRON_PID="$(read_live_app_pid)"
@@ -428,6 +460,12 @@ if [ "${CODEX_TEST_RESTART_HIDDEN:-0}" = "1" ]; then
         || fail "replacement app did not publish a webview runtime marker"
     [ "$(count_test_main_processes)" -eq 1 ] \
         || fail "hidden-window recovery did not leave exactly one Electron process"
+    [ ! -e "$AFTER_EXIT_DONE" ] \
+        || fail "hidden-window recovery waited for the blocking after-exit hook"
+    touch "$AFTER_EXIT_RELEASE"
+    wait_for "blocking after-exit hook completion" test -e "$AFTER_EXIT_DONE"
+    wait "$LAUNCHER_PID" || true
+    LAUNCHER_PID=""
     record_result "hidden-window-restarted"
     printf '%s\n' "launcher hidden-window restart behavior test passed"
     exit 0

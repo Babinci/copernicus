@@ -8,7 +8,8 @@ It adds:
 - a stable install root under `~/.local/opt/codex-desktop-linux`
 - self-contained maintenance scripts under `~/.local/opt/codex-desktop-linux/bin`
 - thin launch/check/update/version wrappers under `~/.local/bin`
-- a desktop entry under `~/.local/share/applications`
+- a desktop entry under `$XDG_DATA_HOME/applications` (normally
+  `~/.local/share/applications`)
 - an icon extracted from the local `Codex.dmg`
 - metadata tracking for the wrapper repo and cached `Codex.dmg`
 - an optional weekly `systemd --user` timer for unattended update checks and rebuilds (opt-in)
@@ -31,7 +32,7 @@ If installing manually, copy the files to:
 - `~/.local/opt/codex-desktop-linux/bin/`
 - `~/.local/opt/codex-desktop-linux/lib/codex-desktop-linux/`
 - `~/.local/bin/` wrappers that exec into `~/.local/opt/codex-desktop-linux/bin/`
-- `~/.local/share/applications/`
+- `$XDG_DATA_HOME/applications/`
 - `~/.config/systemd/user/`
 
 The preferred git checkout location is:
@@ -102,5 +103,6 @@ codex-desktop-version
 - App rebuilds and replacements stay under the user's home and need no `sudo`; installing missing system build dependencies may still require administrator authentication.
 - The X11/XWayland preference is stored in `~/.config/codex-desktop-linux/user-local.env` and is preserved across updater refreshes.
 - The weekly timer runs `codex-desktop-update --quiet`. It is opt-in: pass `--enable-timer` to `install-user-local.sh` to activate it, or run `systemctl --user enable --now codex-desktop-update.timer` manually after install.
+- Manual, timer, and in-app updates share one lock, so only one rebuild can modify the managed checkout at a time.
 - Automated rebuilds never bypass the running-app or DMG acceptance gates. They may build a candidate while ChatGPT Desktop is open, but promotion waits for the in-app after-exit flow or fails safely for a manual/timer run. Retry after closing the app.
 - A successful transactional update retains only the immediately previous app backup. Older exact managed backups are pruned; manually named paths, files, and symlinks are left alone.

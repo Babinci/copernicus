@@ -4,7 +4,11 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
-APP_DIR="$TMP_DIR/app"
+if [ "${CODEX_TEST_PACKED_CMDLINE:-0}" = "1" ]; then
+    APP_DIR="$TMP_DIR/app with spaces"
+else
+    APP_DIR="$TMP_DIR/app"
+fi
 HOME_DIR="$TMP_DIR/home"
 RUNTIME_DIR="$TMP_DIR/runtime"
 STATE_DIR="$HOME_DIR/.local/state/codex-desktop"

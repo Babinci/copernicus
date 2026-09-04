@@ -17,7 +17,6 @@ function upstreamRepoRoot() {
     process.env.CODEX_DESKTOP_LINUX_REPO,
     process.env.CODEX_DESKTOP_LINUX_FULL_PATH,
     path.resolve(featureDir, "..", ".."),
-    "/home/as/Документы/AI_PROJECTS/codex-desktop-linux",
   ].filter(Boolean);
   for (const candidate of candidates) {
     if (fs.existsSync(path.join(candidate, "scripts/lib/linux-features.js"))) {

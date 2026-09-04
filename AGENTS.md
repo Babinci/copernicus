@@ -39,8 +39,9 @@ update-builder bundle.
 - Treat updater, package builder, launcher, and feature framework changes as
   cross-format changes unless the code explicitly scopes them to one package
   format or desktop target.
-- Keep Copernicus model execution native to Codex and GPT-only. No proxy,
-  third-party provider, silent fallback, auth-cache copying, or embedded secret.
+- Keep model execution in `plugins/copernicus/` native to Codex and GPT-only.
+  No provider proxy, third-party fallback, auth-cache copying, or embedded
+  secret may enter the plugin.
 - Keep Copernicus workflows in `plugins/copernicus/`. Do not patch the Desktop
   ASAR or core packaging merely to expose a skill that the plugin system can own.
 - Auto-research writes canonical OKF memory only at cycle boundaries from joined
@@ -53,12 +54,13 @@ update-builder bundle.
   sanitized scope, a bounded Mermaid/DAG, evidence, decisions, and validation
   commands. It is temporary working state, never canonical memory.
 - Default the discovery phase of a substantial autonomous design session to a
-  bounded **DeepLuna** review when the configured Fleet is available: inventory
-  deterministically first, use at most five Luna read-only lenses for breadth,
-  and one bounded DeepSeek skeptic for architecture or safety. Give workers only
-  sanitized evidence and explicit paths; they do not read secrets, environment
-  state, or unrelated projects and never write or spawn workers.
-- DeepLuna is maintainer research only. It must never change Copernicus's
+  bounded Copernicus Fleet review when the configured Fleet is available:
+  inventory deterministically first, then use the fewest independent read-only
+  seats that cover the evidence. Select only models available through the
+  checked-in Fleet policy; do not assume a particular account catalog. Give
+  workers only sanitized evidence and explicit paths; they do not read secrets,
+  environment state, or unrelated projects and never write or spawn workers.
+- Fleet is maintainer research only. It must never change Copernicus's
   shipped execution policy: the public plugin remains native Codex and GPT-only,
   with no provider proxy, third-party fallback, credential handling, or runtime
   dependency on the development fleet.
@@ -66,6 +68,9 @@ update-builder bundle.
   runnable check, update the appropriate `docs/copernicus/` concept and
   `log.md`, then run the OKF validator. Reports and diagrams are derived human
   artifacts; they do not become evaluator evidence or OKF memory by themselves.
+- When the repository owner explicitly authorizes direct delivery, commit the
+  verified result and push it to `main`; do not open a pull request merely as a
+  staging step. Without that authority, stop at a local branch or commit.
 
 ## Issue And Pull Request Labels
 

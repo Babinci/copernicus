@@ -202,9 +202,11 @@ fn reconcile_installed_artifact_metadata(
         return;
     }
 
-    if artifact_version.is_some_and(|version| {
-        !installed_version_matches_candidate(&state.installed_version, version)
-    }) {
+    if state.artifact_paths.package_path.is_some()
+        && artifact_version.is_none_or(|version| {
+            !installed_version_matches_candidate(&state.installed_version, version)
+        })
+    {
         state.artifact_paths.package_path = None;
         state.artifact_paths.workspace_dir = None;
     }
@@ -4567,6 +4569,20 @@ mod tests {
         assert_eq!(state.last_known_good_version, None);
         assert_eq!(state.notified_events.len(), 1);
         assert!(state.notified_events.contains("cli_missing"));
+    }
+
+    #[test]
+    fn idle_state_discards_package_with_unreadable_metadata() {
+        let mut state = PersistedState::new(true);
+        state.status = UpdateStatus::Idle;
+        state.installed_version = "2026.09.02.105700+71c3d032".to_string();
+        state.artifact_paths.package_path = Some(PathBuf::from("/cache/unreadable.deb"));
+        state.artifact_paths.workspace_dir = Some(PathBuf::from("/cache/unreadable-workspace"));
+
+        reconcile_installed_artifact_metadata(&mut state, None);
+
+        assert_eq!(state.artifact_paths.package_path, None);
+        assert_eq!(state.artifact_paths.workspace_dir, None);
     }
 
     #[test]
