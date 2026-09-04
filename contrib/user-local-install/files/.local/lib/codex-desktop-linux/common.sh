@@ -47,12 +47,16 @@ write_kv() {
     printf '%s=%q\n' "$1" "${2-}"
 }
 
+git_checkout_exists() {
+    [ "$(git -C "$1" rev-parse --is-inside-work-tree 2>/dev/null || true)" = "true" ]
+}
+
 effective_repo_dir() {
-    if [ -n "${BUILD_REPO_DIR:-}" ] && [ -d "$BUILD_REPO_DIR/.git" ]; then
+    if [ -n "${BUILD_REPO_DIR:-}" ] && git_checkout_exists "$BUILD_REPO_DIR"; then
         printf '%s\n' "$BUILD_REPO_DIR"
         return 0
     fi
-    if [ -d "$MANAGED_REPO_DIR/.git" ]; then
+    if git_checkout_exists "$MANAGED_REPO_DIR"; then
         printf '%s\n' "$MANAGED_REPO_DIR"
         return 0
     fi
@@ -72,7 +76,7 @@ current_repo_head() {
 }
 
 source_repo_head() {
-    [ -d "$SOURCE_REPO_DIR/.git" ] || return 1
+    git_checkout_exists "$SOURCE_REPO_DIR" || return 1
     git -C "$SOURCE_REPO_DIR" rev-parse HEAD
 }
 
@@ -120,7 +124,7 @@ resolve_repo_origin_url() {
 }
 
 managed_repo_origin_url() {
-    [ -d "$MANAGED_REPO_DIR/.git" ] || return 1
+    git_checkout_exists "$MANAGED_REPO_DIR" || return 1
     git -C "$MANAGED_REPO_DIR" remote get-url origin 2>/dev/null
 }
 
@@ -147,7 +151,7 @@ repo_origin_url() {
         fi
         printf '%s\n' "$origin_url"
         return 0
-    elif [ -d "$SOURCE_REPO_DIR/.git" ]; then
+    elif git_checkout_exists "$SOURCE_REPO_DIR"; then
         git -C "$SOURCE_REPO_DIR" remote get-url origin
         return $?
     fi
@@ -156,11 +160,11 @@ repo_origin_url() {
 }
 
 repo_remote_query_dir() {
-    if [ -d "$SOURCE_REPO_DIR/.git" ]; then
+    if git_checkout_exists "$SOURCE_REPO_DIR"; then
         printf '%s\n' "$SOURCE_REPO_DIR"
         return 0
     fi
-    if [ -d "$MANAGED_REPO_DIR/.git" ]; then
+    if git_checkout_exists "$MANAGED_REPO_DIR"; then
         printf '%s\n' "$MANAGED_REPO_DIR"
         return 0
     fi
@@ -171,7 +175,7 @@ repo_branch_from_origin_head() {
     local repo_dir="$1"
     local branch=""
 
-    [ -d "$repo_dir/.git" ] || return 1
+    git_checkout_exists "$repo_dir" || return 1
     branch="$(git -C "$repo_dir" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
     branch="${branch#origin/}"
     [ -n "$branch" ] || return 1
@@ -235,7 +239,7 @@ repo_default_branch() {
 source_repo_overlay_base_ref() {
     local upstream_ref current_branch default_branch
 
-    [ -d "$SOURCE_REPO_DIR/.git" ] || return 1
+    git_checkout_exists "$SOURCE_REPO_DIR" || return 1
 
     upstream_ref="$(git -C "$SOURCE_REPO_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
     if [ -n "$upstream_ref" ] && git -C "$SOURCE_REPO_DIR" rev-parse --verify --quiet "$upstream_ref" >/dev/null; then
@@ -301,7 +305,7 @@ source_repo_path_is_unmerged() {
 source_repo_has_overlay() {
     local base_ref=""
 
-    [ -d "$SOURCE_REPO_DIR/.git" ] || return 1
+    git_checkout_exists "$SOURCE_REPO_DIR" || return 1
     base_ref="$(source_repo_overlay_base_ref 2>/dev/null || true)"
 
     if [ -n "$base_ref" ] && ! git -C "$SOURCE_REPO_DIR" diff --quiet --no-ext-diff "$base_ref...HEAD" --; then
@@ -314,7 +318,7 @@ source_repo_has_overlay() {
 source_repo_overlay_signature() {
     local base_ref=""
 
-    [ -d "$SOURCE_REPO_DIR/.git" ] || return 0
+    git_checkout_exists "$SOURCE_REPO_DIR" || return 0
     base_ref="$(source_repo_overlay_base_ref 2>/dev/null || true)"
 
     if [ -z "$base_ref" ] && git -C "$SOURCE_REPO_DIR" diff --quiet --no-ext-diff HEAD --; then
@@ -345,7 +349,7 @@ ensure_managed_repo() {
     branch="$(repo_default_branch)"
 
     mkdir -p "$(dirname "$MANAGED_REPO_DIR")"
-    if [ -d "$MANAGED_REPO_DIR/.git" ]; then
+    if git_checkout_exists "$MANAGED_REPO_DIR"; then
         git -C "$MANAGED_REPO_DIR" remote set-url origin "$origin_url"
         configure_managed_repo_fetch
         return 0
@@ -506,7 +510,7 @@ record_metadata() {
     local build_repo_dir repo_head source_repo_head_value source_overlay_sha dmg_file dmg_sha256 dmg_size electron_version dmg_headers dmg_etag dmg_last_modified dmg_content_length build_time repo_origin
     build_repo_dir="$(effective_repo_dir)"
 
-    if [ -d "$build_repo_dir/.git" ]; then
+    if git_checkout_exists "$build_repo_dir"; then
         repo_head="$(current_repo_head)"
         repo_origin="$(repo_origin_url 2>/dev/null || git -C "$build_repo_dir" remote get-url origin 2>/dev/null || printf '%s' unavailable)"
     else

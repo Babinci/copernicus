@@ -61,15 +61,19 @@ CODEX_USER_LOCAL_OZONE_PLATFORM=$(printf '%q' "$USER_LOCAL_OZONE_PLATFORM_SETTIN
 EOF
 }
 
+source_repo_is_git_checkout() {
+    [ "$(git -C "$SOURCE_REPO_ROOT" rev-parse --is-inside-work-tree 2>/dev/null || true)" = "true" ]
+}
+
 repo_origin_url() {
-    if [ -d "${SOURCE_REPO_ROOT}/.git" ]; then
+    if source_repo_is_git_checkout; then
         git -C "$SOURCE_REPO_ROOT" remote get-url origin 2>/dev/null || true
     fi
 }
 
 detected_repo_default_branch() {
     local branch=""
-    if [ -d "${SOURCE_REPO_ROOT}/.git" ]; then
+    if source_repo_is_git_checkout; then
         branch="$(git -C "$SOURCE_REPO_ROOT" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
         branch="${branch#origin/}"
         if [ -z "$branch" ]; then

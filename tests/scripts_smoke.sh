@@ -10520,6 +10520,7 @@ test_user_local_fresh_install_builds_runnable_app() {
     info "Checking a fresh user-local install produces a runnable app"
     local workspace="$TMP_DIR/user-local-fresh-install"
     local origin_repo="$workspace/origin.git"
+    local seed_repo="$workspace/seed"
     local source_repo="$workspace/source"
     local fake_bin="$workspace/bin"
     local home="$workspace/home"
@@ -10530,13 +10531,13 @@ test_user_local_fresh_install_builds_runnable_app() {
 
     mkdir -p "$workspace" "$fake_bin"
     git init --bare --initial-branch=main "$origin_repo" >/dev/null
-    git clone "$origin_repo" "$source_repo" >/dev/null 2>&1
-    git -C "$source_repo" config user.name "Smoke Test"
-    git -C "$source_repo" config user.email "smoke@example.com"
-    mkdir -p "$source_repo/packaging/linux" "$source_repo/assets"
-    cp "$REPO_DIR/packaging/linux/codex-desktop-entry-doctor.sh" "$source_repo/packaging/linux/"
-    cp "$REPO_DIR/assets/codex.png" "$source_repo/assets/"
-    cat > "$source_repo/install.sh" <<'SCRIPT'
+    git clone "$origin_repo" "$seed_repo" >/dev/null 2>&1
+    git -C "$seed_repo" config user.name "Smoke Test"
+    git -C "$seed_repo" config user.email "smoke@example.com"
+    mkdir -p "$seed_repo/packaging/linux" "$seed_repo/assets"
+    cp "$REPO_DIR/packaging/linux/codex-desktop-entry-doctor.sh" "$seed_repo/packaging/linux/"
+    cp "$REPO_DIR/assets/codex.png" "$seed_repo/assets/"
+    cat > "$seed_repo/install.sh" <<'SCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
 : "${EXPECTED_APP_DIR:?}"
@@ -10556,11 +10557,12 @@ printf '%s\n' 'fixture-version' > "$CODEX_INSTALL_DIR/version"
 cp assets/codex.png "$CODEX_INSTALL_DIR/.codex-linux/codex-desktop.png"
 printf '%s\n' built >> "$USER_LOCAL_BUILD_MARKER"
 SCRIPT
-    chmod +x "$source_repo/install.sh"
-    git -C "$source_repo" add .
-    git -C "$source_repo" commit -m "fixture" >/dev/null
-    git -C "$source_repo" push -u origin main >/dev/null
-    git -C "$source_repo" remote set-head origin -a >/dev/null 2>&1 || true
+    chmod +x "$seed_repo/install.sh"
+    git -C "$seed_repo" add .
+    git -C "$seed_repo" commit -m "fixture" >/dev/null
+    git -C "$seed_repo" push -u origin main >/dev/null
+    git -C "$seed_repo" remote set-head origin -a >/dev/null 2>&1 || true
+    git -C "$seed_repo" worktree add --detach "$source_repo" HEAD >/dev/null
 
     cat > "$fake_bin/curl" <<'SCRIPT'
 #!/usr/bin/env bash
