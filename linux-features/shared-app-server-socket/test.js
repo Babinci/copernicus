@@ -24,6 +24,30 @@ const {
 
 const socketEnvHook = path.join(__dirname, "socket-env.sh");
 
+function makeFakeManagedCodex(tempDir, appServerVersion) {
+  const cliPath = path.join(tempDir, "codex");
+  const statePath = path.join(tempDir, "app-server-version");
+  const logPath = path.join(tempDir, "codex.log");
+  fs.writeFileSync(statePath, `${appServerVersion}\n`);
+  fs.writeFileSync(
+    cliPath,
+    [
+      "#!/usr/bin/env bash",
+      "set -eu",
+      'printf "%s\\n" "$*" >> "$FAKE_CODEX_LOG"',
+      'case "$*" in',
+      '  "app-server daemon version") printf \'{"status":"running","cliVersion":"0.152.1","appServerVersion":"%s"}\\n\' "$(cat "$FAKE_CODEX_STATE")" ;;',
+      '  "app-server daemon stop") ;;',
+      '  "app-server daemon start") printf \'0.152.1\\n\' > "$FAKE_CODEX_STATE" ;;',
+      '  *) exit 2 ;;',
+      "esac",
+      "",
+    ].join("\n"),
+    { mode: 0o700 },
+  );
+  return { cliPath, logPath, statePath };
+}
+
 function withFeatureConfig(enabled, callback) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-socket-feature-"));
   const configPath = path.join(tempDir, "features.json");
@@ -270,12 +294,18 @@ test("descriptor is optional and targets the main bundle", () => {
   );
 });
 
-test("socket hook exports the shared Codex path without starting a process", () => {
+test("socket hook reuses a managed daemon running the current CLI", () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-socket-runtime-"));
+  const fake = makeFakeManagedCodex(tempDir, "0.152.1");
   const env = {
     ...process.env,
     CODEX_HOME: path.join(tempDir, "codex-home"),
+    CODEX_CLI_PATH: fake.cliPath,
+    FAKE_CODEX_LOG: fake.logPath,
+    FAKE_CODEX_STATE: fake.statePath,
   };
+  fs.mkdirSync(env.CODEX_HOME);
+  fs.writeFileSync(path.join(env.CODEX_HOME, "thread_history_1.sqlite"), "keep");
   delete env.CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET;
   try {
     const result = spawnSync(socketEnvHook, [], { encoding: "utf8", env });
@@ -284,6 +314,83 @@ test("socket hook exports the shared Codex path without starting a process", () 
       result.stdout.trim(),
       `env CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET=${tempDir}/codex-home/app-server-control/app-server-control.sock`,
     );
+    assert.equal(
+      fs.readFileSync(fake.logPath, "utf8"),
+      "app-server daemon version\napp-server daemon version\n",
+    );
+    assert.equal(
+      fs.readFileSync(path.join(env.CODEX_HOME, "thread_history_1.sqlite"), "utf8"),
+      "keep",
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("socket hook replaces a stale managed daemon and quarantines only rebuildable history", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-socket-upgrade-"));
+  const codexHome = path.join(tempDir, "codex-home");
+  fs.mkdirSync(codexHome);
+  for (const suffix of ["", "-shm", "-wal"]) {
+    fs.writeFileSync(path.join(codexHome, `thread_history_1.sqlite${suffix}`), suffix || "db");
+  }
+  fs.writeFileSync(path.join(codexHome, "state_5.sqlite"), "canonical metadata");
+  const fake = makeFakeManagedCodex(tempDir, "0.146.0");
+  const env = {
+    ...process.env,
+    CODEX_HOME: codexHome,
+    CODEX_CLI_PATH: fake.cliPath,
+    FAKE_CODEX_LOG: fake.logPath,
+    FAKE_CODEX_STATE: fake.statePath,
+  };
+  delete env.CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET;
+  try {
+    const result = spawnSync(socketEnvHook, [], { encoding: "utf8", env });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      result.stdout.trim(),
+      `env CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET=${codexHome}/app-server-control/app-server-control.sock`,
+    );
+    assert.equal(
+      fs.readFileSync(fake.logPath, "utf8"),
+      [
+        "app-server daemon version",
+        "app-server daemon stop",
+        "app-server daemon start",
+        "app-server daemon version",
+        "",
+      ].join("\n"),
+    );
+    assert.equal(fs.readFileSync(path.join(codexHome, "state_5.sqlite"), "utf8"), "canonical metadata");
+    assert.equal(fs.existsSync(path.join(codexHome, "thread_history_1.sqlite")), false);
+    const recoveryRoot = path.join(codexHome, "app-server-control", "recovery");
+    const [backupName] = fs.readdirSync(recoveryRoot);
+    assert.deepEqual(
+      fs.readdirSync(path.join(recoveryRoot, backupName)).sort(),
+      ["thread_history_1.sqlite", "thread_history_1.sqlite-shm", "thread_history_1.sqlite-wal"],
+    );
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("socket hook leaves an explicitly supervised socket untouched", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "shared-app-server-socket-external-"));
+  const socketPath = path.join(tempDir, "supervised.sock");
+  const env = {
+    ...process.env,
+    CODEX_HOME: path.join(tempDir, "codex-home"),
+    CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET: socketPath,
+  };
+  delete env.CODEX_CLI_PATH;
+  try {
+    const result = spawnSync(socketEnvHook, [], { encoding: "utf8", env });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      result.stdout.trim(),
+      `env CODEX_LINUX_APP_SERVER_BRIDGE_SOCKET=${socketPath}`,
+    );
+    assert.equal(fs.existsSync(env.CODEX_HOME), false);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
