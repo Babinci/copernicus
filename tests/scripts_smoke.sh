@@ -163,7 +163,11 @@ JSON
 {"name":"browser","version":"0.1.0-alpha2","interface":{"category":"Engineering"}}
 JSON
     cat > "$resources_dir/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" <<'JS'
-import{env as Ub}from"node:process";function lu(e){let t=globalThis.nodeRepl?.env[e];return typeof t=="string"?t:void 0}function Me(){let e=globalThis.nodeRepl;return e?.config==null?void 0:e}function th(){let e=import.meta.__codexNativePipe;return e==null||typeof e.createConnection!="function"?null:e}var I2=new Set(["about:blank"]);function Gb(e){if(I2.has(e))return!0;let t;try{t=new URL(e)}catch{return!1}return t.protocol==="http:"||t.protocol==="https:"}class Uf{async fetchBlocked(e,t){let r=await bS(e.endpoint,{method:"GET"});if(!r.ok)throw new Error(ae(`${t} cannot determine if ${e.displayUrl} is allowed. Please try again later or use another source.`));let n=await r.json();return TF(n)}}var kE=t=>t==="win32"?"\\\\.\\pipe\\codex-browser-use":"/tmp/codex-browser-use";var Cb=kE(hV.platform()),EV=()=>_P()==="win32"?TV():CV(),CV=async()=>(await yP(Cb)).map(e=>wP.resolve(Cb,e)),TV=async()=>[];export function setupAtlasRuntime() {return Ub.XDG_CONFIG_HOME}
+export async function setupBrowserRuntime(){return globalThis.nodeRepl.rpc("browser",{method:"setup",params:{environment:"codex-app"}})}
+JS
+    cat > "$resources_dir/plugins/openai-bundled/plugins/browser/scripts/browser-service.mjs" <<'JS'
+var I2=new Set(["about:blank"]);function Gb(e){if(I2.has(e))return!0;let t;try{t=new URL(e)}catch{return!1}return t.protocol==="http:"||t.protocol==="https:"}
+var kE=t=>t==="win32"?"\\\\.\\pipe\\codex-browser-use":"/tmp/codex-browser-use";var EV=e=>e.platform==="win32"?TV(e):CV(e),CV=async e=>{let Cb=kE(e.platform);return(await yP(Cb)).map(n=>wP.resolve(Cb,n))},TV=async e=>[];
 JS
 }
 
@@ -7586,12 +7590,12 @@ test_browser_use_node_repl_fallback_runtime() {
     local app_dir="$workspace/Codex.app"
     local install_dir="$workspace/install"
     local archive_root="$workspace/archive-root"
-    local archive="$workspace/runtime.tar.xz"
+    local archive="$workspace/runtime.deb"
     local output_log="$workspace/output.log"
     local archive_sha
     local true_bin
 
-    mkdir -p "$workspace" "$install_dir/resources" "$archive_root/codex-primary-runtime/dependencies/bin"
+    mkdir -p "$workspace" "$install_dir/resources" "$archive_root/usr/lib/chatgpt/resources/cua_node/bin"
     make_fake_browser_upstream_app "$app_dir"
 
     # Simulate the current upstream DMG shape: node_repl is under cua_node/bin,
@@ -7601,9 +7605,12 @@ test_browser_use_node_repl_fallback_runtime() {
     chmod +x "$app_dir/Contents/Resources/cua_node/bin/node_repl"
 
     true_bin="$(type -P true)"
-    cp "$true_bin" "$archive_root/codex-primary-runtime/dependencies/bin/node_repl"
-    chmod 0755 "$archive_root/codex-primary-runtime/dependencies/bin/node_repl"
-    tar -cJf "$archive" -C "$archive_root" codex-primary-runtime
+    cp "$true_bin" "$archive_root/usr/lib/chatgpt/resources/cua_node/bin/node_repl"
+    chmod 0755 "$archive_root/usr/lib/chatgpt/resources/cua_node/bin/node_repl"
+    tar -cJf "$workspace/data.tar.xz" -C "$archive_root" ./usr/lib/chatgpt/resources/cua_node/bin/node_repl
+    tar -cJf "$workspace/control.tar.xz" --files-from /dev/null
+    printf '2.0\n' > "$workspace/debian-binary"
+    ar rc "$archive" "$workspace/debian-binary" "$workspace/control.tar.xz" "$workspace/data.tar.xz"
     archive_sha="$(sha256sum "$archive" | awk '{print $1}')"
 
     (
@@ -7614,7 +7621,7 @@ test_browser_use_node_repl_fallback_runtime() {
         ICON_SOURCE="$workspace/missing-icon.png"
         CODEX_APP_ID="codex-desktop"
         XDG_CACHE_HOME="$workspace/xdg-cache"
-        CODEX_NODE_REPL_PATH=
+        CODEX_NODE_REPL_PATH="$(type -P false)"
         CODEX_LINUX_NODE_REPL_SOURCE=
         CODEX_BROWSER_USE_RUNTIME_CACHE_DIR="$workspace/cache"
         CODEX_BROWSER_USE_NODE_REPL_RUNTIME_URL="file://$archive"
@@ -7637,10 +7644,8 @@ test_browser_use_node_repl_fallback_runtime() {
     assert_file_exists "$install_dir/resources/node_repl"
     assert_file_exists "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs"
     cmp -s "$true_bin" "$install_dir/resources/node_repl" || fail "Expected fallback node_repl to come from the runtime archive"
-    assert_contains "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" 'globalThis.nodeRepl?.env?.\[e\]'
-    assert_not_contains "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" 'globalThis.nodeRepl?.env\[e\]'
-    assert_contains "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" "codexLinuxSiteStatusAllowlistFallback"
-    assert_contains "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" "codexLinuxFileUrlPolicy"
+    assert_contains "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" 'globalThis.nodeRepl.rpc'
+    assert_contains "$install_dir/resources/plugins/openai-bundled/plugins/browser/scripts/browser-service.mjs" "codexLinuxFileUrlPolicy"
     assert_contains "$output_log" "Browser Use node_repl runtime is not a Linux executable for x86_64; skipping"
     assert_not_contains "$output_log" "WARN.*Browser Use node_repl runtime is not a Linux executable"
     assert_contains "$output_log" "Downloading Browser Use node_repl fallback runtime"
@@ -7716,119 +7721,6 @@ for (const [key, value] of Object.entries(expected)) {
 NODE
 }
 
-test_browser_use_site_status_allowlist_fallback_patch_behavior() {
-    info "Checking Browser Use site_status allowlist fallback patch behavior"
-    local workspace="$TMP_DIR/browser-site-status-allowlist-fallback"
-    local client="$workspace/browser-client.mjs"
-    local first_patch="$workspace/browser-client.first-patch.mjs"
-    local output_log="$workspace/output.log"
-
-    mkdir -p "$workspace"
-    cat > "$client" <<'JS'
-var fetchImpl;function F(e,t){return fetchImpl(e,t)}function G(e){return e}function H(e){return e.blocked===!0}var policy={async fetchBlocked(e,t){let s=await F(e.endpoint,{method:"GET"});if(!s.ok)throw new Error(G(`${t} cannot determine if ${e.displayUrl} is allowed. Please try again later or use another source.`));let n=await s.json();return H(n)}};
-JS
-
-    (
-        warn() { echo "[WARN] $*" >&2; }
-        info() { echo "[INFO] $*" >&2; }
-        # shellcheck disable=SC1091
-        source "$REPO_DIR/scripts/lib/bundled-plugins.sh"
-        patch_browser_use_site_status_allowlist_fallback "$client"
-        cp "$client" "$first_patch"
-        patch_browser_use_site_status_allowlist_fallback "$client"
-    ) >"$output_log" 2>&1
-
-    cmp -s "$first_patch" "$client" || fail "Expected Browser Use site_status fallback patch to be byte-identical on second application"
-    assert_occurrence_count "$client" "codexLinuxSiteStatusAllowlistFallback" 1
-    assert_not_contains "$client" "console.warn"
-    assert_not_contains "$output_log" "Could not find Browser Use site_status allowlist fallback insertion point"
-
-    node - "$client" <<'NODE'
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const vm = require("node:vm");
-
-const client = process.argv[2];
-const source = fs.readFileSync(client, "utf8");
-const warnings = [];
-const context = {
-  console: {
-    warn(...args) {
-      warnings.push(args);
-    },
-  },
-};
-vm.createContext(context);
-vm.runInContext(source, context);
-
-const matchingUrl = {
-  endpoint: "http://127.0.0.1/aura/site_status?url=https%3A%2F%2Fexample.com",
-  displayUrl: "https://example.com/",
-};
-const otherUrl = {
-  endpoint: "http://127.0.0.1/aura/other",
-  displayUrl: "https://example.com/",
-};
-
-(async () => {
-  const allowlistError = new Error("native ALLOWLIST is unavailable");
-  context.fetchImpl = async () => {
-    throw allowlistError;
-  };
-  assert.strictEqual(await context.policy.fetchBlocked(matchingUrl, "Chrome"), false);
-
-  await assert.rejects(
-    context.policy.fetchBlocked(otherUrl, "Chrome"),
-    (error) => error === allowlistError,
-  );
-
-  const otherError = new Error("native policy is unavailable");
-  context.fetchImpl = async () => {
-    throw otherError;
-  };
-  await assert.rejects(
-    context.policy.fetchBlocked(matchingUrl, "Chrome"),
-    (error) => error === otherError,
-  );
-
-  context.fetchImpl = async () => ({ ok: false });
-  await assert.rejects(
-    context.policy.fetchBlocked(matchingUrl, "Chrome"),
-    (error) => error.message === "Chrome cannot determine if https://example.com/ is allowed. Please try again later or use another source.",
-  );
-
-  const jsonError = new Error("invalid site_status JSON");
-  context.fetchImpl = async () => ({
-    ok: true,
-    json: async () => {
-      throw jsonError;
-    },
-  });
-  await assert.rejects(
-    context.policy.fetchBlocked(matchingUrl, "Chrome"),
-    (error) => error === jsonError,
-  );
-
-  let fetchedEndpoint;
-  let fetchedMethod;
-  context.fetchImpl = async (endpoint, options) => {
-    fetchedEndpoint = endpoint;
-    fetchedMethod = options.method;
-    return {
-      ok: true,
-      json: async () => ({ blocked: true }),
-    };
-  };
-  assert.strictEqual(await context.policy.fetchBlocked(matchingUrl, "Chrome"), true);
-  assert.strictEqual(fetchedEndpoint, matchingUrl.endpoint);
-  assert.strictEqual(fetchedMethod, "GET");
-  assert.strictEqual(warnings.length, 0);
-})().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
-NODE
-}
 
 test_browser_plugin_renamed_upstream_staging() {
     info "Checking Browser plugin staging from renamed upstream resources"
@@ -7861,23 +7753,10 @@ test_browser_plugin_renamed_upstream_staging() {
 
     assert_file_exists "$browser_dir/scripts/browser-client.mjs"
     assert_contains "$browser_dir/.codex-plugin/plugin.json" '"name":"browser"'
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseProcessEnv"
-    assert_not_contains "$browser_dir/scripts/browser-client.mjs" '"node:process"'
-    assert_contains "$browser_dir/scripts/browser-client.mjs" 'globalThis.nodeRepl?.env?.\[e\]'
-    assert_not_contains "$browser_dir/scripts/browser-client.mjs" 'globalThis.nodeRepl?.env\[e\]'
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseDefineNodeReplMethod"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "addAfterSubmittedCodeHook"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "nativePipe??import.meta.__codexNativePipe"
-    assert_not_contains "$browser_dir/scripts/browser-client.mjs" "let e=import.meta.__codexNativePipe;return"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxSiteStatusAllowlistFallback"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxFileUrlPolicy"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxIabSocketScope"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxPerUserBrowserSocketDir"
-    assert_contains "$browser_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseUserInfo"
-    assert_not_contains "$browser_dir/scripts/browser-client.mjs" "process.env.CODEX_BROWSER_USE_SOCKET_DIR"
-    assert_not_contains "$browser_dir/scripts/browser-client.mjs" '"/tmp/codex-browser-use"'
-    assert_contains "$browser_dir/scripts/browser-client.mjs" 'protocol==="file:"'
-    assert_not_contains "$browser_dir/scripts/browser-client.mjs" 'protocol==="data:"'
+    cmp -s "$app_dir/Contents/Resources/plugins/openai-bundled/plugins/browser/scripts/browser-client.mjs" "$browser_dir/scripts/browser-client.mjs" || fail "Browser RPC client must remain unchanged"
+    assert_contains "$browser_dir/scripts/browser-service.mjs" "codexLinuxPerUserBrowserSocketDir"
+    assert_contains "$browser_dir/scripts/browser-service.mjs" "codexLinuxIabSocketScope"
+    assert_contains "$browser_dir/scripts/browser-service.mjs" "codexLinuxFileUrlPolicy"
     assert_contains "$marketplace" '"name": "browser"'
     assert_contains "$marketplace" '"path": "./plugins/browser"'
     assert_contains "$output_log" "Browser plugin staged from upstream DMG"
@@ -8470,18 +8349,6 @@ for (const [name, plugin] of byName) {
 NODE
 }
 
-test_browser_use_node_repl_glibc_pidfd_patch_static() {
-    info "Checking Browser Use node_repl glibc pidfd patch scope"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "patch_browser_use_node_repl_glibc_pidfd_symbols"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "is_browser_use_node_repl_ldd_output_compatible"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "install_browser_use_node_repl_executable_resource"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "pidfd_spawnp"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "pidfd_getpid"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "GLIBC_2.39"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "GLIBC_2.34"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" "non-pidfd GLIBC_2.39 references remain"
-    assert_contains "$REPO_DIR/scripts/lib/bundled-plugins.sh" 'ldd "$destination"'
-}
 
 test_browser_use_node_repl_ldd_output_compatibility() {
     info "Checking Browser Use node_repl ldd output compatibility gate"
@@ -8529,12 +8396,10 @@ MD
 {"extensionId":"hehggadaopoacecdllhhajmbjkdcmajg","extensionHostName":"com.openai.codexextension"}
 JSON
     cat > "$chrome_dir/scripts/browser-client.mjs" <<'JS'
-const browserPreference={};function preferredWindowIdFor(){}function getForUrl(){}const extensionInstanceId=null;
-var kE=t=>t==="win32"?"\\\\.\\pipe\\codex-browser-use":"/tmp/codex-browser-use";var Cb=kE(hV.platform()),EV=()=>_P()==="win32"?TV():CV(),CV=async()=>(await yP(Cb)).map(e=>wP.resolve(Cb,e)),TV=async()=>[];
-function lu(e){let t=globalThis.nodeRepl?.env[e];return typeof t=="string"?t:void 0}
-function Me(){let e=globalThis.nodeRepl;return e?.config==null?void 0:e}
-import{platform as yT}from"node:os";import{env as Ub}from"node:process";function eh(){return"privileged native pipe bridge is not available; browser-client is not trusted"}function th(){let e=globalThis.nodeRepl?.nativePipe;return e==null||typeof e.createConnection!="function"?null:e}var ml=class e{constructor(t){this.socket=t}static async create(t){let r=th();if(r!=null){let n=await r.createConnection(t);return new e(n)}throw new Error(eh())}};var chromeConfigHome=Ub.CHROME_CONFIG_HOME;
-async fetchBlocked(e,t){let r=await bS(e.endpoint,{method:"GET"});if(!r.ok)throw new Error(ae(`${t} cannot determine if ${e.displayUrl} is allowed. Please try again later or use another source.`));let n=await r.json();return TF(n)}
+export async function setupBrowserRuntime(){return globalThis.nodeRepl.rpc("browser",{method:"setup",params:{environment:"codex-app"}})}
+JS
+    cat > "$chrome_dir/scripts/browser-service.mjs" <<'JS'
+var kE=t=>t==="win32"?"\\\\.\\pipe\\codex-browser-use":"/tmp/codex-browser-use";var EV=e=>e.platform==="win32"?TV(e):CV(e),CV=async e=>{let Cb=kE(e.platform);return(await yP(Cb)).map(n=>wP.resolve(Cb,n))},TV=async e=>[];
 JS
     cat > "$chrome_dir/scripts/check-native-host-manifest.js" <<'JS'
 #!/usr/bin/env node
@@ -8711,32 +8576,9 @@ test_chrome_plugin_staging() {
     assert_contains "$chrome_dir/scripts/open-chrome-window.js" "defaultBrowser ==="
     assert_contains "$chrome_dir/scripts/open-chrome-window.js" "resolveChromeProfileDirectoryFromRunningProcess"
     assert_contains "$chrome_dir/scripts/open-chrome-window.js" "defaultLinuxUserDataDirectoryForCommand"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "browserPreference"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "preferredWindowIdFor"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "getForUrl"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseProcessEnv"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" '"node:process"'
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" 'globalThis.nodeRepl?.env?.\[e\]'
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" 'globalThis.nodeRepl?.env\[e\]'
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseConfigShim"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "writeValue: codexLinuxBrowserUseIgnoreConfigWrite"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "batchWrite: codexLinuxBrowserUseIgnoreConfigWrite"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" "writeFile"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseStringifyToml"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" 'Object.getPrototypeOf(repl)'
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" 'Object.defineProperty(prototype, "config"'
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseDefineNodeReplMethod"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "addAfterSubmittedCodeHook"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseConfigShim();let e=globalThis.nodeRepl"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "nativePipe??import.meta.__codexNativePipe"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxNativePipeFallback"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" 'await import("node:net")'
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxSiteStatusAllowlistFallback"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxPerUserBrowserSocketDir"
-    assert_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxBrowserUseUserInfo"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" "process.env.CODEX_BROWSER_USE_SOCKET_DIR"
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" '"/tmp/codex-browser-use"'
-    assert_not_contains "$chrome_dir/scripts/browser-client.mjs" "codexLinuxIabSocketScope"
+    cmp -s "$app_dir/Contents/Resources/plugins/openai-bundled/plugins/chrome/scripts/browser-client.mjs" "$chrome_dir/scripts/browser-client.mjs" || fail "Browser RPC client must remain unchanged"
+    assert_contains "$chrome_dir/scripts/browser-service.mjs" "codexLinuxPerUserBrowserSocketDir"
+    assert_not_contains "$chrome_dir/scripts/browser-service.mjs" "codexLinuxIabSocketScope"
     assert_contains "$chrome_dir/skills/control-chrome/SKILL.md" "agent.browsers.list()"
     assert_contains "$chrome_dir/skills/control-chrome/SKILL.md" "browser.tabs.new()"
     assert_contains "$install_dir/resources/plugins/openai-bundled/.agents/plugins/marketplace.json" '"name": "chrome"'
@@ -11361,7 +11203,6 @@ main() {
     test_bundled_plugin_system_computer_use_preserves_cosmic_helper_name
     test_browser_use_node_repl_fallback_runtime
     test_browser_use_file_url_policy_patch_behavior
-    test_browser_use_site_status_allowlist_fallback_patch_behavior
     test_browser_plugin_renamed_upstream_staging
     test_upstream_bundled_skills_staging
     test_upstream_bundled_skills_validator_guards
@@ -11375,7 +11216,6 @@ main() {
     test_portable_bundled_plugin_validator_guards
     test_portable_bundled_plugin_stage_failures
     test_portable_bundled_plugin_marketplace_path_guard
-    test_browser_use_node_repl_glibc_pidfd_patch_static
     test_browser_use_node_repl_ldd_output_compatibility
     test_chrome_plugin_staging
     test_chrome_marketplace_fallback_synthesis

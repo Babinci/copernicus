@@ -1,19 +1,19 @@
 "use strict";
 
-const FILE_TREE_ASSET_PATTERN = /^app-initial-[^.]+\.js$/;
+const FILE_TREE_ASSET_PATTERN = /^review-file-tree-pane-[^.]+\.js$/;
 const RUNTIME_MARKER = "codexLinuxFileTreeContextTarget";
 
 const GET_ITEMS_MARKER =
-  "De=()=>{let e=Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},";
+  "Ge=()=>{if(!D)return[];let e=We({cwd:n,isWindowsHost:F===`windows`,itemPath:me.current,targetPathByDisplayPath:le});return Be({...st({scope:N,cwd:n,fallbackOpenTargets:R,hostId:l,targetPath:e}),onAddToChat:l==null?void 0:e=>{I.mutateAsync({hostId:l,path:e})},";
 const GET_ITEMS_REPLACEMENT =
-  "De=()=>{let e=codexLinuxFileTreeContextPath(z,U.current,n,M===`windows`);return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null||U.current?.type!==`file`?void 0:e=>{N.mutateAsync({hostId:o,path:e})},";
+  "Ge=()=>{if(!D)return[];let e=codexLinuxFileTreeContextPath(le,me.current,n,F===`windows`);return Be({...st({scope:N,cwd:n,fallbackOpenTargets:R,hostId:l,targetPath:e}),onAddToChat:l==null||me.current?.type!==`file`?void 0:e=>{I.mutateAsync({hostId:l,path:e})},";
 const PREFETCH_MARKER =
-  "Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})})";
+  "qe=()=>{if(D)return ct({scope:N,cwd:n,hostId:l,targetPath:We({cwd:n,isWindowsHost:F===`windows`,itemPath:me.current,targetPathByDisplayPath:le})})}";
 const PREFETCH_REPLACEMENT =
-  "Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:codexLinuxFileTreeContextPath(z,U.current,n,M===`windows`)})";
-const TARGET_MARKER = "ke=e=>{U.current=Qso(e.nativeEvent)}";
+  "qe=()=>{if(D)return ct({scope:N,cwd:n,hostId:l,targetPath:codexLinuxFileTreeContextPath(le,me.current,n,F===`windows`)})}";
+const TARGET_MARKER = "Je=e=>{me.current=Ke(e.nativeEvent)}";
 const TARGET_REPLACEMENT =
-  "ke=e=>{U.current=codexLinuxFileTreeContextTarget(e.nativeEvent)}";
+  "Je=e=>{me.current=codexLinuxFileTreeContextTarget(e.nativeEvent)}";
 
 function warn(message) {
   console.warn(`WARN: ${message} - skipping ui-tweaks file tree folder actions patch`);
@@ -37,7 +37,7 @@ function runtimeSource() {
     "}return null}",
     "function codexLinuxFileTreeContextPath(pathMap,target,cwd,isWindows){",
     "if(target==null)return null;let path=pathMap.get(target.path);",
-    "return path??(target.type===`folder`?Sp(cwd??``,target.path,isWindows):target.path)}",
+    "return path??g(cwd??``,target.path,isWindows)}",
   ].join("");
 }
 
@@ -47,6 +47,7 @@ function applyFileTreeFolderActionsPatch(source, context = {}) {
     [GET_ITEMS_MARKER, GET_ITEMS_REPLACEMENT],
     [PREFETCH_MARKER, PREFETCH_REPLACEMENT],
     [TARGET_MARKER, TARGET_REPLACEMENT],
+    ["onSaveAs:de.workspaceFiles.saveCopy==null?void 0", "onSaveAs:de.workspaceFiles.saveCopy==null||me.current?.type!==`file`?void 0"],
   ];
   const invalid = replacements.find(([marker]) => source.split(marker).length !== 2);
   if (invalid != null) {

@@ -16,6 +16,13 @@ installs are fine, but no longer required for the generated app build. The
 dependency helper may still install or validate a distro Node.js toolchain on
 some bootstrap paths.
 
+Browser automation also needs the current `node_repl` trusted-service runtime.
+The DMG supplies macOS binaries, so x86_64 builds extract this helper from a
+SHA-256-pinned official Linux package without installing that package. A
+running app's `CODEX_NODE_REPL_PATH` is not a build input; use the explicit
+`CODEX_LINUX_NODE_REPL_SOURCE` override when testing a replacement. CI initializes
+the staged Browser services to detect runtime/client incompatibility.
+
 Bootstrap dependencies:
 
 ```bash

@@ -1,5 +1,11 @@
 # Troubleshooting
 
+If Browser reports `Browser use requires a trusted Node REPL browser service`,
+rebuild from the current sources and fully restart Desktop. This means the
+browser runtime is older than its bundled plugin; opening another tab will not
+repair it. The build stages the matching trusted-service runtime and applies
+Linux socket discovery changes to `browser-service.mjs`.
+
 | Problem | Solution |
 |---|---|
 | `Error: write EPIPE` | Run `start.sh` directly instead of piping output |
