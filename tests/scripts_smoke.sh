@@ -7527,6 +7527,23 @@ test_process_detection_helper_cmdline_shapes() {
         cmdline_has_electron_helper_type "$space_cmdline" || exit 1
         ! cmdline_has_electron_helper_type "$main_cmdline" || exit 1
     ) || fail "Electron helper detection must handle NUL-separated and space-joined cmdline formats"
+
+    (
+        source "$REPO_DIR/scripts/lib/process-detection.sh"
+        INSTALL_DIR="$TMP_DIR/identity-app"
+        XDG_STATE_HOME="$TMP_DIR/identity-state"
+        CODEX_INSTALL_ALLOW_RUNNING=0
+        unset CODEX_APP_ID
+        mkdir -p "$INSTALL_DIR" "$XDG_STATE_HOME/codex-desktop"
+        touch "$INSTALL_DIR/electron"
+        printf '123\n' > "$XDG_STATE_HOME/codex-desktop/app.pid"
+        pid_matches_install_target() { [ "$1" = 123 ]; }
+        ! install_target_is_stopped || exit 1
+        [ "$RUNNING_INSTALL_TARGET_PID" = 123 ] || exit 1
+        find_running_install_target_pid() { return 2; }
+        warn() { :; }
+        ! install_target_is_stopped || exit 1
+    ) || fail "Missing identity and detector errors must never permit live app promotion"
 }
 
 test_side_by_side_launcher_identity() {
