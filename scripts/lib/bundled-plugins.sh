@@ -447,178 +447,6 @@ install_linux_executable_resource() {
     install -m 0755 "$source" "$destination"
 }
 
-patch_browser_use_node_repl_glibc_pidfd_symbols() {
-    local file="$1"
-    python3 - "$file" <<'PY'
-import pathlib
-import struct
-import sys
-
-# node_repl only needs these pidfd symbols opportunistically. Keeping their
-# GLIBC_2.39 version binding makes the whole binary fail to load on glibc
-# 2.34-2.38.
-
-path = pathlib.Path(sys.argv[1])
-data = bytearray(path.read_bytes())
-
-
-def fail(message):
-    print(message, file=sys.stderr)
-    sys.exit(1)
-
-
-def read_cstr(blob, offset):
-    if offset < 0 or offset >= len(blob):
-        return ""
-    end = blob.find(b"\0", offset)
-    if end == -1:
-        end = len(blob)
-    return blob[offset:end].decode("utf-8", "replace")
-
-
-def elf_hash(name):
-    value = 0
-    for byte in name.encode("utf-8"):
-        value = (value << 4) + byte
-        high = value & 0xF0000000
-        if high:
-            value ^= high >> 24
-            value &= ~high
-    return value & 0xFFFFFFFF
-
-
-if len(data) < 64 or data[:4] != b"\x7fELF":
-    sys.exit(0)
-if data[4] != 2 or data[5] != 1:
-    sys.exit(0)
-
-e_machine = struct.unpack_from("<H", data, 18)[0]
-if e_machine != 62:
-    sys.exit(0)
-
-e_shoff = struct.unpack_from("<Q", data, 40)[0]
-e_shentsize = struct.unpack_from("<H", data, 58)[0]
-e_shnum = struct.unpack_from("<H", data, 60)[0]
-e_shstrndx = struct.unpack_from("<H", data, 62)[0]
-
-if e_shoff == 0 or e_shentsize < 64 or e_shnum == 0 or e_shstrndx >= e_shnum:
-    sys.exit(0)
-if e_shoff + (e_shnum * e_shentsize) > len(data):
-    fail("ELF section table is outside file bounds")
-
-sections = []
-for index in range(e_shnum):
-    offset = e_shoff + (index * e_shentsize)
-    fields = struct.unpack_from("<IIQQQQIIQQ", data, offset)
-    sections.append(
-        {
-            "name_offset": fields[0],
-            "type": fields[1],
-            "offset": fields[4],
-            "size": fields[5],
-            "link": fields[6],
-            "entsize": fields[9],
-        }
-    )
-
-shstr = sections[e_shstrndx]
-shstr_data = data[shstr["offset"] : shstr["offset"] + shstr["size"]]
-by_name = {
-    read_cstr(shstr_data, section["name_offset"]): section for section in sections
-}
-
-dynsym = by_name.get(".dynsym")
-dynstr = by_name.get(".dynstr")
-versym = by_name.get(".gnu.version")
-verneed = by_name.get(".gnu.version_r")
-if not dynsym or not dynstr or not versym or not verneed:
-    sys.exit(0)
-if dynsym["entsize"] < 24:
-    fail("ELF dynamic symbol table has an unsupported entry size")
-
-dynstr_data = data[dynstr["offset"] : dynstr["offset"] + dynstr["size"]]
-glibc_234_offset = dynstr_data.find(b"GLIBC_2.34\0")
-if glibc_234_offset < 0:
-    sys.exit(0)
-glibc_234_name_offset = glibc_234_offset
-glibc_234_hash = elf_hash("GLIBC_2.34")
-
-version_names = {}
-version_aux_offsets = {}
-cursor = verneed["offset"]
-end = verneed["offset"] + verneed["size"]
-while cursor and cursor + 16 <= end:
-    vn_version, vn_cnt, _vn_file, vn_aux, vn_next = struct.unpack_from(
-        "<HHIII", data, cursor
-    )
-    if vn_version == 0 or vn_cnt == 0:
-        break
-    aux_cursor = cursor + vn_aux
-    for _ in range(vn_cnt):
-        if aux_cursor + 16 > end:
-            fail("ELF version need auxiliary record is outside section bounds")
-        _hash, _flags, other, name_offset, aux_next = struct.unpack_from(
-            "<IHHII", data, aux_cursor
-        )
-        version_names[other] = read_cstr(dynstr_data, name_offset)
-        version_aux_offsets[other] = aux_cursor
-        if aux_next == 0:
-            break
-        aux_cursor += aux_next
-    if vn_next == 0:
-        break
-    cursor += vn_next
-
-target_names = {"pidfd_spawnp", "pidfd_getpid"}
-target_version_ids = set()
-non_target_glibc_239_refs = []
-patched_symbols = 0
-symbol_count = dynsym["size"] // dynsym["entsize"]
-for index in range(symbol_count):
-    symbol_offset = dynsym["offset"] + (index * dynsym["entsize"])
-    if symbol_offset + 24 > len(data):
-        fail("ELF dynamic symbol entry is outside file bounds")
-    name_offset, info, _other, shndx = struct.unpack_from("<IBBH", data, symbol_offset)
-    name = read_cstr(dynstr_data, name_offset)
-    if not name:
-        continue
-    versym_offset = versym["offset"] + (index * 2)
-    if versym_offset + 2 > versym["offset"] + versym["size"]:
-        fail("ELF version symbol entry is outside section bounds")
-    raw_version = struct.unpack_from("<H", data, versym_offset)[0]
-    version_id = raw_version & 0x7FFF
-    if version_names.get(version_id) != "GLIBC_2.39":
-        continue
-    bind = info >> 4
-    is_weak_undefined = bind == 2 and shndx == 0
-    if name in target_names and is_weak_undefined:
-        struct.pack_into("<H", data, versym_offset, 1)
-        target_version_ids.add(version_id)
-        patched_symbols += 1
-    else:
-        non_target_glibc_239_refs.append(name)
-
-if non_target_glibc_239_refs:
-    fail(
-        "non-pidfd GLIBC_2.39 references remain: "
-        + ", ".join(sorted(set(non_target_glibc_239_refs)))
-    )
-
-if patched_symbols == 0:
-    sys.exit(0)
-
-for version_id in target_version_ids:
-    aux_offset = version_aux_offsets.get(version_id)
-    if aux_offset is None:
-        fail("GLIBC_2.39 version need record was not found")
-    struct.pack_into("<I", data, aux_offset, glibc_234_hash)
-    struct.pack_into("<I", data, aux_offset + 8, glibc_234_name_offset)
-
-path.write_bytes(data)
-print("patched")
-PY
-}
-
 is_browser_use_node_repl_ldd_output_compatible() {
     local output="$1"
     ! printf '%s\n' "$output" | grep -Eq "=> not found|version .* not found"
@@ -630,21 +458,9 @@ install_browser_use_node_repl_executable_resource() {
     local label="$3"
     local log_level="${4:-warn}"
     local ldd_output
-    local patch_status
 
     if ! install_linux_executable_resource "$source" "$destination" "$label" "$log_level"; then
         return 1
-    fi
-
-    if ! patch_status="$(patch_browser_use_node_repl_glibc_pidfd_symbols "$destination" 2>&1)"; then
-        warn "Browser Use $label has unsupported GLIBC_2.39 runtime references; skipping"
-        [ -z "$patch_status" ] || warn "$patch_status"
-        rm -f "$destination"
-        return 1
-    fi
-
-    if [ "$patch_status" = "patched" ]; then
-        info "Patched Browser Use $label for glibc 2.34+ compatibility"
     fi
 
     if command -v ldd >/dev/null 2>&1; then
@@ -664,7 +480,7 @@ install_browser_use_node_repl_executable_resource() {
 browser_use_node_repl_runtime_url() {
     case "$ARCH" in
         x86_64)
-            echo "${CODEX_BROWSER_USE_NODE_REPL_RUNTIME_URL:-https://persistent.oaistatic.com/codex-primary-runtime/26.426.12240/codex-primary-runtime-linux-x64-26.426.12240.tar.xz}"
+            echo "${CODEX_BROWSER_USE_NODE_REPL_RUNTIME_URL:-https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_26.903.61454_amd64.deb}"
             ;;
         *)
             return 1
@@ -675,7 +491,7 @@ browser_use_node_repl_runtime_url() {
 browser_use_node_repl_runtime_sha256() {
     case "$ARCH" in
         x86_64)
-            echo "${CODEX_BROWSER_USE_NODE_REPL_RUNTIME_SHA256:-db5624eb6efa36b66ec6f6dd0488cefb966e49636862aab6209a4336c1ca90c4}"
+            echo "${CODEX_BROWSER_USE_NODE_REPL_RUNTIME_SHA256:-2caa7df314ce37e9048359d8e6a4a78e24574a3b54d6bf510f17754b66dda775}"
             ;;
         *)
             return 1
@@ -683,7 +499,7 @@ browser_use_node_repl_runtime_sha256() {
     esac
 }
 
-install_node_repl_from_primary_runtime_archive() {
+install_node_repl_from_linux_package() {
     local destination="$1"
     local url
     local expected_sha
@@ -693,7 +509,7 @@ install_node_repl_from_primary_runtime_archive() {
     local source
 
     if ! url="$(browser_use_node_repl_runtime_url)"; then
-        warn "Browser Use node_repl primary-runtime fallback is unavailable for $ARCH"
+        warn "Browser Use node_repl Linux package is unavailable for $ARCH"
         return 1
     fi
     expected_sha="$(browser_use_node_repl_runtime_sha256)"
@@ -701,7 +517,7 @@ install_node_repl_from_primary_runtime_archive() {
     cache_dir="${CODEX_BROWSER_USE_RUNTIME_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/codex-desktop/browser-use}"
     archive="$cache_dir/$(basename "$url")"
     extract_dir="$WORK_DIR/browser-use-node-repl-runtime"
-    source="$extract_dir/codex-primary-runtime/dependencies/bin/node_repl"
+    source="$extract_dir/usr/lib/chatgpt/resources/cua_node/bin/node_repl"
 
     mkdir -p "$cache_dir" "$extract_dir"
     if [ ! -f "$archive" ]; then
@@ -722,8 +538,8 @@ install_node_repl_from_primary_runtime_archive() {
         return 1
     fi
 
-    if ! tar -xJf "$archive" -C "$extract_dir" codex-primary-runtime/dependencies/bin/node_repl; then
-        warn "Failed to extract Browser Use node_repl from fallback runtime"
+    if ! "${SEVEN_ZIP_CMD:-7z}" x -so -tAr "$archive" data.tar.xz | tar -xJf - -C "$extract_dir" ./usr/lib/chatgpt/resources/cua_node/bin/node_repl; then
+        warn "Failed to extract Browser Use node_repl from Linux package"
         return 1
     fi
 
@@ -735,20 +551,15 @@ install_browser_use_node_repl_resource() {
     local destination="$2"
     local source
 
-    for source in \
-        "${CODEX_LINUX_NODE_REPL_SOURCE:-}" \
-        "${CODEX_NODE_REPL_PATH:-}"
+    # CODEX_NODE_REPL_PATH belongs to the running app and may be obsolete.
+    # Only an explicit build override may replace the pinned Browser runtime.
+    for source in "${CODEX_LINUX_NODE_REPL_SOURCE:-}"
     do
         [ -n "$source" ] || continue
         if install_browser_use_node_repl_executable_resource "$source" "$destination" "node_repl runtime"; then
             return 0
         fi
     done
-
-    source="${XDG_CACHE_HOME:-$HOME/.cache}/codex-runtimes/codex-primary-runtime/dependencies/bin/node_repl"
-    if [ -f "$source" ] && install_browser_use_node_repl_executable_resource "$source" "$destination" "node_repl runtime"; then
-        return 0
-    fi
 
     for source in \
         "$upstream_resources/cua_node/bin/node_repl" \
@@ -760,7 +571,7 @@ install_browser_use_node_repl_resource() {
         fi
     done
 
-    install_node_repl_from_primary_runtime_archive "$destination"
+    install_node_repl_from_linux_package "$destination"
 }
 
 remove_macos_sidecar_files() {
@@ -1035,41 +846,6 @@ patch_browser_client_linux_socket_dir() {
     fi
 }
 
-patch_browser_use_node_repl_process_env_import() {
-    local client="$1"
-
-    if grep -q "codexLinuxBrowserUseProcessEnv" "$client"; then
-        return 0
-    fi
-
-    python3 - "$client" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-path = Path(sys.argv[1])
-source = path.read_text(encoding="utf-8")
-pattern = re.compile(
-    r'import\{env as (?P<binding>[A-Za-z_$][\w$]*)\}from"node:process";'
-)
-match = pattern.search(source)
-if match is None:
-    if '"node:process"' in source:
-        print(
-            "WARN: Could not find Browser Use node:process env import — leaving browser-client.mjs unchanged",
-            file=sys.stderr,
-        )
-    raise SystemExit(0)
-
-binding = match.group("binding")
-replacement = (
-    "var codexLinuxBrowserUseProcessEnv=globalThis.nodeRepl?.env??{},"
-    f"{binding}=codexLinuxBrowserUseProcessEnv;"
-)
-path.write_text(source[:match.start()] + replacement + source[match.end():], encoding="utf-8")
-PY
-}
-
 normalize_plugin_script_executable_modes() {
     local target_plugin="$1"
     local scripts_dir="$target_plugin/scripts"
@@ -1111,12 +887,7 @@ stage_chrome_plugin_from_upstream() {
     cp -R "$source_plugin" "$target_plugin"
     remove_macos_sidecar_files "$target_plugin"
     patch_chrome_plugin_for_linux "$target_plugin"
-    patch_browser_use_node_repl_process_env_import "$target_plugin/scripts/browser-client.mjs"
-    patch_browser_use_node_repl_env_guard "$target_plugin/scripts/browser-client.mjs"
-    patch_browser_use_node_repl_config_shim "$target_plugin/scripts/browser-client.mjs"
-    patch_browser_use_native_pipe_import_meta_bridge "$target_plugin/scripts/browser-client.mjs"
-    patch_browser_use_site_status_allowlist_fallback "$target_plugin/scripts/browser-client.mjs"
-    patch_browser_client_linux_socket_dir "$target_plugin/scripts/browser-client.mjs"
+    patch_browser_client_linux_socket_dir "$target_plugin/scripts/browser-service.mjs"
     normalize_plugin_script_executable_modes "$target_plugin"
     if ! install_chrome_extension_host_resource "$target_plugin"; then
         rm -rf "$target_plugin"
@@ -1125,61 +896,6 @@ stage_chrome_plugin_from_upstream() {
 
     info "Chrome plugin staged from upstream DMG"
     return 0
-}
-
-patch_browser_use_site_status_allowlist_fallback() {
-    local client="$1"
-
-    if grep -q "codexLinuxSiteStatusAllowlistFallback" "$client"; then
-        return 0
-    fi
-
-    python3 - "$client" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-path = Path(sys.argv[1])
-source = path.read_text(encoding="utf-8")
-pattern = re.compile(
-    r'async fetchBlocked\((?P<url>[A-Za-z_$][\w$]*),(?P<label>[A-Za-z_$][\w$]*)\)\{'
-    r'let (?P<response>[A-Za-z_$][\w$]*)=await (?P<fetch>[A-Za-z_$][\w$]*)'
-    r'\((?P=url)\.endpoint,\{method:"GET"\}\);'
-    r'if\(!(?P=response)\.ok\)throw new Error\((?P<format>[A-Za-z_$][\w$]*)'
-    r'\(`\$\{(?P=label)\} cannot determine if \$\{(?P=url)\.displayUrl\} is allowed\. '
-    r'Please try again later or use another source\.`\)\);'
-    r'let (?P<json>[A-Za-z_$][\w$]*)=await (?P=response)\.json\(\);'
-    r'return (?P<status>[A-Za-z_$][\w$]*)\((?P=json)\)\}'
-)
-match = pattern.search(source)
-if match is None:
-    if "/aura/site_status" not in source and "fetchBlocked(" not in source:
-        raise SystemExit(0)
-    print(
-        "WARN: Could not find Browser Use site_status allowlist fallback insertion point — leaving browser-client.mjs unchanged",
-        file=sys.stderr,
-    )
-    raise SystemExit(0)
-
-url = match.group("url")
-response = match.group("response")
-fetch = match.group("fetch")
-formatter = match.group("format")
-json_value = match.group("json")
-status = match.group("status")
-label = match.group("label")
-error = "__codexLinuxErr"
-error_message = f'${{{label}}} cannot determine if ${{{url}.displayUrl}} is allowed. Please try again later or use another source.'
-replacement = (
-    f'async fetchBlocked({url},{label}){{let {response};try{{{response}=await {fetch}({url}.endpoint,{{method:"GET"}})}}'
-    f'catch({error}){{if(String({url}?.endpoint??"").includes("/aura/site_status")&&'
-    f'String({error}?.message??{error}).toLowerCase().includes("allowlist"))'
-    f'return!1/*codexLinuxSiteStatusAllowlistFallback*/;throw {error}}}'
-    f'if(!{response}.ok)throw new Error({formatter}(`{error_message}`));'
-    f'let {json_value}=await {response}.json();return {status}({json_value})}}'
-)
-path.write_text(source[:match.start()] + replacement + source[match.end():], encoding="utf-8")
-PY
 }
 
 patch_browser_use_file_url_policy() {
@@ -1247,275 +963,6 @@ print(
     "WARN: Could not find Browser Use URL policy insertion point — leaving browser-client.mjs unchanged",
     file=sys.stderr,
 )
-PY
-}
-
-patch_browser_use_node_repl_env_guard() {
-    local client="$1"
-
-    if grep -Eq 'globalThis\.nodeRepl\?\.env\?\.\[[^]]+\]' "$client"; then
-        return 0
-    fi
-
-    python3 - "$client" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-path = Path(sys.argv[1])
-source = path.read_text(encoding="utf-8")
-pattern = re.compile(
-    r'function (?P<helper>[A-Za-z_$][\w$]*)\((?P<key>[A-Za-z_$][\w$]*)\)\{'
-    r'let (?P<value>[A-Za-z_$][\w$]*)=globalThis\.nodeRepl\?\.env\[(?P=key)\];'
-    r'return typeof (?P=value)=="string"\?(?P=value):void 0\}'
-)
-match = pattern.search(source)
-if match is None:
-    print(
-        "WARN: Could not find Browser Use nodeRepl env guard insertion point — leaving browser-client.mjs unchanged",
-        file=sys.stderr,
-    )
-    raise SystemExit(0)
-
-helper = match.group("helper")
-key = match.group("key")
-value = match.group("value")
-replacement = (
-    f'function {helper}({key}){{'
-    f'let {value}=globalThis.nodeRepl?.env?.[{key}];'
-    f'return typeof {value}=="string"?{value}:void 0}}'
-)
-path.write_text(source[:match.start()] + replacement + source[match.end():], encoding="utf-8")
-PY
-}
-
-patch_browser_use_node_repl_config_shim() {
-    local client="$1"
-
-    if grep -q "codexLinuxBrowserUseConfigShim" "$client"; then
-        return 0
-    fi
-
-    python3 - "$client" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-path = Path(sys.argv[1])
-source = path.read_text(encoding="utf-8")
-pattern = re.compile(
-    r'function (?P<helper>[A-Za-z_$][\w$]*)\(\)\{'
-    r'let (?P<value>[A-Za-z_$][\w$]*)=globalThis\.nodeRepl;'
-    r'return (?P=value)\?\.config==null\?void 0:(?P=value)\}'
-)
-match = pattern.search(source)
-if match is None:
-    print(
-        "WARN: Could not find Browser Use nodeRepl config shim insertion point — leaving browser-client.mjs unchanged",
-        file=sys.stderr,
-    )
-    raise SystemExit(0)
-
-helper = match.group("helper")
-value = match.group("value")
-shim = r'''
-function codexLinuxBrowserUseConfigShim() {
-  let repl = globalThis.nodeRepl;
-  if (repl == null) return;
-  codexLinuxBrowserUseNodeReplMethodShim(repl);
-  if (repl.config != null) return;
-  let config = {
-    read: async () => ({ config: await codexLinuxBrowserUseReadToml("config.toml") }),
-    readRequirements: async () => ({ requirements: null }),
-    readToml: async (filePath) => codexLinuxBrowserUseReadToml(filePath),
-    writeToml: codexLinuxBrowserUseIgnoreConfigWrite,
-    writeValue: codexLinuxBrowserUseIgnoreConfigWrite,
-    batchWrite: codexLinuxBrowserUseIgnoreConfigWrite,
-  };
-
-  try {
-    repl.config = config;
-    if (repl.config != null) return;
-  } catch {}
-
-  try {
-    let prototype = Object.getPrototypeOf(repl);
-    if (prototype != null && Object.getOwnPropertyDescriptor(prototype, "config") == null) {
-      Object.defineProperty(prototype, "config", {
-        configurable: true,
-        get: () => config,
-      });
-    }
-  } catch {}
-}
-
-function codexLinuxBrowserUseNodeReplMethodShim(repl) {
-  // Older Linux node_repl builds do not expose browser notification hooks.
-  codexLinuxBrowserUseDefineNodeReplMethod(repl, "addAfterSubmittedCodeHook", () => () => undefined);
-}
-
-function codexLinuxBrowserUseDefineNodeReplMethod(repl, name, value) {
-  if (typeof repl?.[name] == "function") return;
-
-  try {
-    repl[name] = value;
-    if (typeof repl[name] == "function") return;
-  } catch {}
-
-  try {
-    let prototype = Object.getPrototypeOf(repl);
-    if (prototype != null && Object.getOwnPropertyDescriptor(prototype, name) == null) {
-      Object.defineProperty(prototype, name, {
-        configurable: true,
-        value,
-      });
-    }
-  } catch {}
-}
-
-function codexLinuxBrowserUseCodexHome() {
-  let codexHome = globalThis.nodeRepl?.env?.CODEX_HOME;
-  if (typeof codexHome == "string" && codexHome.length > 0) {
-    return codexHome.replace(/\/+$/, "");
-  }
-
-  let homeDir = globalThis.nodeRepl?.homeDir;
-  return typeof homeDir == "string" && homeDir.length > 0
-    ? `${homeDir.replace(/\/+$/, "")}/.codex`
-    : null;
-}
-
-function codexLinuxBrowserUseConfigPath(filePath) {
-  let codexHome = codexLinuxBrowserUseCodexHome();
-  if (codexHome == null || typeof filePath != "string" || filePath.length === 0) {
-    return null;
-  }
-
-  let normalized = filePath.replaceAll("\\", "/");
-  if (normalized.startsWith("/")) {
-    return normalized === codexHome || normalized.startsWith(`${codexHome}/`)
-      ? normalized
-      : null;
-  }
-
-  normalized = normalized.replace(/^\/+/, "");
-  return normalized.split("/").includes("..") ? null : `${codexHome}/${normalized}`;
-}
-
-async function codexLinuxBrowserUseReadToml(filePath) {
-  let configPath = codexLinuxBrowserUseConfigPath(filePath);
-  if (configPath == null) return {};
-
-  try {
-    let { readFile } = await import("node:fs/promises");
-    return codexLinuxBrowserUseParseToml(await readFile(configPath, "utf8"));
-  } catch (error) {
-    if (error && typeof error == "object" && error.code === "ENOENT") return {};
-    throw error;
-  }
-}
-
-async function codexLinuxBrowserUseIgnoreConfigWrite() {
-  return undefined;
-}
-
-function codexLinuxBrowserUseParseToml(source) {
-  let root = {};
-  let section = root;
-
-  for (let line of String(source).split(/\r?\n/)) {
-    let trimmed = line.trim();
-    if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-
-    let sectionMatch = trimmed.match(/^\[([A-Za-z0-9_.-]+)\]$/);
-    if (sectionMatch) {
-      section = root;
-      for (let part of sectionMatch[1].split(".")) {
-        section = section[part] && typeof section[part] == "object" && !Array.isArray(section[part])
-          ? section[part]
-          : (section[part] = {});
-      }
-      continue;
-    }
-
-    let separator = trimmed.indexOf("=");
-    if (separator < 0) continue;
-
-    let key = trimmed.slice(0, separator).trim();
-    let value = trimmed.slice(separator + 1).trim();
-    if (key) section[key] = codexLinuxBrowserUseParseTomlValue(value);
-  }
-
-  return root;
-}
-
-function codexLinuxBrowserUseParseTomlValue(value) {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  if (/^-?\d+(?:\.\d+)?$/.test(value)) return Number(value);
-
-  if (value.startsWith("[") && value.endsWith("]")) {
-    let body = value.slice(1, -1).trim();
-    return body.length === 0
-      ? []
-      : body.split(",").map((item) => codexLinuxBrowserUseParseTomlValue(item.trim()));
-  }
-
-  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value.slice(1, -1);
-    }
-  }
-
-  return value;
-}
-'''
-replacement = (
-    shim
-    + f'function {helper}(){{codexLinuxBrowserUseConfigShim();let {value}=globalThis.nodeRepl;'
-    + f'return {value}?.config==null?void 0:{value}}}'
-)
-path.write_text(source[:match.start()] + replacement + source[match.end():], encoding="utf-8")
-PY
-}
-
-patch_browser_use_native_pipe_import_meta_bridge() {
-    local client="$1"
-
-    if grep -Fq "globalThis.nodeRepl?.nativePipe??import.meta.__codexNativePipe" "$client"; then
-        return 0
-    fi
-
-    python3 - "$client" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-path = Path(sys.argv[1])
-source = path.read_text(encoding="utf-8")
-pattern = re.compile(
-    r'function (?P<helper>[A-Za-z_$][\w$]*)\(\)\{'
-    r'let (?P<bridge>[A-Za-z_$][\w$]*)='
-    r'(?:globalThis\.nodeRepl\?\.nativePipe|import\.meta\.__codexNativePipe);'
-    r'return (?P=bridge)==null\|\|typeof (?P=bridge)\.createConnection!="function"\?null:(?P=bridge)\}'
-)
-match = pattern.search(source)
-if match is None:
-    print(
-        "WARN: Could not find Browser Use nativePipe bridge helper — leaving browser-client.mjs unchanged",
-        file=sys.stderr,
-    )
-    raise SystemExit(0)
-
-helper = match.group("helper")
-bridge = match.group("bridge")
-replacement = (
-    f'function {helper}(){{let {bridge}=globalThis.nodeRepl?.nativePipe??import.meta.__codexNativePipe;'
-    f'return {bridge}==null||typeof {bridge}.createConnection!="function"?null:{bridge}}}'
-)
-path.write_text(source[:match.start()] + replacement + source[match.end():], encoding="utf-8")
 PY
 }
 
@@ -1598,13 +1045,8 @@ stage_browser_plugin_from_upstream() {
     rm -rf "$target_plugin"
     cp -R "$source_plugin" "$target_plugin"
     remove_macos_sidecar_files "$target_plugin"
-    patch_browser_use_node_repl_process_env_import "$target_client"
-    patch_browser_use_node_repl_env_guard "$target_client"
-    patch_browser_use_node_repl_config_shim "$target_client"
-    patch_browser_use_native_pipe_import_meta_bridge "$target_client"
-    patch_browser_use_site_status_allowlist_fallback "$target_client"
-    patch_browser_use_file_url_policy "$target_client"
-    patch_browser_client_iab_socket_scope "$target_client"
+    patch_browser_use_file_url_policy "$target_plugin/scripts/browser-service.mjs"
+    patch_browser_client_iab_socket_scope "$target_plugin/scripts/browser-service.mjs"
 
     info "Browser plugin staged from upstream DMG"
     return 0

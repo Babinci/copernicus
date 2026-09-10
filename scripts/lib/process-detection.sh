@@ -49,8 +49,9 @@ pid_matches_install_target() {
 }
 
 find_running_install_target_pid() {
+    [ -n "${INSTALL_DIR:-}" ] || return 2
     local electron_path="$INSTALL_DIR/electron"
-    local app_pid_file="${XDG_STATE_HOME:-$HOME/.local/state}/$CODEX_APP_ID/app.pid"
+    local app_pid_file="${XDG_STATE_HOME:-$HOME/.local/state}/${CODEX_APP_ID:-codex-desktop}/app.pid"
     local pid
     local proc_exe
 
@@ -100,6 +101,12 @@ install_target_is_stopped() {
         RUNNING_INSTALL_TARGET_PID="$pid"
         export RUNNING_INSTALL_TARGET_PID
         return 1
+    else
+        local status=$?
+        if [ "$status" -ne 1 ]; then
+            warn "Could not determine whether the installed app is running; refusing promotion"
+            return 1
+        fi
     fi
 
     return 0

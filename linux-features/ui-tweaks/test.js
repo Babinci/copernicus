@@ -110,10 +110,10 @@ function enabledThreadColorContext() {
 
 function fileTreeBundleFixture() {
   return [
-    "function Sno(){let U={current:null},z=new Map,N={},F={},o=`local`,A={},M=`linux`;",
-    "let De;De=()=>{let e=Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z});return Kso({...pco({scope:A,cwd:n,fallbackOpenTargets:F,hostId:o,targetPath:e}),onAddToChat:o==null?void 0:e=>{N.mutateAsync({hostId:o,path:e})},onCopyPath:xR,targetPath:e})};",
-    "let Oe;Oe=()=>mco({scope:A,cwd:n,hostId:o,targetPath:Xso({cwd:n,isWindowsHost:M===`windows`,itemPath:U.current,targetPathByDisplayPath:z})});",
-    "let ke;ke=e=>{U.current=Qso(e.nativeEvent)};return[De,Oe,ke]}",
+    "function Sno(){let me={current:null},le=new Map,I={},R={},l=`local`,N={},F=`linux`;",
+    "let Ge;Ge=()=>{if(!D)return[];let e=We({cwd:n,isWindowsHost:F===`windows`,itemPath:me.current,targetPathByDisplayPath:le});return Be({...st({scope:N,cwd:n,fallbackOpenTargets:R,hostId:l,targetPath:e}),onAddToChat:l==null?void 0:e=>{I.mutateAsync({hostId:l,path:e})},onCopyPath:fe,onSaveAs:de.workspaceFiles.saveCopy==null?void 0:e=>de.workspaceFiles.saveCopy(e),targetPath:e})};",
+    "let qe;qe=()=>{if(D)return ct({scope:N,cwd:n,hostId:l,targetPath:We({cwd:n,isWindowsHost:F===`windows`,itemPath:me.current,targetPathByDisplayPath:le})})};",
+    "let Je;Je=e=>{me.current=Ke(e.nativeEvent)};return[Ge,qe,Je]}",
   ].join("");
 }
 
@@ -270,7 +270,8 @@ test("workspace file tree exposes existing path actions for folders", () => {
   };
   const patched = applyFileTreeFolderActionsPatch(fileTreeBundleFixture(), context);
   assert.match(patched, new RegExp(FILE_TREE_FOLDER_ACTIONS_RUNTIME_MARKER));
-  assert.match(patched, /U\.current\?\.type!==`file`\?void 0/);
+  assert.match(patched, /me\.current\?\.type!==`file`\?void 0/);
+  assert.match(patched, /onSaveAs:[^,]+me\.current\?\.type!==`file`\?void 0/);
   assert.equal(applyFileTreeFolderActionsPatch(patched, context), patched);
 
   class FakeElement {
@@ -279,12 +280,32 @@ test("workspace file tree exposes existing path actions for folders", () => {
   }
   const runtime = Function(
     "Element",
-    "Sp",
+    "g",
     `${fileTreeFolderActionsRuntimeSource()};return {target:codexLinuxFileTreeContextTarget,path:codexLinuxFileTreeContextPath};`,
   )(FakeElement, (cwd, path) => `${cwd}/${path}`);
   const folder = runtime.target({ composedPath: () => [new FakeElement("folder", "docs")] });
   assert.deepEqual(folder, { path: "docs", type: "folder" });
   assert.equal(runtime.path(new Map(), folder, "/tmp/project", false), "/tmp/project/docs");
+
+  const menu = Function(
+    "Element", "g", "D", "n", "st", "Be", "ct", "de", "fe",
+    `${patched};return Sno();`,
+  );
+  const dependencies = [FakeElement, (cwd, path) => `${cwd}/${path}`, true,
+    "/tmp/project", (value) => value, (value) => value, (value) => value,
+    { workspaceFiles: { saveCopy() {} } }, () => {}];
+  const [items, prefetch, capture] = menu(...dependencies);
+  capture({ nativeEvent: { composedPath: () => [new FakeElement("folder", "docs")] } });
+  assert.equal(items().targetPath, "/tmp/project/docs");
+  assert.equal(prefetch().targetPath, "/tmp/project/docs");
+  assert.equal(items().onAddToChat, undefined);
+  assert.equal(items().onSaveAs, undefined);
+  capture({ nativeEvent: { composedPath: () => [new FakeElement("file", "README.md")] } });
+  assert.equal(items().targetPath, "/tmp/project/README.md");
+  assert.equal(typeof items().onAddToChat, "function");
+  assert.equal(typeof items().onSaveAs, "function");
+  dependencies[2] = false;
+  assert.deepEqual(menu(...dependencies)[0](), []);
 });
 
 test("model picker opens advanced view and renders model choices inline", () => {

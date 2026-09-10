@@ -18,6 +18,10 @@ function runNodeReplImport(runtime, clients) {
       env: {
         ...process.env,
         CODEX_BROWSER_USE_SOCKET_DIR: "/tmp/codex-browser-use-runtime-test",
+        NODE_REPL_TRUSTED_CODE_PATHS: pluginsRoot,
+        NODE_REPL_TRUSTED_SERVICES: JSON.stringify({
+          browser: path.join(pluginsRoot, "browser", "scripts", "browser-service.mjs"),
+        }),
       },
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -37,8 +41,8 @@ function runNodeReplImport(runtime, clients) {
 
     const send = (message) => child.stdin.write(`${JSON.stringify(message)}\n`);
     const code = `${clients
-      .map((client) => `await import(${JSON.stringify(pathToFileURL(client).href)});`)
-      .join("")}nodeRepl.write("imports-ok")`;
+      .map((client) => `await (await import(${JSON.stringify(pathToFileURL(client).href)})).setupBrowserRuntime();`)
+      .join("")}nodeRepl.write("browser-setup-ok")`;
     const timer = setTimeout(
       () => finish(new Error(`node_repl import timed out: ${stderr}`)),
       20_000,
@@ -110,7 +114,7 @@ function runNodeReplImport(runtime, clients) {
 }
 
 test(
-  "staged Browser and Chrome clients import through the real node_repl runtime",
+  "staged Browser and Chrome clients initialize their trusted service through node_repl",
   { skip: !runtimePath || !pluginsRoot },
   async () => {
     const clients = ["browser", "chrome"].map((plugin) =>
@@ -121,6 +125,6 @@ test(
       assert.ok(fs.existsSync(client), `staged Browser client not found: ${client}`);
     }
 
-    assert.equal(await runNodeReplImport(runtimePath, clients), "imports-ok");
+    assert.equal(await runNodeReplImport(runtimePath, clients), "browser-setup-ok");
   },
 );

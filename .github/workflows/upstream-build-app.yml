@@ -186,7 +186,7 @@ jobs:
             --require-applied feature:ui-tweaks:browser-tab-session-id-copy
           node scripts/ci/validate-thread-color-build.js codex-app
 
-      - name: Import staged Browser clients through node_repl
+      - name: Initialize staged Browser services through node_repl
         if: steps.acceptance-build.outcome == 'success'
         env:
           CODEX_NODE_REPL_PATH: ${{ github.workspace }}/codex-app/resources/node_repl
