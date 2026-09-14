@@ -3,7 +3,7 @@ type: runbook
 title: Getting started with Copernicus
 description: Install the marketplace plugin, validate its GPT-only tools, and run a first metis, planning, deep brief, OKF documentation, retrospective, or SAS research cycle.
 tags: [install, plugin, odyseusz, metis, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective]
-generated: { by: "copernicus/0.10.0", at: 2026-09-01T10:22:14+02:00 }
+generated: { by: "copernicus/0.11.0", at: 2026-09-15T00:30:00+02:00 }
 ---
 
 # Getting started
@@ -20,7 +20,7 @@ codex plugin add copernicus@copernicus
 
 Restart the app if the skills do not appear. The plugin adds `$grill-me`,
 `$odyseusz`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`,
-`$okf-docs`, `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and
+`$okf-docs`, `$html-report`, `$retrospective`, `$security-audit`, `$ponytail`, `$caveman`, and
 `$handoff`.
 
 Confirm installation with:
@@ -29,7 +29,7 @@ Confirm installation with:
 codex plugin list
 ```
 
-In the app, open `/plugins`, select **Copernicus**, and inspect the thirteen bundled
+In the app, open `/plugins`, select **Copernicus**, and inspect the fourteen bundled
 skills. Start a new task so Codex loads their current instructions. One plugin
 installation supplies all skills; no separate provider, database, daemon, or
 credential setup is required.

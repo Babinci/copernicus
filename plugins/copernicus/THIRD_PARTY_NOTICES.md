@@ -1,5 +1,11 @@
 # Third-party notices
 
+The Copernicus `security-audit` skill vendors the unmodified workflow and
+validators from [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill/tree/c1c8a8c1471069fb0e188eeaff69b8e8db6564a8/skills/security-audit),
+commit `c1c8a8c1471069fb0e188eeaff69b8e8db6564a8`. Only Codex discovery metadata
+is added. Its MIT license and Cloudflare copyright ship in
+`skills/security-audit/LICENSE`. No Cloudflare service or credential is required.
+
 The Copernicus `grill-me` and `handoff` skills adapt workflows from
 [`mattpocock/skills`](https://github.com/mattpocock/skills/tree/84fdeffd12f2ee307994d1eb6feb48173b6e0502/skills/productivity).
 

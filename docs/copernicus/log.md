@@ -1,5 +1,14 @@
 # Copernicus documentation log
 
+## 2026-09-15
+
+- Added the MIT-licensed Cloudflare Security Audit workflow at pinned source
+  `c1c8a8c1471069fb0e188eeaff69b8e8db6564a8`, including its complete references,
+  independent-verification contract, coverage/findings validators, and tests.
+- Kept the integration plugin-owned, native Codex/GPT-only, and independent of
+  Cloudflare accounts or services. Documented isolated execution, private audit
+  output, and the separate authority needed to implement or publish fixes.
+
 ## 2026-09-01
 
 - Reconciled the README feature matrix with all 34 tracked opt-in descriptors,

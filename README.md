@@ -11,7 +11,7 @@
 Copernicus is an unofficial, local-build Linux wrapper for
 [OpenAI ChatGPT Desktop](https://chatgpt.com/download/) and an installable
 Codex plugin for ambitious local work. It combines the proven Linux conversion
-pipeline with thirteen deliberately small workflows:
+pipeline with fourteen deliberately small workflows:
 
 - **Grill Me** resolves a plan through one recommended question at a time.
 - **Odyseusz** finds one ethical asymmetric move and its cheapest reversible test.
@@ -28,6 +28,7 @@ pipeline with thirteen deliberately small workflows:
 - **HTML Report** turns evaluated work into a portable human-facing brief,
   explanation, decision aid, review, or lesson.
 - **Retrospective** reconstructs work from evidence and proposes verified improvements.
+- **Security Audit** traces trust boundaries and independently verifies findings.
 - **Ponytail** finds the smallest correct implementation after tracing the real flow.
 - **Caveman** removes prose weight without weakening technical or safety detail.
 - **Handoff** transfers redacted session state while linking durable artifacts.
@@ -68,11 +69,11 @@ codex plugin add copernicus@copernicus
 ```
 
 Then ask Codex to use `$grill-me`, `$odyseusz`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`,
-`$auto-research`, `$okf-docs`, `$html-report`, `$retrospective`, `$ponytail`,
+`$auto-research`, `$okf-docs`, `$html-report`, `$retrospective`, `$security-audit`, `$ponytail`,
 `$caveman`, or `$handoff`. Model access and reasoning controls remain account- and
 workspace-dependent; Copernicus does not unlock models or increase plan limits.
 
-One plugin installation provides all thirteen bundled skills. Open
+One plugin installation provides all fourteen bundled skills. Open
 `/plugins`, choose **Copernicus**, and start a new task after installation. See
 [Copernicus skills](docs/copernicus/skills.md) for the purpose, execution model,
 outputs, examples, privacy boundary, and limitations of each skill.

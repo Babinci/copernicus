@@ -18,7 +18,21 @@ class PluginTest(unittest.TestCase):
         manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertLessEqual(len(manifest["interface"]["defaultPrompt"]), 3)
-        self.assertEqual(len(list((ROOT / "skills").glob("*/SKILL.md"))), 13)
+        self.assertEqual(len(list((ROOT / "skills").glob("*/SKILL.md"))), 14)
+
+    def test_security_audit_ships_its_complete_offline_contract(self) -> None:
+        root = ROOT / "skills/security-audit"
+        skill = (root / "SKILL.md").read_text()
+        for linked in re.findall(r"\]\(([^)]+)\)", skill):
+            self.assertTrue((root / linked).is_file(), linked)
+        for name in ("report-schema.json", "validate-findings.cjs", "validate-coverage-ledger.cjs"):
+            self.assertTrue((root / name).is_file(), name)
+        self.assertIn("OS-enforced sandbox", skill)
+        self.assertIn("fresh", skill)
+        self.assertIn("needs_validation", skill)
+        self.assertIn("Cloudflare, Inc.", (root / "LICENSE").read_text())
+        metadata = (root / "agents/openai.yaml").read_text()
+        self.assertIn("$security-audit", metadata)
 
     def test_odyseusz_is_self_contained_metis_with_an_ethical_gate(self) -> None:
         skill = (ROOT / "skills/odyseusz/SKILL.md").read_text()
@@ -141,6 +155,7 @@ class PluginTest(unittest.TestCase):
         self.assertIn("DietrichGebert/ponytail", notices)
         self.assertIn("GoogleCloudPlatform/knowledge-catalog", notices)
         self.assertIn("PyYAML 6.0.3", notices)
+        self.assertIn("cloudflare/security-audit-skill", notices)
         self.assertIn("Copyright (c) 2026 Matt Pocock", notices)
         self.assertIn("Copyright (c) 2026 DietrichGebert", notices)
         self.assertEqual(notices.count("MIT License"), 2)

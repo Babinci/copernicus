@@ -20,7 +20,9 @@ The upstream wrapper is MIT-licensed at
 Grill Me and Handoff derive from Matt Pocock's MIT-licensed
 [`skills`](https://github.com/mattpocock/skills); Ponytail and Caveman derive
 from the MIT-licensed [`Ponytail`](https://github.com/DietrichGebert/ponytail)
-workflow.
+workflow. Security Audit vendors Cloudflare's MIT-licensed
+[`security-audit-skill`](https://github.com/cloudflare/security-audit-skill),
+with a pinned source revision and its original license inside the plugin.
 Their full notices are inside the installable plugin at
 [`plugins/copernicus/THIRD_PARTY_NOTICES.md`](../plugins/copernicus/THIRD_PARTY_NOTICES.md).
 

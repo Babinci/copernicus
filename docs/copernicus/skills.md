@@ -1,15 +1,15 @@
 ---
 type: guide
 title: Copernicus skills
-description: Why the thirteen installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
-tags: [copernicus, skills, grill-me, odyseusz, metis, rick-rubin, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective, ponytail, caveman, handoff]
-generated: { by: "copernicus/0.10.0", at: 2026-08-30T11:18:28+02:00 }
+description: Why the fourteen installable Copernicus skills exist, how they work together, what they produce, and what they deliberately do not do.
+tags: [copernicus, skills, security-audit, grill-me, odyseusz, metis, rick-rubin, planning, fleet, breathe, auto-research, okf-docs, html-report, retrospective, ponytail, caveman, handoff]
+generated: { by: "copernicus/0.11.0", at: 2026-09-14T22:56:06Z }
 ---
 
 # Copernicus skills
 
-Installing the single `copernicus` plugin installs thirteen skills. Nine form
-the main problem-solving sequence; four govern review, implementation,
+Installing the single `copernicus` plugin installs fourteen skills. Nine form
+the main problem-solving sequence; five cover security, review, implementation,
 delivery, and continuation:
 
 ```text
@@ -32,6 +32,7 @@ $okf-docs        traverse and maintain large OKF knowledge bundles
 $html-report     explain the evaluated work to a human reader
 
 $retrospective   review outcomes and propose the next verified improvement
+$security-audit  inspect trust boundaries and independently verify security findings
 $ponytail        optionally constrain implementation to the smallest correct change
 $caveman         optionally compress any conversational answer
 $handoff         transfer current state to a fresh session
@@ -39,7 +40,7 @@ $handoff         transfer current state to a fresh session
 
 Each skill can be invoked independently; Breathe deliberately composes the
 sibling Fleet execution contract. Installing the plugin adds workflow
-instructions, references, and dependency-free Python tools; it does not
+instructions, references, and dependency-free Python and Node.js tools; it does not
 install a daemon, database, provider proxy, or background service.
 
 ## The skills
@@ -56,6 +57,7 @@ install a daemon, database, provider proxy, or background service.
 | `$okf-docs` | Large Markdown knowledge bundles need metadata, provenance, backlink, and dependency traversal beyond text search. | A deterministic OKF v0.2 graph, validation/health findings, budgeted evidence manifests, progressive indexes, or a reviewed v0.1 migration. |
 | `$html-report` | Evaluated work still needs a clear human-facing explanation or decision aid. | One portable HTML brief, update, explanation, decision, review, or lesson. |
 | `$retrospective` | Work history is easy to turn into hindsight stories instead of useful learning. | An evidence timeline, first divergence, keep/change/try, and ranked proposal-only actions. |
+| `$security-audit` | A plausible security concern is not a verified vulnerability. | Cloudflare's source-first workflow: coverage ledger, independently verified findings, and bounded local reproduction or an exact validation blocker. |
 | `$ponytail` | Correct implementations often grow speculative machinery before the real path is traced. | The smallest complete change, one proportional check, and explicit skipped extensions. |
 | `$caveman` | Long conversational prose can obscure the result. | An opt-in terse answer that preserves exact commands, uncertainty, warnings, and evidence. |
 | `$handoff` | A fresh session needs decision state, not a duplicated transcript. | One redacted temporary Markdown brief linking durable artifacts and validation. |
@@ -73,13 +75,14 @@ The complete explanations ship inside the installed plugin:
 - [HTML reports explained](../../plugins/copernicus/skills/html-report/references/guide.md)
 - [Grill Me contract](../../plugins/copernicus/skills/grill-me/SKILL.md)
 - [Retrospective contract](../../plugins/copernicus/skills/retrospective/SKILL.md)
+- [Security Audit contract](../../plugins/copernicus/skills/security-audit/SKILL.md)
 - [Ponytail contract](../../plugins/copernicus/skills/ponytail/SKILL.md)
 - [Caveman contract](../../plugins/copernicus/skills/caveman/SKILL.md)
 - [Handoff contract](../../plugins/copernicus/skills/handoff/SKILL.md)
 
-## Why these thirteen
+## Why these fourteen
 
-They address thirteen different failure modes:
+They address fourteen different failure modes:
 
 1. **An unresolved plan** — Grill Me resolves one dependency-ordered decision at a time.
 2. **Brute force hiding leverage** — Odyseusz maps changing terrain, applies an
@@ -109,6 +112,9 @@ They address thirteen different failure modes:
    load-bearing technical and safety detail.
 13. **Context loss between sessions** — Handoff moves only current decision state
    and references the durable sources already in the workspace.
+14. **Security guesses becoming findings** — Security Audit separates reconnaissance,
+   hunting, adversarial validation, record verification, and reporting. It requires
+   isolated local checks and never probes deployed services.
 
 No skill is authoritative by itself. Commands, tests, measurements, primary
 sources, and human decisions remain the evaluators.
@@ -122,9 +128,19 @@ codex plugin list
 ```
 
 Start a new Codex task after installation. In the app, open `/plugins`, select
-**Copernicus**, and inspect its thirteen skills. Invoke them explicitly as
+**Copernicus**, and inspect its fourteen skills. Invoke them explicitly as
 `$grill-me`, `$odyseusz`, `$rick-rubin`, `$planning`, `$fleet`, `$breathe`, `$auto-research`,
-`$okf-docs`, `$html-report`, `$retrospective`, `$ponytail`, `$caveman`, and `$handoff`.
+`$okf-docs`, `$html-report`, `$retrospective`, `$security-audit`, `$ponytail`, `$caveman`, and `$handoff`.
+
+For a security review, invoke `$security-audit` directly; it does not require Fleet
+or Auto-Research. Copernicus runs its independent roles through native Codex agents
+with GPT models. The bundled Cloudflare workflow is pinned and retains its own
+MIT license; see [third-party notices](../../plugins/copernicus/THIRD_PARTY_NOTICES.md).
+It uses guidance mode for focused questions and a six-phase audit for an explicit
+codebase audit. Audit artifacts default outside the repository. Target execution
+requires a network-isolated, resource-bounded OS sandbox; missing controls are
+reported as validation blockers. Applying fixes or publishing them requires separate
+user authorization, not an audit finding alone.
 
 ## Global companion resolution
 
@@ -181,6 +197,7 @@ The plugin contains everything specific to the method:
 - the receipt validator and tests;
 - the HTML report generator, static safety checker, and tests;
 - the evidence-first Retrospective review contract;
+- the pinned Cloudflare Security Audit workflow, coverage/findings validators, and tests;
 - four prompt-only companion fallbacks and their bundled MIT notices.
 
 Public users supply only their own problem, authorized materials, real

@@ -3,7 +3,7 @@ type: concept
 title: Copernicus architecture
 description: Product boundaries and data flow for the Linux wrapper, Odysean metis, durable Planning workpacks, GPT-only Fleet presets, Breathe checkpoints, SAS evidence, Retrospective review, and traversable OKF memory.
 tags: [copernicus, odyseusz, metis, planning, workpacks, fleet, breathe, sas, okf, okf-docs, retrospective, architecture]
-generated: { by: "copernicus/0.10.0", at: 2026-09-01T10:22:14+02:00 }
+generated: { by: "copernicus/0.11.0", at: 2026-09-15T00:30:00+02:00 }
 ---
 
 # Copernicus architecture
@@ -35,6 +35,8 @@ flowchart TD
     J --> H["HTML report: derived reader artifact"]
     O --> S
     P --> K["Retrospective: evidence to next improvement"]
+    P --> A["Security Audit: independent source/local verification"]
+    A --> U
     P --> Y["Ponytail: minimum correct implementation"]
     P --> V["Caveman: optional terse delivery"]
     P --> T["Handoff: redacted temporary context"]
@@ -142,6 +144,16 @@ artifacts; separates observations from inferences; traces the first observable
 divergence; and proposes keep/change/try actions. It never reconstructs hidden
 reasoning. Scheduled reviews use the host's native automation surface and remain
 read-only and proposal-only until the user separately authorizes implementation.
+
+### Security Audit
+
+The pinned Cloudflare workflow separates source reconnaissance, coverage-led
+hunting, independent candidate validation, structured records, fresh record
+verification, and reporting. Native Codex agents own isolated assignments;
+the parent alone writes shared audit records. Target execution requires a
+network-isolated, resource-bounded OS sandbox. Missing verification remains
+explicitly incomplete, never a clean security verdict. Reports default outside
+the repository; fixes and publication require separate user authority.
 
 ### Companion fallbacks
 
