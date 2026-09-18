@@ -21,13 +21,11 @@ function validateThreadColorBuild(appRoot) {
     return fs.readFileSync(path.join(assets, matches[0]), "utf8");
   };
   const initial = readOne("app-initial-");
-  const primary = readOne("app-primary-");
-  const requiredInitial = [STATE_MARKER, STYLE_ID, JSON.stringify(sidebarThreadColorCss())];
-  const requiredPrimary = [UI_MARKER, COLOR_ATTRIBUTE, "change-thread-color-clear", "submenu:",
+  const required = [STATE_MARKER, STYLE_ID, JSON.stringify(sidebarThreadColorCss()),
+    UI_MARKER, COLOR_ATTRIBUTE, "change-thread-color-clear", "submenu:",
     ...THREAD_COLORS.map(({ id }) => `change-thread-color-${id}`)];
-  for (const needle of requiredInitial) if (!initial.includes(needle)) throw new Error(`Missing initial contract: ${needle}`);
-  for (const needle of requiredPrimary) if (!primary.includes(needle)) throw new Error(`Missing UI contract: ${needle}`);
-  if (/id:`change-thread-color`[^}]*onSelect:/u.test(primary) || primary.includes("showColorPicker:!0")) {
+  for (const needle of required) if (!initial.includes(needle)) throw new Error(`Missing chat-colour contract: ${needle}`);
+  if (/id:`change-thread-color`[^}]*onSelect:/u.test(initial) || initial.includes("showColorPicker:!0")) {
     throw new Error("Legacy rename-dialog color behavior is present");
   }
 }

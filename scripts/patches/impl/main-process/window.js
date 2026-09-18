@@ -952,73 +952,35 @@ function applyLinuxOpaqueBackgroundPatch(currentSource) {
   const patchedShouldAlwaysOpaqueSurfaceRegex =
     /shouldAlwaysUseOpaqueWindowSurface\(([A-Za-z_$][\w$]*)\)\{return\s*process\.platform===`linux`&&!([A-Za-z_$][\w$]*)\(\1\)\|\|([A-Za-z_$][\w$]*)\(\{appearance:\1,opaqueWindowsEnabled:this\.isOpaqueWindowsEnabled\(\),platform:process\.platform\}\)\|\|!([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?\(\))&&!\2\(\1\)\}/u;
   const shouldAlwaysOpaqueSurfaceMatch = currentSource.match(shouldAlwaysOpaqueSurfaceRegex);
-  const shouldAlwaysOpaqueSurfaceReady =
-    shouldAlwaysOpaqueSurfaceMatch != null ||
-    patchedShouldAlwaysOpaqueSurfaceRegex.test(currentSource);
-
-  if (!shouldAlwaysOpaqueSurfaceReady) {
+  if (patchedShouldAlwaysOpaqueSurfaceRegex.test(currentSource)) {
+    return currentSource;
+  }
+  if (shouldAlwaysOpaqueSurfaceMatch == null) {
     console.warn("WARN: Could not find opaque surface mode predicate — skipping Linux opaque surface patch");
+    return currentSource;
   }
 
-  const opaqueWindowSurfaceFunctionRegex =
-    /function\s+[A-Za-z_$][\w$]*\(\{platform:([A-Za-z_$][\w$]*),appearance:([A-Za-z_$][\w$]*),opaqueWindowSurfaceEnabled:([A-Za-z_$][\w$]*),prefersDarkColors:([A-Za-z_$][\w$]*)\}\)\{return\s*(?:\2===`avatarOverlay`\?\{backgroundColor:`#00000000`,backgroundMaterial:null\}:)?\3\?\{backgroundColor:\4\?([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*),backgroundMaterial:\1===`win32`\?`none`:null\}:\1===`win32`&&!([A-Za-z_$][\w$]*)\(\2\)\?/;
-  const patchedOpaqueWindowSurfaceFunctionRegex =
-    /function\s+[A-Za-z_$][\w$]*\(\{platform:([A-Za-z_$][\w$]*),appearance:([A-Za-z_$][\w$]*),opaqueWindowSurfaceEnabled:([A-Za-z_$][\w$]*),prefersDarkColors:([A-Za-z_$][\w$]*)\}\)\{return\s*(?:\2===`avatarOverlay`\?\{backgroundColor:`#00000000`,backgroundMaterial:null\}:)?\3\?\{backgroundColor:\4\?([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*),backgroundMaterial:\1===`win32`\?`none`:null\}:\1===`linux`&&!([A-Za-z_$][\w$]*)\(\2\)\?\{backgroundColor:\4\?\5:\6,backgroundMaterial:null\}:\1===`win32`&&!\7\(\2\)\?/;
-  const opaqueWindowSurfaceFunctionMatch = currentSource.match(
-    opaqueWindowSurfaceFunctionRegex,
-  );
   const opaqueWindowSurfaceFunctionReady =
-    opaqueWindowSurfaceFunctionMatch != null ||
-    patchedOpaqueWindowSurfaceFunctionRegex.test(currentSource);
+    /function\s+[A-Za-z_$][\w$]*\(\{platform:([A-Za-z_$][\w$]*),appearance:([A-Za-z_$][\w$]*),opaqueWindowSurfaceEnabled:([A-Za-z_$][\w$]*),prefersDarkColors:([A-Za-z_$][\w$]*)\}\)\{return\s*\3\?\{backgroundColor:\4\?[A-Za-z_$][\w$]*:[A-Za-z_$][\w$]*,backgroundMaterial:\1===`win32`\?`none`:null\}:\1!==`win32`\|\|[A-Za-z_$][\w$]*\(\2\)\?\{backgroundColor:[A-Za-z_$][\w$]*,backgroundMaterial:null\}:\{backgroundColor:[A-Za-z_$][\w$]*,backgroundMaterial:`mica`\}\}/u.test(currentSource);
 
   if (!opaqueWindowSurfaceFunctionReady) {
     console.warn("WARN: Could not find BrowserWindow background function signature — skipping background patch");
   }
 
-  if (!shouldAlwaysOpaqueSurfaceReady || !opaqueWindowSurfaceFunctionReady) {
+  if (!opaqueWindowSurfaceFunctionReady) {
     return currentSource;
   }
 
-  let patchedSource = currentSource;
-  if (shouldAlwaysOpaqueSurfaceMatch != null) {
-    const [
-      match,
-      appearanceParam,
-      opaqueSurfaceHelper,
-      nativeSurfaceCapabilityCall,
-      transparentAppearancePredicate,
-    ] = shouldAlwaysOpaqueSurfaceMatch;
-    const replacement =
-      `shouldAlwaysUseOpaqueWindowSurface(${appearanceParam}){return process.platform===\`linux\`&&!${transparentAppearancePredicate}(${appearanceParam})||${opaqueSurfaceHelper}({appearance:${appearanceParam},opaqueWindowsEnabled:this.isOpaqueWindowsEnabled(),platform:process.platform})||!${nativeSurfaceCapabilityCall}&&!${transparentAppearancePredicate}(${appearanceParam})}`;
-    patchedSource = patchedSource.replace(match, replacement);
-  }
-
-  if (opaqueWindowSurfaceFunctionMatch == null) {
-    return patchedSource;
-  }
-
   const [
-    ,
-    platformParam,
+    match,
     appearanceParam,
-    ,
-    darkColorsParam,
-    darkBackground,
-    lightBackground,
+    opaqueSurfaceHelper,
+    nativeSurfaceCapabilityCall,
     transparentAppearancePredicate,
-  ] = opaqueWindowSurfaceFunctionMatch;
-  const win32Needle =
-    `:${platformParam}===\`win32\`&&!${transparentAppearancePredicate}(${appearanceParam})?`;
-  const linuxBackground =
-    `:${platformParam}===\`linux\`&&!${transparentAppearancePredicate}(${appearanceParam})?{backgroundColor:${darkColorsParam}?${darkBackground}:${lightBackground},backgroundMaterial:null}:`;
-
-  if (!patchedSource.includes(win32Needle)) {
-    console.warn("WARN: Could not find BrowserWindow background color needle — skipping background patch");
-    return patchedSource;
-  }
-  return patchedSource.replace(
-    win32Needle,
-    `${linuxBackground}${win32Needle.slice(1)}`,
+  ] = shouldAlwaysOpaqueSurfaceMatch;
+  return currentSource.replace(
+    match,
+    `shouldAlwaysUseOpaqueWindowSurface(${appearanceParam}){return process.platform===\`linux\`&&!${transparentAppearancePredicate}(${appearanceParam})||${opaqueSurfaceHelper}({appearance:${appearanceParam},opaqueWindowsEnabled:this.isOpaqueWindowsEnabled(),platform:process.platform})||!${nativeSurfaceCapabilityCall}&&!${transparentAppearancePredicate}(${appearanceParam})}`,
   );
 }
 

@@ -19,8 +19,7 @@ function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "thread-color-build-"));
   const assets = path.join(root, "content/webview/assets");
   fs.mkdirSync(assets, { recursive: true });
-  fs.writeFileSync(path.join(assets, "app-initial-test.js"), `${STATE_MARKER}${STYLE_ID}${JSON.stringify(sidebarThreadColorCss())}`);
-  fs.writeFileSync(path.join(assets, "app-primary-test.js"), `${UI_MARKER}${COLOR_ATTRIBUTE}submenu:${THREAD_COLORS.map(({ id }) => `change-thread-color-${id}`).join("")}change-thread-color-clear`);
+  fs.writeFileSync(path.join(assets, "app-initial-test.js"), `${STATE_MARKER}${STYLE_ID}${JSON.stringify(sidebarThreadColorCss())}${UI_MARKER}${COLOR_ATTRIBUTE}submenu:${THREAD_COLORS.map(({ id }) => `change-thread-color-${id}`).join("")}change-thread-color-clear`);
   return root;
 }
 
@@ -28,7 +27,7 @@ test("validates the built direct chat-colour contract and rejects the old dialog
   const root = fixture();
   try {
     assert.doesNotThrow(() => validateThreadColorBuild(root));
-    fs.appendFileSync(path.join(root, "content/webview/assets/app-primary-test.js"), "showColorPicker:!0");
+    fs.appendFileSync(path.join(root, "content/webview/assets/app-initial-test.js"), "showColorPicker:!0");
     assert.throws(() => validateThreadColorBuild(root), /Legacy rename-dialog/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
