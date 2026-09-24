@@ -357,16 +357,21 @@ function applyLinuxGitOriginsSourceFallbackPatch(currentSource) {
 }
 
 function applyLinuxOwlAppShellGuardPatch(currentSource) {
-  const guard = "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
-  const patchedGuard = "if(process.platform===`linux`){a.app.setDebugChromePagesEnabled??=()=>{};a.app.setRuntimeFeatures??=()=>{};a.BrowserWindow.isInputShapeSupported??=()=>!1;a.BrowserWindow.isSystemBackdropSupported??=()=>!1}else if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
-  if (currentSource.includes(patchedGuard)) return currentSource;
-  if (!currentSource.includes(guard)) {
+  const patchedGuard = /if\(process\.platform===`linux`\)\{([A-Za-z_$][\w$]*)\.app\.setDebugChromePagesEnabled\?\?=\(\)=>\{\};\1\.app\.setRuntimeFeatures\?\?=\(\)=>\{\};\1\.BrowserWindow\.isInputShapeSupported\?\?=\(\)=>!1;\1\.BrowserWindow\.isSystemBackdropSupported\?\?=\(\)=>!1\}else if\(process\.versions\.electron!=null&&typeof \1\.app\.showTaskManager!=`function`\)throw Error\(`Codex requires the Owl app shell; stock Electron is no longer supported\.`\);/u;
+  if (patchedGuard.test(currentSource)) return currentSource;
+  const guard = /if\(process\.versions\.electron!=null&&typeof ([A-Za-z_$][\w$]*)\.app\.showTaskManager!=`function`\)throw Error\(`Codex requires the Owl app shell; stock Electron is no longer supported\.`\);/u;
+  const match = currentSource.match(guard);
+  if (match == null) {
     if (currentSource.includes("requires the Owl app shell")) {
       console.warn("WARN: Could not find Owl app shell guard - skipping Linux stock Electron fallback patch");
     }
     return currentSource;
   }
-  return currentSource.replace(guard, patchedGuard);
+  const electron = match[1];
+  return currentSource.replace(
+    guard,
+    `if(process.platform===\`linux\`){${electron}.app.setDebugChromePagesEnabled??=()=>{};${electron}.app.setRuntimeFeatures??=()=>{};${electron}.BrowserWindow.isInputShapeSupported??=()=>!1;${electron}.BrowserWindow.isSystemBackdropSupported??=()=>!1}else ${match[0]}`,
+  );
 }
 
 function applyLinuxOwlPreferredLanguagesPatch(currentSource) {

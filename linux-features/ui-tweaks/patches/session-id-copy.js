@@ -1,7 +1,7 @@
 "use strict";
 
-const PRIMARY_ASSET_PATTERN = /^app-primary-[^.]+\.js$/;
-const BROWSER_TAB_ASSET_PATTERN = /^open-tab-[^.]+\.js$/;
+const PRIMARY_ASSET_PATTERN = /^app-initial-[^.]+\.js$/;
+const BROWSER_TAB_ASSET_PATTERN = PRIMARY_ASSET_PATTERN;
 const THREAD_MARKER = "codexLinuxThreadSessionCopy";
 const BROWSER_TAB_MARKER = "codexLinuxBrowserTabSessionCopy";
 
@@ -21,18 +21,19 @@ function applyThreadSessionCopyPatch(source) {
 
 function applyBrowserTabSessionCopyPatch(source) {
   if (source.includes(BROWSER_TAB_MARKER)) return source;
-  const functions = [...source.matchAll(/function [A-Za-z_$][\w$]*\(\{browserConversationId:([A-Za-z_$][\w$]*),browserHostDisplayName:[A-Za-z_$][\w$]*,browserTabId:[A-Za-z_$][\w$]*,cwd:[A-Za-z_$][\w$]*,target:[A-Za-z_$][\w$]*\}\)\{/g)];
+  const functions = [...source.matchAll(/function [A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*,\{browserConversationId:([A-Za-z_$][\w$]*),browserHostDisplayName:[A-Za-z_$][\w$]*,browserTabId:[A-Za-z_$][\w$]*,cwd:[A-Za-z_$][\w$]*\},\{controller:[A-Za-z_$][\w$]*,placement:[A-Za-z_$][\w$]*,onBeginRename:[A-Za-z_$][\w$]*\}\)\{let [A-Za-z_$][\w$]*=[^;]+,([A-Za-z_$][\w$]*)=\[\];/g)];
   if (functions.length !== 1) return source;
   const fn = functions[0];
   const functionEnd = source.indexOf("function ", fn.index + fn[0].length);
   const end = functionEnd < 0 ? source.length : functionEnd;
-  const start = source.indexOf("[{id:`new-browser-tab-to-the-right`", fn.index);
   const body = source.slice(fn.index, end);
   const formatter = body.match(/message:([A-Za-z_$][\w$]*)\(\{id:`thread\.sidePanel\.browserTabMenu\.newTabToTheRight`/)?.[1];
   const clipboard = body.match(/([A-Za-z_$][\w$]*)\.clipboard\.writeText\(/)?.[1];
+  const insertion = `${fn[2]}.push({id:\`reload-browser-tab\``;
+  const start = source.indexOf(insertion, fn.index);
   if (start < 0 || start > end || !formatter || !clipboard) return source;
-  const item = `/*${BROWSER_TAB_MARKER}*/{id:\`copy-browser-tab-session-id\`,message:${formatter}({id:\`thread.sidePanel.browserTabMenu.copySessionId\`,defaultMessage:\`Copy session ID\`,description:\`Context menu action that copies the owning chat session ID\`}),onSelect:()=>${clipboard}.clipboard.writeText(${fn[1]})},{id:\`copy-browser-tab-session-id-separator\`,type:\`separator\`},`;
-  return `${source.slice(0, start + 1)}${item}${source.slice(start + 1)}`;
+  const item = `/*${BROWSER_TAB_MARKER}*/${fn[2]}.push({id:\`copy-browser-tab-session-id\`,message:${formatter}({id:\`thread.sidePanel.browserTabMenu.copySessionId\`,defaultMessage:\`Copy session ID\`,description:\`Context menu action that copies the owning chat session ID\`}),onSelect:()=>${clipboard}.clipboard.writeText(${fn[1]})},{id:\`copy-browser-tab-session-id-separator\`,type:\`separator\`}),`;
+  return `${source.slice(0, start)}${item}${source.slice(start)}`;
 }
 
 const descriptors = [

@@ -93,9 +93,9 @@ function sidebarThreadColorStateBundleFixture() {
 
 function sidebarThreadColorUiBundleFixture() {
   return [
-    "function SAn({scope:e,target:t,actions:n,onRename:r,onArchive:i,executeAction:a,surface:o}){let{conversationId:m,hostId:h,cwd:g}=t,w=!1,k=zZ({rename:w?void 0:{id:`rename-thread`,onSelect:r}}),A=o!==`sidebar`||w?[]:[...Zkn([])];if(o===`header`)A.push({message:Zy({id:`threadHeader.openSideChat`})});return[k,A]}",
+    "function rSc({scope:e,target:t,actions:n,onRename:r,onArchive:i,executeAction:a,surface:o,isUnread:s,isWorktreeThread:c,isGitBackedThread:l,canOpenSideChat:u,showForkInSidebar:d,canPin:f}){let{conversationId:h,hostId:g,cwd:_}=t,T=!1,A=bxc({rename:T?void 0:{id:`rename-thread`,onSelect:r}}),N=o!==`sidebar`||T?[]:[...Cxc([])];if(o===`header`)N.push({message:Di({id:`threadHeader.openSideChat`})});return[A,N]}",
     "function fTn(e){let{conversationId:n,labelColor:u}=e,C=u===void 0?null:u,T=rC(Rh),w={},U=``;let Fe=()=>{QC(T,wxn,{conversationId:n,initialValue:U??``,initialColor:null,showColorPicker:!1,onSave:(e,t)=>{ie({conversationId:n,hostId:w?.hostId,previousTitle:U??void 0,title:e})}})};return Fe}",
-    "function Ljn(e){let t=[],n={kind:`local`,conversationId:`one`,modelProvider:null},de=n.conversationId,De=M_(fIe,de),ot;t[144]!==De||t[145]!==null||t[146]!==n?(ot=()=>jsx(fTn,{labelColor:null,modelProvider:n?.modelProvider,dataAttributes:vo.sidebarThreadRow({active:l,hostId:m,id:d,kind:`local`,pinned:i,selected:a,title:void 0})}),t[144]=De,t[145]=null,t[146]=n,t[167]=ot):ot=t[167];return ot}",
+    "function Ljn(e){let t=[],n={kind:`local`,conversationId:`one`,modelProvider:null},de=n.conversationId,Ie=M_(fIe,de),ht;t[149]!==Ie||t[150]!==null||t[151]!==n?(ht=()=>jsx(fTn,{labelColor:null,modelProvider:n?.modelProvider,dataAttributes:Dp.sidebarThreadRow({active:l,hostId:m,id:d,kind:`local`,pinned:i,selected:a,title:void 0})}),t[149]=Ie,t[150]=null,t[151]=n,t[171]=ht):ht=t[171];return ht}",
   ].join("");
 }
 
@@ -491,7 +491,7 @@ test("sidebar project descriptor targets only the current project sidebar asset"
   );
 });
 
-test("sidebar thread colors patch the current split bundles once", () => {
+test("sidebar thread colors patch the current app-initial contracts once", () => {
   const context = enabledThreadColorContext();
   const initial = sidebarThreadColorStateBundleFixture();
   const primary = sidebarThreadColorUiBundleFixture();
@@ -510,11 +510,11 @@ test("sidebar thread colors patch the current split bundles once", () => {
   assert.match(patchedInitial, new RegExp(THREAD_COLOR_ATTRIBUTE));
   assert.ok(patchedInitial.includes(JSON.stringify(sidebarThreadColorCss())));
   assert.match(patchedPrimary, new RegExp(THREAD_COLOR_UI_MARKER.replace(/[/*]/g, "\\$&")));
-  assert.match(patchedPrimary, /labelColor:De/);
+  assert.match(patchedPrimary, /labelColor:Ie/);
   assert.match(patchedPrimary, /submenu:/);
   assert.match(patchedPrimary, new RegExp(THREAD_COLOR_ATTRIBUTE));
   assert.match(patchedPrimary, /defaultMessage:`Change chat color…`/);
-  assert.match(patchedPrimary, /t\[144\]!==De\|\|t\[145\]!==De/);
+  assert.match(patchedPrimary, /t\[149\]!==Ie\|\|t\[150\]!==Ie/);
   assert.doesNotMatch(
     patchedPrimary,
     /id:`change-thread-color`[^}]*onSelect:r/,
@@ -533,17 +533,17 @@ test("sidebar thread colors patch the current split bundles once", () => {
 });
 
 test("session ID is copyable from both current native menus", () => {
-  const thread = "function GLc({scope:e,target:t,actions:n}){let{conversationId:f,hostId:p,cwd:m}=t,{copyAppLink:y,copyConversationMarkdown:x}=n;return fLc({workingDirectory:{onSelect:()=>v(m)},link:{onSelect:()=>y(f)},additionalItems:[{id:`copy-conversation-markdown`,message:xL.copyConversationMarkdown,onSelect:()=>x(f)}]})}";
-  const browser = "function tn({browserConversationId:e,browserHostDisplayName:t,browserTabId:r,cwd:i,target:a}){return(o,s)=>{let c=u.getSnapshot(e,r),l=[{id:`new-browser-tab-to-the-right`,message:D({id:`thread.sidePanel.browserTabMenu.newTabToTheRight`}),onSelect:()=>Z(o)}];l.push({id:`copy-browser-tab-url`,onSelect:()=>A.clipboard.writeText(c.url)});return l}}";
+  const thread = "function rSc({scope:e,target:t,actions:n,onRename:r,onArchive:i,executeAction:a,surface:o}){let{conversationId:h,hostId:g,cwd:_}=t,{copyAppLink:b,copyConversationMarkdown:S}=n;return Sxc({workingDirectory:{onSelect:()=>x(_)},link:{onSelect:()=>b(h)},additionalItems:[{id:`copy-conversation-markdown`,message:rB.copyConversationMarkdown,onSelect:()=>S({conversationId:h})}]})}";
+  const browser = "function dRi(e,{browserConversationId:t,browserHostDisplayName:n,browserTabId:r,cwd:i},{controller:a,placement:o,onBeginRename:s}){let c=hL.getSnapshot(t,r),l=[];o===`tab-strip`&&l.push({id:`new-browser-tab-to-the-right`,message:Di({id:`thread.sidePanel.browserTabMenu.newTabToTheRight`}),onSelect:()=>fRi(e)}),l.push({id:`reload-browser-tab`},{id:`copy-browser-tab-url`,onSelect:()=>$H.clipboard.writeText(c.url)});return l}";
   const patchedThread = applyThreadSessionCopyPatch(thread);
   const patchedBrowser = applyBrowserTabSessionCopyPatch(browser);
 
   assert.match(patchedThread, new RegExp(SESSION_COPY_THREAD_MARKER));
   assert.match(patchedThread, /defaultMessage:`Copy session ID`/);
-  assert.match(patchedThread, /navigator\.clipboard\.writeText\(f\)/);
+  assert.match(patchedThread, /navigator\.clipboard\.writeText\(h\)/);
   assert.match(patchedBrowser, new RegExp(SESSION_COPY_BROWSER_MARKER));
   assert.match(patchedBrowser, /defaultMessage:`Copy session ID`/);
-  assert.match(patchedBrowser, /A\.clipboard\.writeText\(e\)/);
+  assert.match(patchedBrowser, /\$H\.clipboard\.writeText\(t\)/);
   assert.equal(applyThreadSessionCopyPatch(patchedThread), patchedThread);
   assert.equal(applyBrowserTabSessionCopyPatch(patchedBrowser), patchedBrowser);
   assert.doesNotThrow(() => new Function(patchedThread));
@@ -581,10 +581,11 @@ test("sidebar thread color metadata writer merges and clears upstream state", as
   assert.deepEqual(persisted["thread-one"], { futureField: true });
 });
 
-test("sidebar thread color descriptors target split assets and expose disabled state", () => {
+test("sidebar thread color descriptors target the current app-initial asset", () => {
   assert.equal(threadColorDescriptors.length, 2);
   assert.match("app-initial-current.js", THREAD_COLOR_INITIAL_ASSET_PATTERN);
-  assert.match("app-primary-current.js", THREAD_COLOR_PRIMARY_ASSET_PATTERN);
+  assert.match("app-initial-current.js", THREAD_COLOR_PRIMARY_ASSET_PATTERN);
+  assert.doesNotMatch("app-primary-current.js", THREAD_COLOR_PRIMARY_ASSET_PATTERN);
   assert.equal(threadColorDescriptors.every((descriptor) => descriptor.enabled({}) === false), true);
   assert.equal(
     threadColorDescriptors.every((descriptor) => descriptor.enabled(enabledThreadColorContext()) === true),

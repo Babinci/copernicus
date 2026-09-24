@@ -1,7 +1,7 @@
 "use strict";
 
 const INITIAL_ASSET_PATTERN = /^app-initial-[^.]+\.js$/;
-const PRIMARY_ASSET_PATTERN = /^app-primary-[^.]+\.js$/;
+const PRIMARY_ASSET_PATTERN = INITIAL_ASSET_PATTERN;
 const STATE_MARKER = "codexLinuxSetSidebarThreadColor";
 const UI_MARKER = "/*codexLinuxSidebarThreadColorUi*/";
 const COLOR_ATTRIBUTE = "data-codex-linux-thread-label-color";

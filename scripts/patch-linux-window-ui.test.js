@@ -221,7 +221,7 @@ const terminalEnvBundle =
 const obsoleteTerminalEnvBundle =
   "var Q0=`xterm-256color`;var t={$r(e){return e}};var Backend=class{isLocalTerminalSession(e){return e?.type===`local`}async getWorktreeShellEnvironmentForCwd(e){return null}async buildTerminalEnv(e,n,r){let i={...process.env};if(n!=null&&(i.CODEX_APP_TITLE=n),this.isLocalTerminalSession(r)){let t=await this.getWorktreeShellEnvironmentForCwd(e);if(t!=null){for(let e of t.exclude)delete i[e];Object.assign(i,t.set)}}return process.platform!==`win32`&&(i.TERM=Q0,delete i.TERMINFO,delete i.TERMINFO_DIRS),t.$r(i)}};";
 const currentOpaqueWindowSurfaceBackgroundHelper =
-  "var W4=`#00000000`,G4=`#000000`,K4=`#f9f9f9`;function g3(e){return e===`avatarOverlay`||e===`browserCommentPopup`||e===`globalDictation`||e===`hotkeyWindowHome`||e===`hotkeyWindowThread`||e===`hud`}function v3({appearance:e,opaqueWindowsEnabled:t,platform:n}){return t&&!g3(e)&&(n===`darwin`||n===`win32`)}function S3({platform:e,appearance:t,opaqueWindowSurfaceEnabled:n,prefersDarkColors:r}){return n?{backgroundColor:r?G4:K4,backgroundMaterial:e===`win32`?`none`:null}:e===`win32`&&!g3(t)?{backgroundColor:W4,backgroundMaterial:`mica`}:{backgroundColor:W4,backgroundMaterial:null}}";
+  "var W4=`#00000000`,G4=`#000000`,K4=`#f9f9f9`;function g3(e){return e===`avatarOverlay`||e===`browserCommentPopup`||e===`globalDictation`||e===`screenOverlay`||e===`hotkeyWindowHome`||e===`hotkeyWindowThread`}function v3({appearance:e,opaqueWindowsEnabled:t,platform:n}){return t&&!g3(e)&&(n===`darwin`||n===`win32`)}function S3({platform:e,appearance:t,opaqueWindowSurfaceEnabled:n,prefersDarkColors:r}){return n?{backgroundColor:r?G4:K4,backgroundMaterial:e===`win32`?`none`:null}:e!==`win32`||g3(t)?{backgroundColor:W4,backgroundMaterial:null}:{backgroundColor:W4,backgroundMaterial:`mica`}}";
 const currentOpaqueWindowSurfaceBackgroundBundle =
   `${currentOpaqueWindowSurfaceBackgroundHelper}class k3{isOpaqueWindowsEnabled(){return theme?.opaqueWindows===!0}shouldUseOpaqueWindowSurface(e,t,n){return this.shouldAlwaysUseOpaqueWindowSurface(e)}shouldAlwaysUseOpaqueWindowSurface(e){return v3({appearance:e,opaqueWindowsEnabled:this.isOpaqueWindowsEnabled(),platform:process.platform})||!bF()&&!g3(e)}}`;
 function escapeRegExp(value) {
@@ -1561,36 +1561,8 @@ function currentComputerUseFeatureBundleFixture() {
 function currentLaunchActionBundleFixture() {
   return [
     "const e={gr:e=>({default:e,...e})};let n=require(`electron`);let i=require(`node:path`);i=e.gr(i);let o=require(`node:fs`);o=e.gr(o);let f=require(`node:net`);f=e.gr(f);",
-    "async function CN(){let{setSecondInstanceArgsHandler:l}=t.y(),g={reportNonFatal(){}},k=new t.In;k.add(x);let j={globalState:{get(){return true}},repoRoot:`/tmp`,codexHome:`/tmp`},M={hotkeyWindowLifecycleManager:{hide(){},ensureHotkeyWindowController(){}},getPrimaryWindow(){},createFreshLocalWindow(){},ensureHostWindow(){},windowManager:{sendMessageToWindow(){}}},B=`local`,R={desktopNotificationManager:{dismissByNavigationPath(){}},getOrCreateContext(){},localHost:B},z={deepLinks:{queueProcessArgs(){},flushPendingDeepLinks(){}},navigateToRoute(){}};let A=Date.now(),w=()=>{},ae=e=>{e.isMinimized()&&e.restore(),e.show(),e.focus()},le=async()=>{try{M.hotkeyWindowLifecycleManager.hide();let e=M.getPrimaryWindow()??await M.createFreshLocalWindow(`/`);if(e==null)return;ae(e)}catch(e){g.reportNonFatal(e instanceof Error?e:`Failed to open window on second instance`,{kind:`second-instance-open-window-failed`})}};l(e=>{let n=t.t(t.g(e));if(z.deepLinks.queueProcessArgs(e)){n&&le();return}if(n){le();return}le()});let ue=async(e,t)=>{M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await M.createFreshLocalWindow(e);r!=null&&(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r))};let ce=async()=>{};E&&ce();let be=await M.ensureHostWindow(B);be&&ae(be),w(`local window ensured`,A,{hostId:B,localWindowVisible:be?.isVisible()??!1}),A=Date.now(),await z.deepLinks.flushPendingDeepLinks();}",
+    "async function CN(){let{setSecondInstanceArgsHandler:l}=t.y(),g={reportNonFatal(){}},k=new t.In;k.add(x);let j={globalState:{get(){return true}},repoRoot:`/tmp`,codexHome:`/tmp`},M={hotkeyWindowLifecycleManager:{hide(){},ensureHotkeyWindowController(){}},getPrimaryWindow(){},createFreshWindow(){},ensureHostWindow(){},windowManager:{sendMessageToWindow(){}}},B=`local`,R={desktopNotificationManager:{dismissByNavigationPath(){}},getOrCreateContext(){},localHost:B},z={deepLinks:{queueProcessArgs(){},flushPendingDeepLinks(){}},navigateToRoute(){}};let enabled=!0,ee=e=>enabled?M.createFreshWindow(e):Promise.resolve(null),A=Date.now(),w=()=>{},ae=e=>{e.isMinimized()&&e.restore(),e.show(),e.focus()},le=async()=>{try{M.hotkeyWindowLifecycleManager.hide();let e=M.getPrimaryWindow()??await ee(`/`);if(e==null)return;ae(e)}catch(e){g.reportNonFatal(e instanceof Error?e:`Failed to open window on second instance`,{kind:`second-instance-open-window-failed`})}};l(e=>{let n=Pl(e),r=t.n(n);if(z.deepLinks.queueProcessArgs(e)){r&&le();return}if(r){le();return}le({channel:`shortcut`,source:`shortcut`})});let ue=async(e,t)=>{if(!enabled)return null;M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await ee(e);return r==null?null:(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r),r)};let ce=async()=>{};E&&ce();let be=await M.ensureHostWindow(B);be&&ae(be),w(`local window ensured`,A,{hostId:B,localWindowVisible:be?.isVisible()??!1}),A=Date.now(),await z.deepLinks.flushPendingDeepLinks();}",
   ].join("");
-}
-
-function currentLaunchActionBundleWithWindowApiDriftFixture() {
-  return currentLaunchActionBundleFixture()
-    .replaceAll("createFreshLocalWindow", "createFreshWindow")
-    .replace("getPrimaryWindow()??await M.createFreshWindow(`/`)", "getPrimaryWindow()??await M.createFreshWindow(`/`)")
-    .replace("let n=M.getPrimaryWindow(),r=n??await M.createFreshWindow(e);", "let n=M.getPrimaryWindow(),r=n??await M.createFreshWindow(e);");
-}
-
-function currentLaunchActionBundleWithEntryTelemetryFixture() {
-  return currentLaunchActionBundleFixture()
-    .replaceAll("createFreshLocalWindow", "createFreshWindow")
-    .replace(
-      "let A=Date.now(),w=()=>{}",
-      "let enabled=!0,ee=e=>enabled?M.createFreshWindow(e):Promise.resolve(null),A=Date.now(),w=()=>{}",
-    )
-    .replace(
-      "let e=M.getPrimaryWindow()??await M.createFreshWindow(`/`);if(e==null)return;ae(e)",
-      "let e=M.getPrimaryWindow()??await ee(`/`);if(e==null)return;ae(e),source!=null&&entry(source,e.webContents)",
-    )
-    .replace(
-      "le=async()=>{try",
-      "le=async source=>{if(enabled)try",
-    )
-    .replace(
-      "le()});let ue=async(e,t)=>{M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await M.createFreshWindow(e);r!=null&&(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r))};",
-      "le({channel:`shortcut`,source:`shortcut`})});let ue=async(e,t)=>{if(!enabled)return null;M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await ee(e);return r==null?null:(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r),r)};",
-    );
 }
 
 function settingsPersistenceBundleFixture() {
@@ -4234,13 +4206,28 @@ test("patches current opaque window surface background helper shape for Linux", 
 
   assert.match(
     patched,
-    /:e===`linux`&&!g3\(t\)\?\{backgroundColor:r\?G4:K4,backgroundMaterial:null\}:e===`win32`&&!g3\(t\)\?/,
-  );
-  assert.match(
-    patched,
     /shouldAlwaysUseOpaqueWindowSurface\(e\)\{return process\.platform===`linux`&&!g3\(e\)\|\|v3\(\{appearance:e,opaqueWindowsEnabled:this\.isOpaqueWindowsEnabled\(\),platform:process\.platform\}\)\|\|!bF\(\)&&!g3\(e\)\}/,
   );
-  assert.match(patched, /opaqueWindowSurfaceEnabled:n/);
+  assert.ok(patched.includes(currentOpaqueWindowSurfaceBackgroundHelper));
+});
+
+test("current window policy makes Linux opaque while preserving overlay and non-Linux surfaces", () => {
+  const patched = applyPatchTwice(applyLinuxOpaqueBackgroundPatch, currentOpaqueWindowSurfaceBackgroundBundle);
+  for (const platform of ["linux", "darwin", "win32"]) {
+    for (const appearance of ["primary", "screenOverlay", "hotkeyWindowHome"]) {
+      for (const prefersDarkColors of [false, true]) {
+        const context = {process: {platform}, theme: {}, bF: () => true, appearance, prefersDarkColors};
+        const evaluate = source => vm.runInNewContext(`${source};S3({platform:process.platform,appearance,opaqueWindowSurfaceEnabled:new k3().shouldAlwaysUseOpaqueWindowSurface(appearance),prefersDarkColors})`, {...context});
+        const result = evaluate(patched);
+        if (platform === "linux" && appearance === "primary") {
+          assert.equal(result.backgroundColor, prefersDarkColors ? "#000000" : "#f9f9f9");
+          assert.equal(result.backgroundMaterial, null);
+        } else {
+          assert.equal(JSON.stringify(result), JSON.stringify(evaluate(currentOpaqueWindowSurfaceBackgroundBundle)));
+        }
+      }
+    }
+  }
 });
 
 test("keeps the opaque background patch idempotent after pet overlay composition", () => {
@@ -4256,39 +4243,6 @@ test("keeps the opaque background patch idempotent after pet overlay composition
   assert.deepEqual(warnings, []);
 });
 
-test("patches an opaque background helper composed by pet overlay first", () => {
-  const source = `${latestAvatarOverlayBundleFixture()}${currentOpaqueWindowSurfaceBackgroundBundle}`;
-  const petPatched = applyPetOverlayPatch(source);
-  const { value: corePatched, warnings } = captureWarns(() =>
-    applyLinuxOpaqueBackgroundPatch(petPatched),
-  );
-
-  assert.notEqual(corePatched, petPatched);
-  assert.match(
-    corePatched,
-    /t===`avatarOverlay`\?\{backgroundColor:`#00000000`,backgroundMaterial:null\}:n\?[^;]+:e===`linux`&&!g3\(t\)\?\{backgroundColor:r\?G4:K4,backgroundMaterial:null\}:/,
-  );
-  assert.deepEqual(warnings, []);
-});
-
-test("reports drift in a malformed opaque background helper after pet overlay composition", () => {
-  const source = `${latestAvatarOverlayBundleFixture()}${currentOpaqueWindowSurfaceBackgroundBundle}`;
-  const composed = applyPetOverlayPatch(applyLinuxOpaqueBackgroundPatch(source));
-  const drifted = composed.replace(
-    ":e===`linux`&&!g3(t)?{backgroundColor:r?G4:K4,backgroundMaterial:null}:",
-    ":e===`linux`?{backgroundColor:r?G4:K4,backgroundMaterial:null}:",
-  );
-  const { value: rerun, warnings } = captureWarns(() =>
-    applyLinuxOpaqueBackgroundPatch(drifted),
-  );
-
-  assert.notEqual(drifted, composed);
-  assert.equal(rerun, drifted);
-  assert.deepEqual(warnings, [
-    "WARN: Could not find BrowserWindow background function signature — skipping background patch",
-  ]);
-});
-
 test("does not mistake an unrelated Linux background branch for the current patched helper", () => {
   const unrelatedLinuxBackground =
     "function legacy({platform:e,appearance:t,prefersDarkColors:r}){return e===`linux`&&!x(t)?{backgroundColor:r?D:L,backgroundMaterial:null}:null}";
@@ -4297,10 +4251,7 @@ test("does not mistake an unrelated Linux background branch for the current patc
     `${unrelatedLinuxBackground}${currentOpaqueWindowSurfaceBackgroundBundle}`,
   );
 
-  assert.match(
-    patched,
-    /function S3\([^}]+\}\)\{return n\?[^;]+:e===`linux`&&!g3\(t\)\?\{backgroundColor:r\?G4:K4,backgroundMaterial:null\}:e===`win32`&&!g3\(t\)\?/,
-  );
+  assert.ok(patched.includes(currentOpaqueWindowSurfaceBackgroundHelper));
   assert.match(patched, new RegExp(escapeRegExp(unrelatedLinuxBackground)));
 });
 
@@ -5433,28 +5384,16 @@ test("adds Linux single-instance lock and second-instance handoff", () => {
   assert.match(patched, /n\.app\.off\(`second-instance`,codexLinuxSecondInstanceHandler\)/);
 });
 
-test("forces the bootstrap single-instance lock on Linux even when upstream disables it", () => {
+test("adds the Linux side-by-side opt-out to the current bootstrap lock", () => {
   const source =
-    "var S=t.x({isMacOS:b,isPackaged:n.app.isPackaged});if(!(!S||n.app.requestSingleInstanceLock()))t.Jr().info(`Exiting second desktop instance`,{safe:{packaged:n.app.isPackaged,platform:process.platform}}),n.app.exit(0);else{let e=t.C(x);}";
+    "var bj=uk({isMacOS:hj,isPackaged:o.app.isPackaged,hasExplicitUserDataPath:!!process.env.CODEX_ELECTRON_USER_DATA_PATH?.trim()});if(bj&&!o.app.requestSingleInstanceLock())r.n().info(`Exiting second desktop instance`,{safe:{packaged:o.app.isPackaged,platform:process.platform}}),o.app.exit(0);else{let e=CO(gj);}";
   const patched = applyPatchTwice(applyLinuxMultiInstanceBootstrapPatch, source);
 
   assert.match(
     patched,
-    /if\(!\(process\.platform===`linux`\?process\.env\.CODEX_LINUX_MULTI_LAUNCH===`1`\|\|n\.app\.requestSingleInstanceLock\(\):!S\|\|n\.app\.requestSingleInstanceLock\(\)\)\)/,
+    /if\(bj&&!\(process\.platform===`linux`&&process\.env\.CODEX_LINUX_MULTI_LAUNCH===`1`\|\|o\.app\.requestSingleInstanceLock\(\)\)\)/,
   );
   assert.match(patched, /Exiting second desktop instance/);
-});
-
-test("upgrades the legacy guarded bootstrap single-instance lock to the enforced form", () => {
-  const source =
-    "var $=r.D({isMacOS:Z,isPackaged:e.app.isPackaged});if(!(!$||process.platform===`linux`&&process.env.CODEX_LINUX_MULTI_LAUNCH===`1`||e.app.requestSingleInstanceLock()))t.Vr().info(`Exiting second desktop instance`,{}),e.app.exit(0);";
-  const patched = applyPatchTwice(applyLinuxMultiInstanceBootstrapPatch, source);
-
-  assert.match(
-    patched,
-    /if\(!\(process\.platform===`linux`\?process\.env\.CODEX_LINUX_MULTI_LAUNCH===`1`\|\|e\.app\.requestSingleInstanceLock\(\):!\$\|\|e\.app\.requestSingleInstanceLock\(\)\)\)/,
-  );
-  assert.ok(!patched.includes("&&process.env.CODEX_LINUX_MULTI_LAUNCH"));
 });
 
 function bootstrapFailureBundleFixture() {
@@ -5468,8 +5407,8 @@ function bootstrapFailureBundleFixture() {
 
 function currentBootstrapBundleFixture() {
   return [
-    "var S=t.x({isMacOS:b,isPackaged:i.app.isPackaged});",
-    "if(!(!S||i.app.requestSingleInstanceLock()))i.app.exit(0);",
+    "var bj=uk({isMacOS:hj,isPackaged:i.app.isPackaged,hasExplicitUserDataPath:!!process.env.CODEX_ELECTRON_USER_DATA_PATH?.trim()});",
+    "if(bj&&!i.app.requestSingleInstanceLock())r.n().info(`Exiting second desktop instance`,{safe:{packaged:i.app.isPackaged,platform:process.platform}}),i.app.exit(0);",
     bootstrapFailureBundleFixture(),
   ].join("");
 }
@@ -5587,8 +5526,8 @@ test("warns without failing when the optional bootstrap failure handler drifts",
     );
     fs.writeFileSync(
       bundlePath,
-      "var S=t.x({isMacOS:b,isPackaged:i.app.isPackaged});" +
-        "if(!(!S||i.app.requestSingleInstanceLock()))i.app.exit(0);",
+      "var bj=uk({isMacOS:hj,isPackaged:i.app.isPackaged,hasExplicitUserDataPath:!!process.env.CODEX_ELECTRON_USER_DATA_PATH?.trim()});" +
+        "if(bj&&!i.app.requestSingleInstanceLock())r.n().info(`Exiting second desktop instance`,{safe:{packaged:i.app.isPackaged,platform:process.platform}}),i.app.exit(0);",
     );
 
     const report = applyBootstrapDescriptors(tempRoot);
@@ -5659,14 +5598,14 @@ test("Linux bootstrap failure exits even when the native dialog never resolves",
   assert.deepEqual(calls.exit, [1]);
 });
 
-test("enforced bootstrap lock takes the Linux lock with upstream flag off and exits the loser", () => {
+test("current bootstrap lock takes the Linux lock and honors side-by-side mode", () => {
   const source =
-    "var S=t.x({isMacOS:b,isPackaged:n.app.isPackaged});if(!(!S||n.app.requestSingleInstanceLock()))n.app.exit(0);";
+    "var bj=uk({isMacOS:hj,isPackaged:n.app.isPackaged,hasExplicitUserDataPath:!!process.env.CODEX_ELECTRON_USER_DATA_PATH?.trim()});if(bj&&!n.app.requestSingleInstanceLock())r.n().info(`Exiting second desktop instance`),n.app.exit(0);";
   const patched = applyLinuxMultiInstanceBootstrapPatch(source);
 
   const run = ({ lockResult, multiLaunch }) => {
     const calls = { lock: 0, exit: 0 };
-    const t = { x: () => false };
+    const uk = () => true;
     const n = {
       app: {
         isPackaged: true,
@@ -5686,7 +5625,7 @@ test("enforced bootstrap lock takes the Linux lock with upstream flag off and ex
       delete process.env.CODEX_LINUX_MULTI_LAUNCH;
     }
     try {
-      new Function("t", "n", "b", patched)(t, n, false);
+      new Function("uk", "n", "hj", "r", patched)(uk, n, false, { n: () => ({ info() {} }) });
     } finally {
       if (previous == null) {
         delete process.env.CODEX_LINUX_MULTI_LAUNCH;
@@ -5712,7 +5651,7 @@ test("enforced bootstrap lock takes the Linux lock with upstream flag off and ex
 });
 
 test("recognizes bootstrap-owned single-instance handoff in current bundles", () => {
-  const source = "let{setSecondInstanceArgsHandler:l}=t.y();l(e=>{let n=t.t(t.g(e));if(z.deepLinks.queueProcessArgs(e)){n&&le();return}if(n){le();return}le()});";
+  const source = "let{setSecondInstanceArgsHandler:b}=a.b();b(e=>{let n=Pl(e),r=t.n(n);if(K.deepLinks.queueProcessArgs(e)){r&&Ve();return}if(r){Ve();return}Ve({channel:`shortcut`,source:`shortcut`})});";
   const patched = applyPatchTwice(applyLinuxSingleInstancePatch, source);
 
   assert.equal(patched, source);
@@ -5894,12 +5833,35 @@ test("adds Linux launch actions through current setSecondInstanceArgsHandler bun
   assert.match(launchPatched, /if\(e===`restart`\)\{t\.end\?\.\(`restart\\n`\),setImmediate\(\(\)=>/);
   assert.match(launchPatched, /require\(`electron`\)\.app\.quit\(\)/);
   assert.match(launchPatched, /return r!=null&&\([\s\S]{0,300}?ae\(r\)\),r\}/);
-  assert.match(launchPatched, /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);l\(e=>/);
+  assert.match(launchPatched, /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);let codexLinuxUpstreamLaunchActionHandler=e=>/);
   assert.doesNotMatch(launchPatched, /l\(e=>\{z\.deepLinks\.queueProcessArgs\(e\)\|\|oe\(\)\}\)/);
   assert.match(
     prewarmPatched,
     /process\.platform===`linux`&&codexLinuxPrewarmHotkeyWindow\(\),A=Date\.now\(\),await z\.deepLinks\.flushPendingDeepLinks\(\)/,
   );
+});
+
+test("preserves upstream shortcut metadata and non-Linux launch handling", () => {
+  const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, currentLaunchActionBundleFixture());
+  const registration = patched.slice(patched.indexOf("let codexLinuxUpstreamLaunchActionHandler="), patched.indexOf(";let ce="));
+  for (const platform of ["linux", "darwin", "win32"]) {
+    const calls = [];
+    let handler;
+    vm.runInNewContext(registration, {
+      process: {platform},
+      Pl: args => args,
+      t: {n: () => false},
+      z: {deepLinks: {queueProcessArgs: () => false}},
+      le: metadata => calls.push(metadata),
+      l: callback => { handler = callback; },
+      codexLinuxHandleLaunchActionArgsFallback: (_args, fallback) => {
+        assert.equal(platform, "linux");
+        fallback();
+      },
+    });
+    handler(["app", "--unknown"]);
+    assert.equal(JSON.stringify(calls), '[{"channel":"shortcut","source":"shortcut"}]');
+  }
 });
 
 test("uses collision-safe modules for launch-action socket in shadowed startup scopes", () => {
@@ -5920,8 +5882,8 @@ test("uses collision-safe modules for launch-action socket in shadowed startup s
 
 test("adds Linux launch actions when captured window identifiers contain dollar signs", () => {
   const source = currentLaunchActionBundleFixture().replace(
-    "let ue=async(e,t)=>{M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await M.createFreshLocalWindow(e);r!=null&&(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r))};",
-    "let ue=async(e,t)=>{M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r$=n??await M.createFreshLocalWindow(e);r$!=null&&(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r$,e),ae(r$))};",
+    "let ue=async(e,t)=>{if(!enabled)return null;M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r=n??await ee(e);return r==null?null:(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r,e),ae(r),r)};",
+    "let ue=async(e,t)=>{if(!enabled)return null;M.hotkeyWindowLifecycleManager.hide();let n=M.getPrimaryWindow(),r$=n??await ee(e);return r$==null?null:(R.desktopNotificationManager.dismissByNavigationPath(e),n!=null&&t.navigateExistingWindow&&z.navigateToRoute(r$,e),ae(r$),r$)};",
   );
 
   const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
@@ -5947,51 +5909,10 @@ test("adds Linux launch actions when captured window identifiers contain dollar 
   assert.match(patched, /e\.includes\(`--hotkey-window`\)/);
 });
 
-test("adds Linux launch actions after current window API drift", () => {
-  const source = currentLaunchActionBundleFixture()
-    .replaceAll("createFreshLocalWindow", "createFreshWindow");
-
-  const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
-
-  assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await M\.createFreshWindow\(e\);/);
-  assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await M\.createFreshWindow\(`/);
-});
-
-test("adds Linux launch actions when current upstream wraps fresh window creation", () => {
-  const source = currentLaunchActionBundleFixture()
-    .replaceAll("createFreshLocalWindow", "createFreshWindow")
-    .replace(
-      "let A=Date.now(),w=()=>{}",
-      "let enabled=!0,ee=e=>enabled?M.createFreshWindow(e):Promise.resolve(null),A=Date.now(),w=()=>{}",
-    )
-    .replace("M.getPrimaryWindow()??await M.createFreshWindow(`/`)", "M.getPrimaryWindow()??await ee(`/`)")
-    .replace("r=n??await M.createFreshWindow(e)", "r=n??await ee(e)");
-
-  const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, source);
-
-  assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
-  assert.match(patched, /let e=M\.getPrimaryWindow\(B\),t=e\?\?await ee\(`\/`\);/);
-});
-
-test("adds Linux launch actions after current entry-telemetry drift", () => {
-  const patched = applyPatchTwice(
-    applyLinuxLaunchActionArgsPatch,
-    currentLaunchActionBundleWithEntryTelemetryFixture(),
-  );
-
-  assert.match(patched, /codexLinuxHandleLaunchActionArgs/);
-  assert.match(patched, /codexLinuxStartLaunchActionSocket=\(\)=>/);
-  assert.match(patched, /let n=M\.getPrimaryWindow\(B\),r=n\?\?await ee\(e\);/);
-  assert.match(patched, /z\.navigateToRoute\(r,e\),ae\(r\)/);
-});
-
 test("prewarms the hotkey window after startup marker drift", () => {
   const launchPatched = applyPatchTwice(
     applyLinuxLaunchActionArgsPatch,
     currentLaunchActionBundleFixture()
-      .replaceAll("createFreshLocalWindow", "createFreshWindow")
       .replace(
         "let be=await M.ensureHostWindow(B);be&&ae(be),w(`local window ensured`,A,{hostId:B,localWindowVisible:be?.isVisible()??!1}),A=Date.now(),await z.deepLinks.flushPendingDeepLinks();",
         "let be=await M.ensureHostWindow(B);be&&ae(be),w(`window ensured`,A,{windowVisible:be?.isVisible()??!1}),A=Date.now(),await z.deepLinks.flushPendingDeepLinks();",
@@ -10841,7 +10762,7 @@ test("patches current Electron Owl compatibility outside the main bundle", () =>
     fs.writeFileSync(
       bootstrapPath,
       [
-        "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);",
+        "if(process.versions.electron!=null&&typeof o.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);",
         "function gu(e){return l.session.fromPartition(du(e))}",
         "async function history(){return gu(`persist:test`).getDownloadHistory()}",
         "function attach(e,t,i,a){i.isAudible=a.isCurrentlyAudible(),i.isCapturingUserMedia=a.isCapturingUserMedia(),i.isCapturingCamera=a.isCapturingCamera(),i.isCapturingMicrophone=a.isCapturingMicrophone()}",
@@ -10860,7 +10781,7 @@ test("patches current Electron Owl compatibility outside the main bundle", () =>
     assert.match(fs.readFileSync(bundlePath, "utf8"), /setPreferredLanguages\?\./);
     assert.match(
       fs.readFileSync(bootstrapPath, "utf8"),
-      /process\.platform===`linux`\)\{a\.app\.setDebugChromePagesEnabled\?\?=/,
+      /process\.platform===`linux`\)\{o\.app\.setDebugChromePagesEnabled\?\?=/,
     );
     assert.deepEqual(patchLinuxOwlCompatibilityAssets(tempRoot), {
       matched: 2,
@@ -10877,21 +10798,21 @@ test("patches current Electron Owl compatibility outside the main bundle", () =>
 
 test("provides the stock Electron debug-pages compatibility hook on Linux", () => {
   const source =
-    "if(process.versions.electron!=null&&typeof a.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
+    "if(process.versions.electron!=null&&typeof o.app.showTaskManager!=`function`)throw Error(`Codex requires the Owl app shell; stock Electron is no longer supported.`);";
   const patched = applyPatchTwice(applyLinuxOwlAppShellGuardPatch, source);
   const sandbox = {
     process: { platform: "linux", versions: { electron: "38.0.0" } },
-    a: { app: {}, BrowserWindow: {} },
+    o: { app: {}, BrowserWindow: {} },
   };
 
   vm.runInNewContext(patched, sandbox);
 
-  assert.equal(typeof sandbox.a.app.setDebugChromePagesEnabled, "function");
-  assert.equal(sandbox.a.app.setDebugChromePagesEnabled(true), undefined);
-  assert.equal(typeof sandbox.a.app.setRuntimeFeatures, "function");
-  assert.equal(sandbox.a.app.setRuntimeFeatures({ Example: true }), undefined);
-  assert.equal(sandbox.a.BrowserWindow.isInputShapeSupported(), false);
-  assert.equal(sandbox.a.BrowserWindow.isSystemBackdropSupported(), false);
+  assert.equal(typeof sandbox.o.app.setDebugChromePagesEnabled, "function");
+  assert.equal(sandbox.o.app.setDebugChromePagesEnabled(true), undefined);
+  assert.equal(typeof sandbox.o.app.setRuntimeFeatures, "function");
+  assert.equal(sandbox.o.app.setRuntimeFeatures({ Example: true }), undefined);
+  assert.equal(sandbox.o.BrowserWindow.isInputShapeSupported(), false);
+  assert.equal(sandbox.o.BrowserWindow.isSystemBackdropSupported(), false);
 });
 
 test("skips the Owl-only preferred-languages setter on stock Electron", () => {

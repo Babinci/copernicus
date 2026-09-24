@@ -63,13 +63,13 @@ function applyLinuxSettingsPersistencePatch(currentSource) {
 
 function buildSemanticLinuxLaunchActionPatch({
   setterVar,
+  upstreamHandler,
   deepLinksVar,
   fallbackFn,
   openerFn,
   windowManagerVar,
   hostExpr,
   getPrimaryWindowCall,
-  createFreshWindowMethod,
   currentWindowVar,
   createdWindowVar,
   routeVar,
@@ -79,7 +79,7 @@ function buildSemanticLinuxLaunchActionPatch({
   reporterVar,
   disposableVar,
   appVar,
-  freshWindowExpr,
+  createFreshWindow,
 }) {
   const notificationPrefix = notificationVar == null
     ? ""
@@ -89,11 +89,10 @@ function buildSemanticLinuxLaunchActionPatch({
     ? ""
     : `,codexLinuxSecondInstanceHandler=(e,t)=>{codexLinuxHandleLaunchActionArgsFallback(t,()=>{${fallbackFn}()})},codexLinuxBeforeQuitHandler=()=>{typeof codexLinuxMarkQuitInProgress===\`function\`&&codexLinuxMarkQuitInProgress()}`;
   const startup = appVar == null
-    ? `process.platform===\`linux\`&&codexLinuxStartLaunchActionSocket();${setterVar}(e=>{codexLinuxHandleLaunchActionArgsFallback(e,()=>{${fallbackFn}()})});`
+    ? `process.platform===\`linux\`&&codexLinuxStartLaunchActionSocket();let codexLinuxUpstreamLaunchActionHandler=${upstreamHandler};${setterVar}(e=>{if(process.platform!==\`linux\`)return codexLinuxUpstreamLaunchActionHandler(e);codexLinuxHandleLaunchActionArgsFallback(e,()=>{codexLinuxUpstreamLaunchActionHandler(e)})});`
     : `process.platform===\`linux\`&&(${appVar}.app.on(\`before-quit\`,codexLinuxBeforeQuitHandler),${disposableVar}.add(()=>{${appVar}.app.off(\`before-quit\`,codexLinuxBeforeQuitHandler)}),codexLinuxStartLaunchActionSocket(),${appVar}.app.on(\`second-instance\`,codexLinuxSecondInstanceHandler),${disposableVar}.add(()=>{${appVar}.app.off(\`second-instance\`,codexLinuxSecondInstanceHandler)}));${setterVar}(e=>{codexLinuxHandleLaunchActionArgsFallback(e,()=>{${fallbackFn}()})});`;
 
   const ensureHostWindowCall = hostExpr == null ? `${windowManagerVar}.ensureHostWindow()` : `${windowManagerVar}.ensureHostWindow(${hostExpr})`;
-  const createFreshWindow = freshWindowExpr ?? ((pathExpr) => `${windowManagerVar}.${createFreshWindowMethod}(${pathExpr})`);
   const defaultSocket =
     "codexLinuxDefaultLaunchActionSocket=()=>{let e=codexLinuxLaunchActionAppId(),t=codexLinuxLaunchActionInstanceId(),n=process.env.XDG_RUNTIME_DIR?.trim(),r=require(`node:path`);if(n&&n.length>0)return t?r.join(n,e,`instances`,t,`launch-action.sock`):r.join(n,e,`launch-action.sock`);let i=process.env.XDG_STATE_HOME?.trim(),a=process.env.HOME?.trim();if((!i||i.length===0)&&a&&a.length>0)i=r.join(a,`.local`,`state`);if(!i||i.length===0)return null;return t?r.join(i,e,`instances`,t,`launch-action.sock`):r.join(i,e,`launch-action.sock`)}";
   const startSocket =
@@ -103,7 +102,7 @@ function buildSemanticLinuxLaunchActionPatch({
 
 function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
   const handlerRegex =
-    /([A-Za-z_$][\w$]*)\(e=>\{let ([A-Za-z_$][\w$]*)=[^;{}]+;if\(([A-Za-z_$][\w$]*)\.deepLinks\.queueProcessArgs\(e\)\)\{\2&&([A-Za-z_$][\w$]*)\(\);return\}if\(\2\)\{\4\(\);return\}\4\((?:\{[^{}]*\})?\)\}\);let ([A-Za-z_$][\w$]*)=async\(e,t\)=>\{/g;
+    /([A-Za-z_$][\w$]*)\(e=>\{let [A-Za-z_$][\w$]*=[^;{}]+,([A-Za-z_$][\w$]*)=[^;{}]+;if\(([A-Za-z_$][\w$]*)\.deepLinks\.queueProcessArgs\(e\)\)\{\2&&([A-Za-z_$][\w$]*)\(\);return\}if\(\2\)\{\4\(\);return\}\4\((?:\{[^{}]*\})?\)\}\);let ([A-Za-z_$][\w$]*)=async\(e,t\)=>\{/g;
   let match;
   while ((match = handlerRegex.exec(currentSource)) != null) {
     const [, setterVar, , deepLinksVar, fallbackFn, openerFn] = match;
@@ -120,30 +119,20 @@ function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
     }
 
     const openerText = currentSource.slice(openerLetIndex, openerEnd + 1);
-    let openerVars = openerText.match(
-      /([A-Za-z_$][\w$]*)\.hotkeyWindowLifecycleManager\.hide\(\);let ([A-Za-z_$][\w$]*)=\1\.getPrimaryWindow(?:\(([^)]*)\))?,([A-Za-z_$][\w$]*)=\2\?\?await \1\.(createFreshLocalWindow|createFreshWindow)\(e\);/,
+    const openerVars = openerText.match(
+      /if\(![A-Za-z_$][\w$]*\)return null;([A-Za-z_$][\w$]*)\.hotkeyWindowLifecycleManager\.hide\(\);let ([A-Za-z_$][\w$]*)=\1\.getPrimaryWindow(?:\(([^)]*)\))?,([A-Za-z_$][\w$]*)=\2\?\?await ([A-Za-z_$][\w$]*)\(e\);/,
     );
-    let freshWindowExpr;
-    if (openerVars == null) {
-      const wrapperVars = openerText.match(
-        /([A-Za-z_$][\w$]*)\.hotkeyWindowLifecycleManager\.hide\(\);let ([A-Za-z_$][\w$]*)=\1\.getPrimaryWindow(?:\(([^)]*)\))?,([A-Za-z_$][\w$]*)=\2\?\?await ([A-Za-z_$][\w$]*)\(e\);/,
-      );
-      if (wrapperVars != null) {
-        const [, windowManagerVar, currentWindowVar, hostExprRaw, createdWindowVar, wrapperFn] = wrapperVars;
-        const wrapperDefinition = new RegExp(
-          `${escapeRegExp(wrapperFn)}=([A-Za-z_$][\\w$]*)=>[A-Za-z_$][\\w$]*\\?${escapeRegExp(windowManagerVar)}\\.createFresh(?:Local)?Window\\(\\1\\):Promise\\.resolve\\(null\\)`,
-        );
-        if (wrapperDefinition.test(currentSource.slice(Math.max(0, match.index - HANDLER_PREFIX_LOOKBACK), match.index))) {
-          openerVars = [wrapperVars[0], windowManagerVar, currentWindowVar, hostExprRaw, createdWindowVar, "createFreshWindow"];
-          freshWindowExpr = (pathExpr) => `${wrapperFn}(${pathExpr})`;
-        }
-      }
-    }
     if (openerVars == null) {
       continue;
     }
 
-    const [, windowManagerVar, currentWindowVar, hostExprRaw, createdWindowVar, createFreshWindowMethod] = openerVars;
+    const [, windowManagerVar, currentWindowVar, hostExprRaw, createdWindowVar, wrapperFn] = openerVars;
+    const wrapperDefinition = new RegExp(
+      `${escapeRegExp(wrapperFn)}=([A-Za-z_$][\\w$]*)=>[A-Za-z_$][\\w$]*\\?${escapeRegExp(windowManagerVar)}\\.createFreshWindow\\(\\1\\):Promise\\.resolve\\(null\\)`,
+    );
+    if (!wrapperDefinition.test(currentSource.slice(Math.max(0, match.index - HANDLER_PREFIX_LOOKBACK), match.index))) {
+      continue;
+    }
     const routeVar = openerText.match(/([A-Za-z_$][\w$]*)\.navigateToRoute\([A-Za-z_$][\w$]*,e\)/)?.[1];
     const focusFn = openerText.match(new RegExp(`,([A-Za-z_$][\\w$]*)\\(${escapeRegExp(createdWindowVar)}\\)(?:,${escapeRegExp(createdWindowVar)})?\\)\\}$`))?.[1];
     if (routeVar == null || focusFn == null) {
@@ -173,13 +162,13 @@ function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
     )?.[1] ?? null;
     const replacement = buildSemanticLinuxLaunchActionPatch({
       setterVar,
+      upstreamHandler: match[0].slice(setterVar.length + 1, match[0].lastIndexOf(");let ")),
       deepLinksVar,
       fallbackFn,
       openerFn,
       windowManagerVar,
       hostExpr,
       getPrimaryWindowCall,
-      createFreshWindowMethod,
       currentWindowVar,
       createdWindowVar,
       routeVar,
@@ -189,7 +178,7 @@ function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
       reporterVar,
       disposableVar,
       appVar: null,
-      freshWindowExpr,
+      createFreshWindow: (pathExpr) => `${wrapperFn}(${pathExpr})`,
     });
     const suffix = separator === "," ? "let " : "";
     return currentSource.slice(0, match.index) + replacement + suffix + currentSource.slice(openerEnd + 2);
@@ -214,7 +203,7 @@ function applyLinuxLaunchActionArgsPatch(currentSource) {
     patchedSource.includes("codexLinuxStartLaunchActionSocket=()=>") &&
     (
       patchedSource.includes("n.app.on(`before-quit`,codexLinuxBeforeQuitHandler)") ||
-      /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);[A-Za-z_$][\w$]*\(e=>\{codexLinuxHandleLaunchActionArgsFallback\(e,\(\)=>\{[A-Za-z_$][\w$]*\(\)\}\)\}\)/.test(patchedSource)
+      patchedSource.includes("codexLinuxUpstreamLaunchActionHandler=e=>")
     ) &&
     !patchedSource.includes("codexLinuxOpenNewChat")
   ) {
