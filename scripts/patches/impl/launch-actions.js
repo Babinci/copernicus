@@ -63,6 +63,7 @@ function applyLinuxSettingsPersistencePatch(currentSource) {
 
 function buildSemanticLinuxLaunchActionPatch({
   setterVar,
+  upstreamHandler,
   deepLinksVar,
   fallbackFn,
   openerFn,
@@ -88,7 +89,7 @@ function buildSemanticLinuxLaunchActionPatch({
     ? ""
     : `,codexLinuxSecondInstanceHandler=(e,t)=>{codexLinuxHandleLaunchActionArgsFallback(t,()=>{${fallbackFn}()})},codexLinuxBeforeQuitHandler=()=>{typeof codexLinuxMarkQuitInProgress===\`function\`&&codexLinuxMarkQuitInProgress()}`;
   const startup = appVar == null
-    ? `process.platform===\`linux\`&&codexLinuxStartLaunchActionSocket();${setterVar}(e=>{codexLinuxHandleLaunchActionArgsFallback(e,()=>{${fallbackFn}()})});`
+    ? `process.platform===\`linux\`&&codexLinuxStartLaunchActionSocket();let codexLinuxUpstreamLaunchActionHandler=${upstreamHandler};${setterVar}(e=>{if(process.platform!==\`linux\`)return codexLinuxUpstreamLaunchActionHandler(e);codexLinuxHandleLaunchActionArgsFallback(e,()=>{codexLinuxUpstreamLaunchActionHandler(e)})});`
     : `process.platform===\`linux\`&&(${appVar}.app.on(\`before-quit\`,codexLinuxBeforeQuitHandler),${disposableVar}.add(()=>{${appVar}.app.off(\`before-quit\`,codexLinuxBeforeQuitHandler)}),codexLinuxStartLaunchActionSocket(),${appVar}.app.on(\`second-instance\`,codexLinuxSecondInstanceHandler),${disposableVar}.add(()=>{${appVar}.app.off(\`second-instance\`,codexLinuxSecondInstanceHandler)}));${setterVar}(e=>{codexLinuxHandleLaunchActionArgsFallback(e,()=>{${fallbackFn}()})});`;
 
   const ensureHostWindowCall = hostExpr == null ? `${windowManagerVar}.ensureHostWindow()` : `${windowManagerVar}.ensureHostWindow(${hostExpr})`;
@@ -161,6 +162,7 @@ function applyCurrentSemanticLinuxLaunchActionArgsPatch(currentSource) {
     )?.[1] ?? null;
     const replacement = buildSemanticLinuxLaunchActionPatch({
       setterVar,
+      upstreamHandler: match[0].slice(setterVar.length + 1, match[0].lastIndexOf(");let ")),
       deepLinksVar,
       fallbackFn,
       openerFn,
@@ -201,7 +203,7 @@ function applyLinuxLaunchActionArgsPatch(currentSource) {
     patchedSource.includes("codexLinuxStartLaunchActionSocket=()=>") &&
     (
       patchedSource.includes("n.app.on(`before-quit`,codexLinuxBeforeQuitHandler)") ||
-      /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);[A-Za-z_$][\w$]*\(e=>\{codexLinuxHandleLaunchActionArgsFallback\(e,\(\)=>\{[A-Za-z_$][\w$]*\(\)\}\)\}\)/.test(patchedSource)
+      patchedSource.includes("codexLinuxUpstreamLaunchActionHandler=e=>")
     ) &&
     !patchedSource.includes("codexLinuxOpenNewChat")
   ) {

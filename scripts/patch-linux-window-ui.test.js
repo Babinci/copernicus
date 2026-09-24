@@ -4211,6 +4211,25 @@ test("patches current opaque window surface background helper shape for Linux", 
   assert.ok(patched.includes(currentOpaqueWindowSurfaceBackgroundHelper));
 });
 
+test("current window policy makes Linux opaque while preserving overlay and non-Linux surfaces", () => {
+  const patched = applyPatchTwice(applyLinuxOpaqueBackgroundPatch, currentOpaqueWindowSurfaceBackgroundBundle);
+  for (const platform of ["linux", "darwin", "win32"]) {
+    for (const appearance of ["primary", "screenOverlay", "hotkeyWindowHome"]) {
+      for (const prefersDarkColors of [false, true]) {
+        const context = {process: {platform}, theme: {}, bF: () => true, appearance, prefersDarkColors};
+        const evaluate = source => vm.runInNewContext(`${source};S3({platform:process.platform,appearance,opaqueWindowSurfaceEnabled:new k3().shouldAlwaysUseOpaqueWindowSurface(appearance),prefersDarkColors})`, {...context});
+        const result = evaluate(patched);
+        if (platform === "linux" && appearance === "primary") {
+          assert.equal(result.backgroundColor, prefersDarkColors ? "#000000" : "#f9f9f9");
+          assert.equal(result.backgroundMaterial, null);
+        } else {
+          assert.equal(JSON.stringify(result), JSON.stringify(evaluate(currentOpaqueWindowSurfaceBackgroundBundle)));
+        }
+      }
+    }
+  }
+});
+
 test("keeps the opaque background patch idempotent after pet overlay composition", () => {
   const source = `${latestAvatarOverlayBundleFixture()}${currentOpaqueWindowSurfaceBackgroundBundle}`;
   const corePatched = applyLinuxOpaqueBackgroundPatch(source);
@@ -5814,12 +5833,35 @@ test("adds Linux launch actions through current setSecondInstanceArgsHandler bun
   assert.match(launchPatched, /if\(e===`restart`\)\{t\.end\?\.\(`restart\\n`\),setImmediate\(\(\)=>/);
   assert.match(launchPatched, /require\(`electron`\)\.app\.quit\(\)/);
   assert.match(launchPatched, /return r!=null&&\([\s\S]{0,300}?ae\(r\)\),r\}/);
-  assert.match(launchPatched, /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);l\(e=>/);
+  assert.match(launchPatched, /process\.platform===`linux`&&codexLinuxStartLaunchActionSocket\(\);let codexLinuxUpstreamLaunchActionHandler=e=>/);
   assert.doesNotMatch(launchPatched, /l\(e=>\{z\.deepLinks\.queueProcessArgs\(e\)\|\|oe\(\)\}\)/);
   assert.match(
     prewarmPatched,
     /process\.platform===`linux`&&codexLinuxPrewarmHotkeyWindow\(\),A=Date\.now\(\),await z\.deepLinks\.flushPendingDeepLinks\(\)/,
   );
+});
+
+test("preserves upstream shortcut metadata and non-Linux launch handling", () => {
+  const patched = applyPatchTwice(applyLinuxLaunchActionArgsPatch, currentLaunchActionBundleFixture());
+  const registration = patched.slice(patched.indexOf("let codexLinuxUpstreamLaunchActionHandler="), patched.indexOf(";let ce="));
+  for (const platform of ["linux", "darwin", "win32"]) {
+    const calls = [];
+    let handler;
+    vm.runInNewContext(registration, {
+      process: {platform},
+      Pl: args => args,
+      t: {n: () => false},
+      z: {deepLinks: {queueProcessArgs: () => false}},
+      le: metadata => calls.push(metadata),
+      l: callback => { handler = callback; },
+      codexLinuxHandleLaunchActionArgsFallback: (_args, fallback) => {
+        assert.equal(platform, "linux");
+        fallback();
+      },
+    });
+    handler(["app", "--unknown"]);
+    assert.equal(JSON.stringify(calls), '[{"channel":"shortcut","source":"shortcut"}]');
+  }
 });
 
 test("uses collision-safe modules for launch-action socket in shadowed startup scopes", () => {

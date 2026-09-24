@@ -9750,7 +9750,7 @@ async function boot(settings = {}, env = { CODEX_DESKTOP_LAUNCH_ACTION_SOCKET: "
 
   resetCalls();
   await runSecondInstance(["codex-desktop"]);
-  assert(state.queueArgs.length === 0, "no-flag args without a deeplink should not be consumed by deeplink routing");
+  assert(state.queueArgs.length === 1, "unhandled args should retain the upstream deeplink check before focus fallback");
   assert(state.ieCalls === 1, "no-flag args should use the focus fallback");
   assert(state.createFreshLocalWindowCalls.length === 1 && state.createFreshLocalWindowCalls[0] === "/", "fallback should create the default window");
 
@@ -9791,7 +9791,7 @@ async function boot(settings = {}, env = { CODEX_DESKTOP_LAUNCH_ACTION_SOCKET: "
   resetCalls();
   state.primaryWindow = state.primary;
   await runSecondInstance(["codex-desktop", "--prompt-chat"]);
-  assert(state.queueArgs.length === 0, "disabled prompt-chat args without a deeplink should not be consumed by deeplink routing");
+  assert(state.queueArgs.length === 1, "disabled prompt-chat should retain the upstream deeplink check before focus fallback");
   assert(state.openHomeCalls === 0, "disabled prompt-chat gate should not open the compact prompt");
   assert(state.ensureHotkeyWindowControllerCalls === 0, "disabled prompt-chat gate should not create the hotkey window controller");
   assert(state.ieCalls === 1, "disabled prompt-chat gate should fall back to main-window focus");
