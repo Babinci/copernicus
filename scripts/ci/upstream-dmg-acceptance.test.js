@@ -204,17 +204,18 @@ test("upstream workflow concurrency is isolated per PR or ref", () => {
     path.resolve(__dirname, "../../.github/workflows/upstream-build-app.yml"),
     "utf8",
   );
-  assert.match(workflow, /cron: '30 \* \* \* \*'/);
+  assert.match(workflow, /^  pull_request:$/m);
+  assert.match(workflow, /^  workflow_dispatch:$/m);
+  assert.doesNotMatch(workflow, /^  (?:schedule|push):$/m);
+  assert.doesNotMatch(workflow, /reconcile-upstream-dmg-issue:/);
   assert.match(
     workflow,
     /group: upstream-dmg-acceptance-\$\{\{ github\.event_name \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/,
   );
   assert.doesNotMatch(workflow, /group: upstream-dmg-acceptance-\$\{\{ github\.event_name \}\}\s*$/m);
-  assert.equal((workflow.match(/- linux-features\/\*\*/g) ?? []).length, 2);
-  assert.equal((workflow.match(/- scripts\/lib\/linux-features\.js/g) ?? []).length, 2);
+  assert.equal((workflow.match(/- linux-features\/\*\*/g) ?? []).length, 1);
+  assert.equal((workflow.match(/- scripts\/lib\/linux-features\.js/g) ?? []).length, 1);
   assert.doesNotMatch(workflow, /uses:\s+[^\s]+@v\d/);
-  assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
-  assert.match(workflow, /persist-credentials: false/);
 });
 
 test("upstream workflow gates the enabled chat-colour feature against the current DMG", () => {

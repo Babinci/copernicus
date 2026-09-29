@@ -4,7 +4,6 @@
 
 <p align="center">
   <a href="https://github.com/Babinci/copernicus/actions/workflows/ci.yml"><img src="https://github.com/Babinci/copernicus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/Babinci/copernicus/actions/workflows/upstream-build-app.yml"><img src="https://github.com/Babinci/copernicus/actions/workflows/upstream-build-app.yml/badge.svg" alt="Upstream Build App"></a>
   <a href="https://discord.gg/skCB3DXqgw"><img src="https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white" alt="Join the Discord community"></a>
 </p>
 
@@ -431,7 +430,8 @@ make build-app DMG=/path/to/Codex.dmg
 
 Local builds are transactional: the candidate must pass the same
 [upstream DMG acceptance profile](docs/upstream-dmg-acceptance.md) used by the
-scheduled GitHub workflow before it replaces the working `codex-app/`.
+pull-request and manually triggered GitHub build before it replaces the working
+`codex-app/`.
 Only configured Linux Features are checked; drift in an enabled feature keeps
 the current app installed until that feature is disabled or repaired.
 

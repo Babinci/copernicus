@@ -197,7 +197,7 @@ protection, review requirements, and the contributor workflow in
 
 Repository-owned issue producers must read their labels from the policy and
 apply a complete deterministic classification. The Computer Use sync reminder
-and upstream DMG drift reconciler follow this rule. Existing item automation,
+follows this rule. Existing item automation,
 including the contributor pull request limit, must inspect
 `workflow: manual only` before any comment, edit, classification, close, or
 merge operation and leave that item for staff.
@@ -229,8 +229,8 @@ The migration is intentionally split:
 
 1. Merge the reviewed policy, documentation, script, tests, and workflow.
 2. Update or disable any external automation that still writes retired names.
-   The committed Computer Use and upstream DMG issue producers read their
-   classifications from the policy.
+   The committed Computer Use issue producer reads its classification from the
+   policy.
 3. Run `plan`. It is read-only and needs no confirmation text.
    It also reports open items whose migrated labels still need a required
    staff classification; these are triage notices, not inferred labels.

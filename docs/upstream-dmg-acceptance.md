@@ -1,18 +1,19 @@
 # Upstream DMG Acceptance
 
-Local installs, updater rebuilds, and the scheduled upstream workflow use the
-same release profile from `scripts/lib/upstream-dmg-release-profile.js`. Shell
-and workflow entrypoints produce reports; `scripts/validate-upstream-dmg.js`
+Local installs, updater rebuilds, and pull-request or manually triggered
+upstream builds use the same release profile from
+`scripts/lib/upstream-dmg-release-profile.js`. Shell and workflow entrypoints
+produce reports; `scripts/validate-upstream-dmg.js`
 is the only component that decides whether the candidate can be promoted.
 
 ## Verdicts
 
-| Verdict | Meaning | Local promotion | Scheduled issue |
-|---|---|---:|---:|
-| `accepted` | Build and every required release check passed | yes | close obsolete drift issues |
-| `accepted_with_warnings` | Only fail-soft core diagnostics drifted | yes | close obsolete drift issues |
-| `rejected` | A required core/integrity check or an enabled Linux Feature drifted | no | create or update the current fingerprint issue |
-| `inconclusive` | Reports are missing or an infrastructure failure prevented a decision | no | no change |
+| Verdict | Meaning | Local promotion |
+|---|---|---:|
+| `accepted` | Build and every required release check passed | yes |
+| `accepted_with_warnings` | Only fail-soft core diagnostics drifted | yes |
+| `rejected` | A required core/integrity check or an enabled Linux Feature drifted | no |
+| `inconclusive` | Reports are missing or an infrastructure failure prevented a decision | no |
 
 The profile derives required core patches from patch descriptors and reads the
 enabled feature set from the candidate's patch report. It never enables a
@@ -60,23 +61,6 @@ cache lease remains held through state persistence and package consumption.
 Cleanup keeps the state-referenced DMG and removes older managed hashes plus
 temporary files abandoned by an interrupted download; unrelated files and
 symlinks are ignored.
-
-## Drift Issue Lifecycle
-
-Scheduled runs use the DMG SHA-256 as the identity and the app version only as
-a display value. One `area: upstream dmg` issue is kept per rejected fingerprint.
-When a new fingerprint arrives, open issues for older DMGs are closed as
-superseded. An accepted new DMG closes all remaining drift issues. Before any
-mutation, the issue job compares the tested HTTP identity with the current DMG
-headers so rerunning an obsolete workflow cannot reopen an old issue. The
-identity must contain an ETag or both Last-Modified and Content-Length. If
-either the tested or current identity is unavailable, reconciliation makes no
-issue changes. The reconciler reads its classification from
-`.github/labels.json` and leaves any issue carrying `workflow: manual only`
-untouched.
-Only issues carrying both the label and a valid hidden 64-character fingerprint
-marker are managed. Manually created labeled issues and malformed markers are
-never updated, reopened, superseded, or closed by the workflow.
 
 ## Manual Validation
 
